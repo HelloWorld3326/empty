@@ -1,0 +1,6 @@
+order_id,order_number,customer_id,item_name,amount,status,created_at
+O1001,ORD-1001,C001,机械键盘,399.00,unshipped,2026-07-08
+O1002,ORD-1002,C001,USB-C 数据线,59.00,shipped,2026-07-05
+O1003,ORD-1003,C002,4K 显示器,1899.00,unshipped,2026-07-10
+O1004,ORD-1004,C003,鼠标垫,29.00,delivered,2026-06-30
+O1005,ORD-1005,C001,人体工学椅,1299.00,cancelled,2026-07-01

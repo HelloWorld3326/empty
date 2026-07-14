@@ -1,0 +1,4 @@
+customer_id,name,tier,email
+C001,张三,gold,zhangsan@example.com
+C002,李四,silver,lisi@example.com
+C003,王五,bronze,wangwu@example.com
