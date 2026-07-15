@@ -1,0 +1,556 @@
+<title>Ontology 对象创建器</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --surface:#ffffff; --surface2:#eef1f6;
+    --ink:#1c2733; --muted:#5c6b7a; --line:#d9dfe8;
+    --obj:#0e7490; --obj-soft:#e0f2f7;
+    --raw:#6b7a8c; --raw-soft:#eceff3;
+    --ok:#15803d; --ok-soft:#e3f3e8;
+    --bad:#b91c1c; --bad-soft:#fbe9e9;
+    --focus:#0e7490;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#141a22; --surface:#1c242f; --surface2:#232d3a;
+      --ink:#e6ecf3; --muted:#93a1b0; --line:#33404f;
+      --obj:#4cc4de; --obj-soft:#0f3a45;
+      --raw:#8b9aab; --raw-soft:#222b36;
+      --ok:#5dc98a; --ok-soft:#123824;
+      --bad:#ef7b7b; --bad-soft:#3f1a1a;
+      --focus:#4cc4de;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#141a22; --surface:#1c242f; --surface2:#232d3a;
+    --ink:#e6ecf3; --muted:#93a1b0; --line:#33404f;
+    --obj:#4cc4de; --obj-soft:#0f3a45;
+    --raw:#8b9aab; --raw-soft:#222b36;
+    --ok:#5dc98a; --ok-soft:#123824;
+    --bad:#ef7b7b; --bad-soft:#3f1a1a;
+    --focus:#4cc4de;
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f6f9; --surface:#ffffff; --surface2:#eef1f6;
+    --ink:#1c2733; --muted:#5c6b7a; --line:#d9dfe8;
+    --obj:#0e7490; --obj-soft:#e0f2f7;
+    --raw:#6b7a8c; --raw-soft:#eceff3;
+    --ok:#15803d; --ok-soft:#e3f3e8;
+    --bad:#b91c1c; --bad-soft:#fbe9e9;
+    --focus:#0e7490;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    font-size:14.5px; line-height:1.6;
+  }
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,"Cascadia Mono",monospace; font-variant-numeric:tabular-nums;}
+  .wrap{max-width:1220px; margin:0 auto; padding:28px 20px 80px;}
+
+  header.top{margin-bottom:22px;}
+  .eyebrow{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 6px;}
+  h1{font-size:26px; margin:0 0 8px; text-wrap:balance; font-weight:700;}
+  .sub{color:var(--muted); max-width:66ch; margin:0;}
+  .sub b{color:var(--obj);}
+
+  .grid{display:grid; grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr); gap:20px; align-items:start; margin-top:22px;}
+  @media (max-width:980px){ .grid{grid-template-columns:1fr;} }
+
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+  .panel-h{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 16px; border-bottom:1px solid var(--line); background:var(--surface2);}
+  .panel-h h2{font-size:15px; margin:0; font-weight:700;}
+  .tag{font-size:11px; letter-spacing:.1em; text-transform:uppercase; padding:2px 9px; border-radius:999px; font-weight:600;}
+  .tag.raw{background:var(--raw-soft); color:var(--raw); border:1px solid var(--raw);}
+  .tag.obj{background:var(--obj-soft); color:var(--obj); border:1px solid var(--obj);}
+  .panel-b{padding:16px;}
+
+  /* datasource list */
+  .dslist{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
+  .dsbtn{
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    padding:6px 14px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;
+  }
+  .dsbtn[aria-pressed="true"]{background:var(--raw); border-color:var(--raw); color:var(--bg);}
+  .dsbtn.add{border-style:dashed; color:var(--muted); font-weight:500;}
+  .dsmeta{font-size:12.5px; color:var(--muted); margin:0 0 8px;}
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
+     padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; background:var(--surface2);}
+  td{padding:6px 9px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  tr:last-child td{border-bottom:0;}
+  .tscroll{overflow-x:auto; border:1px solid var(--line); border-radius:8px;}
+  td.hl-pk{background:var(--obj-soft); font-weight:700;}
+  td.hl-title{text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--obj);}
+
+  /* CSV paste box */
+  .csvbox{margin-top:14px; border-top:1px dashed var(--line); padding-top:14px; display:none;}
+  .csvbox.open{display:block;}
+  .csvbox textarea{
+    width:100%; min-height:110px; padding:10px; border:1px solid var(--line); border-radius:8px;
+    background:var(--surface); color:var(--ink); font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px;
+  }
+  .csvbox .hint{font-size:12px; color:var(--muted); margin:4px 0 8px;}
+
+  /* wizard */
+  .step{border:1px solid var(--line); border-radius:10px; margin-bottom:14px; overflow:hidden;}
+  .step-h{display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--surface2);}
+  .step-n{
+    width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+    font-size:12.5px; font-weight:700; background:var(--surface); border:2px solid var(--line); color:var(--muted); flex:none;
+  }
+  .step.done .step-n{background:var(--obj); border-color:var(--obj); color:#fff;}
+  .step-h .t{font-weight:700; font-size:14px;}
+  .step-h .req{margin-left:auto; font-size:11px; color:var(--bad); letter-spacing:.06em;}
+  .step-b{padding:14px;}
+  .step.locked .step-b{color:var(--muted); font-size:13px;}
+
+  .field{margin-bottom:12px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:block; font-size:12.5px; color:var(--muted); margin-bottom:4px;}
+  .field input,.field select{
+    width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px;
+    background:var(--surface); color:var(--ink); font-size:13.5px; font-family:inherit;
+  }
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:560px){ .two{grid-template-columns:1fr;} }
+
+  /* property mapping rows */
+  .prow{display:grid; grid-template-columns:26px minmax(90px,1.1fr) minmax(90px,1.1fr) 86px; gap:8px; align-items:center;
+        padding:6px 0; border-bottom:1px dashed var(--line); font-size:13px;}
+  .prow:last-child{border-bottom:0;}
+  .prow input[type="checkbox"]{width:16px; height:16px; accent-color:var(--obj); cursor:pointer;}
+  .prow input[type="text"]{padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink); font-size:12.5px; width:100%;}
+  .prow .typechip{font-size:11.5px; color:var(--muted); background:var(--surface2); border-radius:6px; padding:3px 8px; text-align:center;}
+  .prow.excluded .colname, .prow.excluded .typechip{opacity:.4; text-decoration:line-through;}
+  .phead{display:grid; grid-template-columns:26px minmax(90px,1.1fr) minmax(90px,1.1fr) 86px; gap:8px;
+         font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding-bottom:6px; border-bottom:1px solid var(--line);}
+
+  .warnmsg{margin-top:8px; padding:9px 12px; border-radius:8px; font-size:12.5px; display:none;}
+  .warnmsg.show{display:block; background:var(--bad-soft); border:1px solid var(--bad); color:var(--bad);}
+  .okmsg{margin-top:8px; padding:9px 12px; border-radius:8px; font-size:12.5px; display:none;}
+  .okmsg.show{display:block; background:var(--ok-soft); border:1px solid var(--ok); color:var(--ok);}
+
+  .preview{
+    margin:4px 0 12px; padding:10px 14px; border-radius:8px; background:var(--obj-soft);
+    border:1px dashed var(--obj); font-size:13.5px;
+  }
+  .preview .lbl{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--obj); font-weight:700;}
+
+  .savebtn{
+    width:100%; padding:11px 0; border:0; border-radius:8px; cursor:pointer;
+    background:var(--obj); color:#fff; font-weight:700; font-size:14.5px;
+  }
+  .savebtn:disabled{opacity:.45; cursor:not-allowed;}
+  .savebtn:not(:disabled):hover{filter:brightness(1.08);}
+
+  /* created object types */
+  .otcards{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
+  .otcard{
+    border:1px solid var(--obj); border-radius:10px; background:var(--surface); cursor:pointer;
+    padding:12px 14px; text-align:left; color:var(--ink); font:inherit;
+  }
+  .otcard:hover{background:var(--obj-soft);}
+  .otcard .nm{font-weight:700; font-size:15px; color:var(--obj);}
+  .otcard .meta{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.7;}
+  .otcard .meta .k{display:inline-block; min-width:64px;}
+  .empty{color:var(--muted); font-size:13.5px;}
+
+  /* object browser modal-ish section */
+  .browser{margin-top:14px; border-top:1px dashed var(--line); padding-top:14px;}
+  .browser h3{margin:0 0 4px; font-size:14.5px;}
+  .browser h3 .mono{color:var(--muted); font-weight:400; font-size:12.5px;}
+  .objchip{display:inline-block; margin:3px 4px 3px 0; padding:4px 12px; border-radius:999px;
+           background:var(--obj-soft); border:1px solid var(--obj); color:var(--obj); font-size:12.5px; font-weight:600;}
+
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+  .smallbtn{border:1px solid var(--line); background:var(--surface); color:var(--muted); border-radius:7px; padding:4px 12px; font-size:12.5px; cursor:pointer;}
+  footer.note{margin-top:26px; color:var(--muted); font-size:12.5px; max-width:72ch;}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Mini Ontology Manager · 第一步</p>
+    <h1>从底层表创建对象类型</h1>
+    <p class="sub">这是 Ontology 成型的第一步：把一张原始数据表<b>映射</b>成业务对象 —— 选表、命名、挑属性、定主键和标题。左边是数据库眼里的"表"，右边的向导完成后，它就变成了业务眼里的"对象"。流程与 Palantir Ontology Manager 的 Create object type 向导一一对应。</p>
+  </header>
+
+  <div class="grid">
+    <!-- ===== 左：底层数据表 ===== -->
+    <section class="panel" aria-labelledby="ds-title">
+      <div class="panel-h">
+        <span class="tag raw">数据层</span>
+        <h2 id="ds-title">底层数据表（Backing Datasets）</h2>
+      </div>
+      <div class="panel-b">
+        <div class="dslist" id="dslist"></div>
+        <p class="dsmeta" id="dsmeta"></p>
+        <div class="tscroll"><table id="rawtable"></table></div>
+
+        <div class="csvbox" id="csvbox">
+          <div class="hint">粘贴 CSV（第一行为列名，逗号分隔），即可把你自己的表加入数据层：</div>
+          <textarea id="csvinput" placeholder="product_id,name,price,in_stock&#10;P01,键帽套装,99.00,true&#10;P02,轴体润滑油,35.50,false"></textarea>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="smallbtn" style="border-color:var(--obj);color:var(--obj)" onclick="importCsv()">导入为新数据表</button>
+            <button class="smallbtn" onclick="toggleCsv(false)">收起</button>
+          </div>
+          <div class="warnmsg" id="csverr"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 右：创建向导 ===== -->
+    <section class="panel" aria-labelledby="wz-title">
+      <div class="panel-h">
+        <span class="tag obj">语义层</span>
+        <h2 id="wz-title">创建对象类型（Create Object Type）</h2>
+      </div>
+      <div class="panel-b" id="wizard">
+
+        <div class="step" id="st1">
+          <div class="step-h"><span class="step-n">1</span><span class="t">选择数据源 Select Datasource</span><span class="req">必选</span></div>
+          <div class="step-b" id="st1b">
+            <div class="field">
+              <label for="wz-ds">对象类型的后备数据集（backing dataset）</label>
+              <select id="wz-ds" onchange="pickDatasource()"><option value="">— 在左侧或此处选择一张表 —</option></select>
+            </div>
+            <div class="okmsg" id="st1ok"></div>
+          </div>
+        </div>
+
+        <div class="step locked" id="st2">
+          <div class="step-h"><span class="step-n">2</span><span class="t">命名 Name</span><span class="req">必填</span></div>
+          <div class="step-b" id="st2b">先选择数据源。</div>
+        </div>
+
+        <div class="step locked" id="st3">
+          <div class="step-h"><span class="step-n">3</span><span class="t">属性 Properties（列 → 属性自动映射）</span></div>
+          <div class="step-b" id="st3b">先选择数据源。</div>
+        </div>
+
+        <div class="step locked" id="st4">
+          <div class="step-h"><span class="step-n">4</span><span class="t">主键与标题 Primary Key & Title Key</span><span class="req">必选</span></div>
+          <div class="step-b" id="st4b">先选择数据源。</div>
+        </div>
+
+        <div class="preview" id="preview" style="display:none">
+          <span class="lbl">对象预览</span>
+          <div id="previewbody" class="mono"></div>
+        </div>
+        <div class="warnmsg" id="saveerr"></div>
+        <button class="savebtn" id="savebtn" onclick="saveObjectType()" disabled>保存 —— 生成对象类型</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== 已创建的对象类型 ===== -->
+  <section class="panel" style="margin-top:20px" aria-labelledby="ot-title">
+    <div class="panel-h">
+      <span class="tag obj">成果</span>
+      <h2 id="ot-title">已创建的对象类型 —— 你的 Ontology</h2>
+    </div>
+    <div class="panel-b">
+      <div class="otcards" id="otcards"></div>
+      <div class="empty" id="otempty">还没有对象类型。完成右上方向导后，第一张"表"就会以"对象"的身份出现在这里 —— 点击卡片可浏览它的对象实例。</div>
+      <div class="browser" id="browser" style="display:none"></div>
+    </div>
+  </section>
+
+  <footer class="note">
+    教学提示：故意在第 4 步把主键选成一个有重复值的列（例如 all_orders 的 status），保存会被拦下 —— 这正是 Ontology Manager 中"主键必须每行唯一"的硬约束。数据仅存于本页内存，刷新即复位。做完这一步，下一课就是给对象之间连"链接"、再定义"动作"。
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ================= 数据层：内置三张原始表 ================= */
+const DATASETS = {
+  all_orders: {
+    desc: "订单流水表 · 来自订单系统",
+    cols: ["order_id","order_number","customer_id","item_name","amount","status","created_at"],
+    rows: [
+      ["O1001","ORD-1001","C001","机械键盘","399.00","unshipped","2026-07-08"],
+      ["O1002","ORD-1002","C001","USB-C 数据线","59.00","shipped","2026-07-05"],
+      ["O1003","ORD-1003","C002","4K 显示器","1899.00","unshipped","2026-07-10"],
+      ["O1004","ORD-1004","C003","鼠标垫","29.00","delivered","2026-06-30"],
+      ["O1005","ORD-1005","C001","人体工学椅","1299.00","cancelled","2026-07-01"],
+    ]
+  },
+  customers: {
+    desc: "客户主数据表 · 来自 CRM",
+    cols: ["customer_id","name","tier","email"],
+    rows: [
+      ["C001","张三","gold","zhangsan@example.com"],
+      ["C002","李四","silver","lisi@example.com"],
+      ["C003","王五","bronze","wangwu@example.com"],
+    ]
+  },
+  warehouses: {
+    desc: "仓库表 · 来自 WMS",
+    cols: ["wh_code","city","capacity","is_active"],
+    rows: [
+      ["WH-BJ","北京","12000","true"],
+      ["WH-SH","上海","20000","true"],
+      ["WH-CD","成都","8000","false"],
+    ]
+  }
+};
+
+/* ================= 类型推断 ================= */
+function inferType(values){
+  const vs = values.filter(v => v !== "" && v != null);
+  if(vs.length === 0) return "string";
+  if(vs.every(v => /^-?\d+$/.test(v))) return "integer";
+  if(vs.every(v => /^-?\d+(\.\d+)?$/.test(v))) return "double";
+  if(vs.every(v => /^(true|false|yes|no|1|0)$/i.test(v))) return "boolean";
+  if(vs.every(v => /^\d{4}-\d{2}-\d{2}$/.test(v))) return "date";
+  return "string";
+}
+
+/* ================= 状态 ================= */
+let curDs = null;                 // 当前选中的数据表名
+let wiz = null;                   // 向导状态 {name, plural, props:{col:{include,title,type}}, pk, titleKey}
+const CREATED = {};               // 已创建的对象类型
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ================= 左侧：数据表列表与预览 ================= */
+function renderDsList(){
+  const box = document.getElementById("dslist");
+  box.innerHTML = Object.keys(DATASETS).map(n =>
+    `<button class="dsbtn" aria-pressed="${n===curDs}" onclick="selectDs('${esc(n)}')">${esc(n)} <span style="opacity:.6">(${DATASETS[n].rows.length}行)</span></button>`
+  ).join("") + `<button class="dsbtn add" onclick="toggleCsv(true)">＋ 粘贴 CSV 新增表</button>`;
+
+  const sel = document.getElementById("wz-ds");
+  const keep = sel.value;
+  sel.innerHTML = `<option value="">— 在左侧或此处选择一张表 —</option>` +
+    Object.keys(DATASETS).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  if(DATASETS[keep]) sel.value = keep;
+}
+function selectDs(name){
+  curDs = name;
+  document.getElementById("wz-ds").value = name;
+  pickDatasource();
+}
+function renderRaw(){
+  const meta = document.getElementById("dsmeta");
+  const tbl = document.getElementById("rawtable");
+  if(!curDs){ meta.textContent = "点击上方任意表名预览原始数据。"; tbl.innerHTML = ""; return; }
+  const D = DATASETS[curDs];
+  meta.innerHTML = `<b class="mono">${esc(curDs)}</b> · ${esc(D.desc)} · ${D.cols.length} 列 × ${D.rows.length} 行` +
+    (wiz && wiz.pk ? ` · <span style="color:var(--obj)">高亮列 = 你选的主键/标题</span>` : "");
+  const pkIdx = wiz && wiz.pk ? D.cols.indexOf(wiz.pk) : -1;
+  const ttIdx = wiz && wiz.titleKey ? D.cols.indexOf(wiz.titleKey) : -1;
+  tbl.innerHTML = "<thead><tr>" + D.cols.map(c=>`<th class="mono">${esc(c)}</th>`).join("") + "</tr></thead><tbody>" +
+    D.rows.map(r => "<tr>" + r.map((v,i) =>
+      `<td class="mono${i===pkIdx?" hl-pk":""}${i===ttIdx?" hl-title":""}">${esc(v)}</td>`).join("") + "</tr>").join("") + "</tbody>";
+}
+
+/* ================= CSV 导入 ================= */
+function toggleCsv(open){ document.getElementById("csvbox").classList.toggle("open", open); }
+function importCsv(){
+  const err = document.getElementById("csverr");
+  err.classList.remove("show");
+  const text = document.getElementById("csvinput").value.trim();
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+  if(lines.length < 2){ err.textContent = "至少需要一行列名 + 一行数据。"; err.classList.add("show"); return; }
+  const cols = lines[0].split(",").map(s=>s.trim());
+  if(new Set(cols).size !== cols.length){ err.textContent = "列名有重复，请修正后再导入。"; err.classList.add("show"); return; }
+  const rows = lines.slice(1).map(l => l.split(",").map(s=>s.trim()));
+  if(rows.some(r => r.length !== cols.length)){ err.textContent = "存在与列数不一致的数据行。"; err.classList.add("show"); return; }
+  let name = "custom_table", i = 1;
+  while(DATASETS[name]) name = "custom_table_" + (++i);
+  DATASETS[name] = {desc:"自定义表 · 粘贴导入", cols, rows};
+  document.getElementById("csvinput").value = "";
+  toggleCsv(false); renderDsList(); selectDs(name);
+}
+
+/* ================= 向导 ================= */
+function pickDatasource(){
+  const name = document.getElementById("wz-ds").value;
+  if(!name){ curDs = null; wiz = null; renderDsList(); renderRaw(); lockSteps(); return; }
+  curDs = name;
+  const D = DATASETS[name];
+  // 自动映射:每列 -> 一个属性;类型自动推断;显示名默认同列名
+  const props = {};
+  D.cols.forEach((c, i) => {
+    props[c] = {include:true, title:c, type: inferType(D.rows.map(r => r[i]))};
+  });
+  // 默认对象名:表名转 PascalCase 单数化(去尾 s / all_ 前缀)
+  let guess = name.replace(/^all_/, "").replace(/s$/, "");
+  guess = guess.split(/[_-]/).map(w => w.charAt(0).toUpperCase()+w.slice(1)).join("");
+  wiz = {name:guess, plural:guess+"s", props, pk:"", titleKey:""};
+  renderDsList(); renderRaw(); renderSteps();
+  const ok1 = document.getElementById("st1ok");
+  ok1.textContent = `已选 ${name}:${D.cols.length} 列已自动映射为属性(可在第 3 步调整)。`;
+  ok1.classList.add("show");
+  document.getElementById("st1").classList.add("done");
+}
+function lockSteps(){
+  ["st2","st3","st4"].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.add("locked"); el.classList.remove("done");
+    document.getElementById(id+"b").innerHTML = "先选择数据源。";
+  });
+  document.getElementById("st1").classList.remove("done");
+  document.getElementById("st1ok").classList.remove("show");
+  document.getElementById("preview").style.display = "none";
+  document.getElementById("savebtn").disabled = true;
+}
+
+function renderSteps(){
+  if(!wiz) return;
+  const D = DATASETS[curDs];
+
+  // 步骤2:命名
+  const st2 = document.getElementById("st2");
+  st2.classList.remove("locked");
+  document.getElementById("st2b").innerHTML = `
+    <div class="two">
+      <div class="field"><label for="wz-name">对象类型名 Name(单数,建议 PascalCase)</label>
+        <input id="wz-name" type="text" value="${esc(wiz.name)}" oninput="wiz.name=this.value; wiz.plural=this.value?this.value+'s':''; syncNameEcho(); refreshSave();"></div>
+      <div class="field"><label for="wz-plural">复数名 Plural(自动补全,可改)</label>
+        <input id="wz-plural" type="text" value="${esc(wiz.plural)}" oninput="wiz.plural=this.value"></div>
+    </div>`;
+
+  // 步骤3:属性映射
+  const st3 = document.getElementById("st3");
+  st3.classList.remove("locked");
+  document.getElementById("st3b").innerHTML = `
+    <div class="phead"><span>含</span><span>列名(API 名)</span><span>显示名</span><span>推断类型</span></div>` +
+    D.cols.map(c => {
+      const p = wiz.props[c];
+      return `<div class="prow ${p.include?"":"excluded"}" id="prow-${esc(c)}">
+        <input type="checkbox" ${p.include?"checked":""} aria-label="包含列 ${esc(c)}" onchange="toggleProp('${esc(c)}', this.checked)">
+        <span class="colname mono">${esc(c)}</span>
+        <input type="text" value="${esc(p.title)}" aria-label="显示名" oninput="wiz.props['${esc(c)}'].title=this.value">
+        <span class="typechip mono">${esc(p.type)}</span>
+      </div>`;
+    }).join("");
+
+  // 步骤4:主键与标题
+  renderStep4();
+  refreshSave();
+}
+function toggleProp(col, on){
+  wiz.props[col].include = on;
+  document.getElementById("prow-"+col).classList.toggle("excluded", !on);
+  if(!on && wiz.pk === col) wiz.pk = "";
+  if(!on && wiz.titleKey === col) wiz.titleKey = "";
+  renderStep4(); renderRaw(); refreshSave();
+}
+function renderStep4(){
+  const st4 = document.getElementById("st4");
+  st4.classList.remove("locked");
+  const inc = Object.keys(wiz.props).filter(c => wiz.props[c].include);
+  const opts = sel => `<option value="">— 选择 —</option>` + inc.map(c =>
+    `<option value="${esc(c)}" ${sel===c?"selected":""}>${esc(c)}</option>`).join("");
+  document.getElementById("st4b").innerHTML = `
+    <div class="two">
+      <div class="field"><label for="wz-pk">主键 Primary Key(必须每行唯一)</label>
+        <select id="wz-pk" onchange="wiz.pk=this.value; validatePk(); renderRaw(); refreshSave();">${opts(wiz.pk)}</select></div>
+      <div class="field"><label for="wz-title">标题键 Title Key(对象的显示名)</label>
+        <select id="wz-title" onchange="wiz.titleKey=this.value; renderRaw(); refreshSave();">${opts(wiz.titleKey)}</select></div>
+    </div>
+    <div class="warnmsg" id="pkerr"></div>`;
+  validatePk();
+}
+function validatePk(){
+  const err = document.getElementById("pkerr");
+  if(!err) return true;
+  err.classList.remove("show");
+  if(!wiz.pk) return false;
+  const D = DATASETS[curDs];
+  const idx = D.cols.indexOf(wiz.pk);
+  const seen = new Map();
+  for(const r of D.rows){
+    const v = r[idx];
+    if(v === "" || v == null){ err.textContent = `列 ${wiz.pk} 存在空值,不能作为主键。`; err.classList.add("show"); return false; }
+    if(seen.has(v)){
+      err.innerHTML = `<b>主键校验失败:</b>列 <span class="mono">${esc(wiz.pk)}</span> 的值 <span class="mono">${esc(v)}</span> 出现了多次。主键必须每行唯一 —— 这是 Ontology Manager 的硬约束,换一列试试。`;
+      err.classList.add("show"); return false;
+    }
+    seen.set(v, true);
+  }
+  return true;
+}
+function syncNameEcho(){
+  const el = document.getElementById("wz-plural");
+  if(el) el.value = wiz.plural;
+}
+
+/* ================= 预览与保存 ================= */
+function refreshSave(){
+  const btn = document.getElementById("savebtn");
+  const pv = document.getElementById("preview");
+  const pvb = document.getElementById("previewbody");
+  document.getElementById("saveerr").classList.remove("show");
+  const nameOk = wiz && wiz.name.trim() !== "";
+  const pkOk = wiz && wiz.pk && validatePk();
+  const ttOk = wiz && wiz.titleKey;
+  document.getElementById("st2").classList.toggle("done", !!nameOk);
+  document.getElementById("st3").classList.toggle("done", true);
+  document.getElementById("st4").classList.toggle("done", !!(pkOk && ttOk));
+
+  if(nameOk && pkOk && ttOk){
+    const D = DATASETS[curDs];
+    const r0 = D.rows[0];
+    pvb.innerHTML = `&lt;${esc(wiz.name.trim())} ${esc(r0[D.cols.indexOf(wiz.pk)])}: ${esc(r0[D.cols.indexOf(wiz.titleKey)])}&gt; <span style="opacity:.65">…共 ${D.rows.length} 个对象</span>`;
+    pv.style.display = "block";
+    btn.disabled = false;
+  } else {
+    pv.style.display = "none";
+    btn.disabled = true;
+  }
+}
+function saveObjectType(){
+  const err = document.getElementById("saveerr");
+  err.classList.remove("show");
+  const name = wiz.name.trim();
+  if(CREATED[name]){ err.textContent = `对象类型 ${name} 已存在,换个名字。`; err.classList.add("show"); return; }
+  const D = DATASETS[curDs];
+  const inc = Object.keys(wiz.props).filter(c => wiz.props[c].include);
+  CREATED[name] = {
+    backing: curDs, plural: wiz.plural || name+"s", pk: wiz.pk, titleKey: wiz.titleKey,
+    props: inc.map(c => ({name:c, title:wiz.props[c].title, type:wiz.props[c].type})),
+    rows: D.rows.map(r => Object.fromEntries(inc.map(c => [c, r[D.cols.indexOf(c)]])))
+  };
+  renderCreated(); browseType(name);
+  // 重置向导
+  document.getElementById("wz-ds").value = ""; curDs = null; wiz = null;
+  renderDsList(); renderRaw(); lockSteps();
+  document.getElementById("otcards").scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+/* ================= 成果区:已创建对象类型 + 浏览 ================= */
+function renderCreated(){
+  const names = Object.keys(CREATED);
+  document.getElementById("otempty").style.display = names.length ? "none" : "block";
+  document.getElementById("otcards").innerHTML = names.map(n => {
+    const T = CREATED[n];
+    return `<button class="otcard" onclick="browseType('${esc(n)}')">
+      <div class="nm">${esc(n)}</div>
+      <div class="meta">
+        <div><span class="k">后备表</span><span class="mono">${esc(T.backing)}</span></div>
+        <div><span class="k">主键</span><span class="mono">${esc(T.pk)}</span> · <span class="k" style="min-width:0">标题</span><span class="mono">${esc(T.titleKey)}</span></div>
+        <div><span class="k">属性</span>${T.props.length} 个 · <span class="k" style="min-width:0">对象</span>${T.rows.length} 个</div>
+      </div>
+    </button>`;
+  }).join("");
+}
+function browseType(name){
+  const T = CREATED[name];
+  const b = document.getElementById("browser");
+  b.style.display = "block";
+  b.innerHTML = `
+    <h3>${esc(name)} 的对象实例 <span class="mono">(表 ${esc(T.backing)} 的每一行,现在都是一个对象)</span></h3>
+    <div>${T.rows.map(r => `<span class="objchip mono">&lt;${esc(name)} ${esc(r[T.pk])}: ${esc(r[T.titleKey])}&gt;</span>`).join("")}</div>
+    <div class="tscroll" style="margin-top:10px"><table>
+      <thead><tr>${T.props.map(p=>`<th>${esc(p.title)}<span style="opacity:.55;text-transform:none;letter-spacing:0"> · ${esc(p.type)}</span></th>`).join("")}</tr></thead>
+      <tbody>${T.rows.map(r=>`<tr>${T.props.map(p=>`<td class="mono${p.name===T.pk?" hl-pk":""}${p.name===T.titleKey?" hl-title":""}">${esc(r[p.name])}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table></div>`;
+}
+
+/* ================= 启动 ================= */
+renderDsList(); renderRaw(); renderCreated();
+</script>
