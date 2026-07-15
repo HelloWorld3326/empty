@@ -1,0 +1,620 @@
+<title>迷你 Ontology 体验台</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --surface:#ffffff; --surface2:#eef1f6;
+    --ink:#1c2733; --muted:#5c6b7a; --line:#d9dfe8;
+    --obj:#0e7490; --obj-soft:#e0f2f7;
+    --lnk:#6d5bd0; --lnk-soft:#ece9fa;
+    --act:#b45309; --act-soft:#fbeedd;
+    --ok:#15803d; --ok-soft:#e3f3e8;
+    --bad:#b91c1c; --bad-soft:#fbe9e9;
+    --chip-pending:#b45309; --chip-unshipped:#0e7490; --chip-shipped:#6d5bd0;
+    --chip-delivered:#15803d; --chip-cancelled:#8a94a0;
+    --focus:#0e7490;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#141a22; --surface:#1c242f; --surface2:#232d3a;
+      --ink:#e6ecf3; --muted:#93a1b0; --line:#33404f;
+      --obj:#4cc4de; --obj-soft:#0f3a45;
+      --lnk:#a99bf0; --lnk-soft:#2c2750;
+      --act:#e8a04c; --act-soft:#40300f;
+      --ok:#5dc98a; --ok-soft:#123824;
+      --bad:#ef7b7b; --bad-soft:#3f1a1a;
+      --chip-pending:#e8a04c; --chip-unshipped:#4cc4de; --chip-shipped:#a99bf0;
+      --chip-delivered:#5dc98a; --chip-cancelled:#7d8792;
+      --focus:#4cc4de;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#141a22; --surface:#1c242f; --surface2:#232d3a;
+    --ink:#e6ecf3; --muted:#93a1b0; --line:#33404f;
+    --obj:#4cc4de; --obj-soft:#0f3a45;
+    --lnk:#a99bf0; --lnk-soft:#2c2750;
+    --act:#e8a04c; --act-soft:#40300f;
+    --ok:#5dc98a; --ok-soft:#123824;
+    --bad:#ef7b7b; --bad-soft:#3f1a1a;
+    --chip-pending:#e8a04c; --chip-unshipped:#4cc4de; --chip-shipped:#a99bf0;
+    --chip-delivered:#5dc98a; --chip-cancelled:#7d8792;
+    --focus:#4cc4de;
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f6f9; --surface:#ffffff; --surface2:#eef1f6;
+    --ink:#1c2733; --muted:#5c6b7a; --line:#d9dfe8;
+    --obj:#0e7490; --obj-soft:#e0f2f7;
+    --lnk:#6d5bd0; --lnk-soft:#ece9fa;
+    --act:#b45309; --act-soft:#fbeedd;
+    --ok:#15803d; --ok-soft:#e3f3e8;
+    --bad:#b91c1c; --bad-soft:#fbe9e9;
+    --chip-pending:#b45309; --chip-unshipped:#0e7490; --chip-shipped:#6d5bd0;
+    --chip-delivered:#15803d; --chip-cancelled:#8a94a0;
+    --focus:#0e7490;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    font-size:14.5px; line-height:1.6;
+  }
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,"Cascadia Mono",monospace; font-variant-numeric:tabular-nums;}
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 20px 80px;}
+
+  header.top{margin-bottom:22px;}
+  .eyebrow{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 6px;}
+  h1{font-size:26px; margin:0 0 8px; text-wrap:balance; font-weight:700;}
+  .sub{color:var(--muted); max-width:62ch; margin:0;}
+
+  /* concept legend */
+  .legend{display:flex; flex-wrap:wrap; gap:10px; margin:16px 0 0;}
+  .lg{display:inline-flex; align-items:center; gap:7px; font-size:13px; padding:5px 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface);}
+  .dot{width:9px; height:9px; border-radius:50%;}
+  .dot.obj{background:var(--obj)} .dot.lnk{background:var(--lnk)} .dot.act{background:var(--act)}
+
+  /* schema strip */
+  .schema{
+    display:flex; align-items:center; flex-wrap:wrap; gap:8px;
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:14px 18px; margin:18px 0 24px;
+  }
+  .schema .node{
+    padding:6px 14px; border-radius:8px; font-weight:600; font-size:13.5px;
+    background:var(--obj-soft); color:var(--obj); border:1px solid var(--obj);
+  }
+  .schema .edge{display:inline-flex; flex-direction:column; align-items:center; color:var(--lnk); font-size:11.5px; line-height:1.3; padding:0 4px;}
+  .schema .edge .arrow{font-size:15px; letter-spacing:-1px;}
+  .schema .acts{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap;}
+  .schema .actchip{padding:5px 12px; border-radius:8px; font-size:12.5px; background:var(--act-soft); color:var(--act); border:1px dashed var(--act);}
+
+  /* scenario card */
+  .scenario{
+    border:1px solid var(--line); border-left:4px solid var(--act);
+    background:var(--surface); border-radius:10px; padding:14px 18px; margin-bottom:24px;
+  }
+  .scenario b{color:var(--act);}
+  .scenario ol{margin:8px 0 0; padding-left:22px; color:var(--muted);}
+  .scenario li{margin:2px 0;}
+  .scenario li em{color:var(--ink); font-style:normal; font-weight:600;}
+
+  /* main grid */
+  .grid{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr); gap:20px; align-items:start;}
+  @media (max-width:960px){ .grid{grid-template-columns:1fr;} }
+
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+  .panel-h{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:12px 16px; border-bottom:1px solid var(--line); background:var(--surface2);
+  }
+  .panel-h h2{font-size:15px; margin:0; font-weight:700;}
+  .panel-h .tag{font-size:11px; letter-spacing:.1em; text-transform:uppercase; padding:2px 9px; border-radius:999px; font-weight:600;}
+  .tag.obj{background:var(--obj-soft); color:var(--obj);}
+  .tag.act{background:var(--act-soft); color:var(--act);}
+  .panel-b{padding:16px;}
+
+  /* tabs + view toggle */
+  .tabs{display:flex; gap:6px;}
+  .tab{
+    border:1px solid var(--line); background:var(--surface); color:var(--muted);
+    padding:5px 14px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;
+  }
+  .tab[aria-selected="true"]{background:var(--obj); border-color:var(--obj); color:#fff;}
+  :root[data-theme="dark"] .tab[aria-selected="true"], .dark .tab[aria-selected="true"]{color:#08222a;}
+  .viewtoggle{margin-left:auto; display:flex; gap:0; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .viewtoggle button{
+    border:0; background:var(--surface); color:var(--muted); padding:5px 12px; cursor:pointer; font-size:12.5px;
+  }
+  .viewtoggle button[aria-pressed="true"]{background:var(--ink); color:var(--bg); font-weight:600;}
+
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  th{
+    text-align:left; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  td{padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:0;}
+  tbody tr.rowbtn{cursor:pointer;}
+  tbody tr.rowbtn:hover{background:var(--surface2);}
+  tbody tr.selected{background:var(--obj-soft);}
+  .tscroll{overflow-x:auto;}
+  .num{text-align:right;}
+
+  .pill{display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; border:1px solid currentColor;}
+  .st-pending{color:var(--chip-pending);} .st-unshipped{color:var(--chip-unshipped);}
+  .st-shipped{color:var(--chip-shipped);} .st-delivered{color:var(--chip-delivered);}
+  .st-cancelled{color:var(--chip-cancelled);}
+
+  /* detail card */
+  .detail{border-top:1px dashed var(--line); margin-top:14px; padding-top:14px;}
+  .detail h3{margin:0 0 4px; font-size:14.5px;}
+  .detail .pk{color:var(--muted); font-size:12.5px;}
+  .props{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px 16px; margin:10px 0 0;}
+  .prop .k{font-size:11.5px; color:var(--muted); letter-spacing:.05em;}
+  .prop .v{font-weight:600;}
+  .linksec{margin-top:14px; padding:12px; border-radius:10px; background:var(--lnk-soft); border:1px solid var(--lnk);}
+  .linksec .lt{color:var(--lnk); font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:6px;}
+  .linkitem{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding:5px 0; border-bottom:1px dashed var(--line); font-size:13.5px;
+  }
+  .linkitem:last-child{border-bottom:0;}
+  .linkbtn{
+    border:0; background:none; color:var(--lnk); font-weight:700; cursor:pointer;
+    text-decoration:underline; text-underline-offset:3px; padding:0; font-size:13.5px;
+  }
+  .useinact{
+    border:1px solid var(--act); color:var(--act); background:var(--act-soft);
+    border-radius:8px; padding:4px 12px; font-size:12.5px; cursor:pointer; font-weight:600; margin-top:12px;
+  }
+
+  /* actions */
+  .actcard{border:1px solid var(--line); border-radius:10px; margin-bottom:16px; overflow:hidden;}
+  .actcard:last-child{margin-bottom:0;}
+  .actcard-h{padding:10px 14px; background:var(--act-soft); border-bottom:1px solid var(--line);}
+  .actcard-h .name{font-weight:700; color:var(--act);}
+  .actcard-h .desc{font-size:12.5px; color:var(--muted); margin-top:2px;}
+  .actcard-b{padding:14px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:12.5px; color:var(--muted); margin-bottom:4px;}
+  .field select,.field input{
+    width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px;
+    background:var(--surface); color:var(--ink); font-size:13.5px; font-family:inherit;
+  }
+  .crit{margin:4px 0 12px; padding:10px 12px; border-radius:8px; background:var(--surface2); font-size:13px;}
+  .crit .ct{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:4px;}
+  .critline{display:flex; gap:8px; align-items:baseline;}
+  .critline .mark{font-weight:700;}
+  .critline.pass .mark{color:var(--ok);} .critline.fail .mark{color:var(--bad);}
+  .critline.idle .mark{color:var(--muted);}
+  .runbtn{
+    width:100%; padding:9px 0; border:0; border-radius:8px; cursor:pointer;
+    background:var(--act); color:#fff; font-weight:700; font-size:14px;
+  }
+  .runbtn:hover{filter:brightness(1.08);}
+  .result{margin-top:12px; padding:11px 13px; border-radius:8px; font-size:13px; display:none;}
+  .result.ok{display:block; background:var(--ok-soft); border:1px solid var(--ok); color:var(--ok);}
+  .result.bad{display:block; background:var(--bad-soft); border:1px solid var(--bad); color:var(--bad);}
+  .result .why{margin:4px 0 0; padding-left:18px;}
+  .result .edit{font-size:12px; margin-top:6px; color:var(--ink); word-break:break-all;}
+
+  /* audit */
+  .audit-empty{color:var(--muted); font-size:13px; padding:6px 2px;}
+  .op{font-size:11.5px; font-weight:700; letter-spacing:.06em; padding:2px 8px; border-radius:6px;}
+  .op-modify{background:var(--act-soft); color:var(--act);}
+  .op-create{background:var(--ok-soft); color:var(--ok);}
+  .op-denied{background:var(--bad-soft); color:var(--bad);}
+
+  button:focus-visible, .tab:focus-visible, select:focus-visible, input:focus-visible, tr.rowbtn:focus-visible{
+    outline:2px solid var(--focus); outline-offset:2px;
+  }
+  footer.note{margin-top:26px; color:var(--muted); font-size:12.5px; max-width:70ch;}
+  @media (prefers-reduced-motion: no-preference){
+    .result.ok,.result.bad{animation:pop .18s ease-out;}
+    @keyframes pop{from{transform:translateY(4px);opacity:0}to{transform:none;opacity:1}}
+  }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Mini Ontology Playground · 订单管理</p>
+    <h1>迷你 Ontology 体验台</h1>
+    <p class="sub">Ontology 把数据库的表翻译成业务语言：<b>对象</b>是名词，<b>链接</b>是关系，<b>动作</b>是唯一被允许的写操作。在下面亲手点一遍，感受"读靠遍历、写靠动作、规则守门"的完整闭环。</p>
+    <div class="legend" aria-hidden="true">
+      <span class="lg"><span class="dot obj"></span>对象 Object（名词，一行数据）</span>
+      <span class="lg"><span class="dot lnk"></span>链接 Link（关系，预固化的 JOIN）</span>
+      <span class="lg"><span class="dot act"></span>动作 Action（动词，带校验的写）</span>
+    </div>
+  </header>
+
+  <div class="schema" role="img" aria-label="模式图：Customer 与 Order 通过链接相连，右侧是两个动作">
+    <span class="node">Customer 客户</span>
+    <span class="edge"><span>orders ▸ 1 对多</span><span class="arrow">◂──────▸</span><span>◂ customer</span></span>
+    <span class="node">Order 订单</span>
+    <span class="acts">
+      <span class="actchip">⚡ cancel_order 取消订单</span>
+      <span class="actchip">⚡ place_order 新建订单</span>
+    </span>
+  </div>
+
+  <div class="scenario">
+    <b>推荐剧本</b> —— 模拟一句自然语言指令「帮张三把没发货的订单取消了」在 Ontology 里的执行过程：
+    <ol>
+      <li>在左侧选中客户 <em>张三</em>，在紫色链接区点开他的 <em>orders</em>，找到状态为「未发货」的订单；</li>
+      <li>点 <em>「在动作面板中使用」</em>，右侧 cancel_order 会自动填入该订单 → 执行，观察状态变化与审计日志；</li>
+      <li>再故意选一笔 <em>已发货</em> 的订单执行取消 → 看提交校验如何当场拦截，数据分毫不动。</li>
+    </ol>
+  </div>
+
+  <div class="grid">
+    <!-- ===== 左：对象浏览器 ===== -->
+    <section class="panel" aria-labelledby="explorer-title">
+      <div class="panel-h">
+        <span class="tag obj">对象 · 链接</span>
+        <h2 id="explorer-title">对象浏览器</h2>
+        <div class="tabs" role="tablist" aria-label="对象类型">
+          <button class="tab" role="tab" id="tab-Order" aria-selected="true" onclick="switchType('Order')">Order 订单</button>
+          <button class="tab" role="tab" id="tab-Customer" aria-selected="false" onclick="switchType('Customer')">Customer 客户</button>
+        </div>
+        <div class="viewtoggle" role="group" aria-label="视角切换">
+          <button id="vw-sem" aria-pressed="true" onclick="switchView('sem')">语义视角</button>
+          <button id="vw-raw" aria-pressed="false" onclick="switchView('raw')">底层表视角</button>
+        </div>
+      </div>
+      <div class="panel-b">
+        <div class="tscroll"><table id="objtable"></table></div>
+        <div id="detail"></div>
+      </div>
+    </section>
+
+    <!-- ===== 右：动作 ===== -->
+    <section class="panel" aria-labelledby="actions-title">
+      <div class="panel-h">
+        <span class="tag act">动作</span>
+        <h2 id="actions-title">动作面板 —— 唯一的写入口</h2>
+      </div>
+      <div class="panel-b">
+
+        <div class="actcard">
+          <div class="actcard-h">
+            <div class="name">⚡ cancel_order · 取消订单</div>
+            <div class="desc">规则：把订单状态改为 cancelled（Modify object）</div>
+          </div>
+          <div class="actcard-b">
+            <div class="field">
+              <label for="co-order">参数 order：object&lt;Order&gt;（必填）</label>
+              <select id="co-order" onchange="refreshCriteria()"></select>
+            </div>
+            <div class="field">
+              <label for="co-reason">参数 reason：string（选填）</label>
+              <input id="co-reason" type="text" placeholder="例如：用户主动取消">
+            </div>
+            <div class="crit">
+              <div class="ct">提交校验 Submission Criteria</div>
+              <div class="critline idle" id="co-crit">
+                <span class="mark">●</span><span>订单状态必须是「未发货」或「待处理」才允许取消</span>
+              </div>
+            </div>
+            <button class="runbtn" onclick="runCancel()">执行动作</button>
+            <div class="result" id="co-result" role="status"></div>
+          </div>
+        </div>
+
+        <div class="actcard">
+          <div class="actcard-h">
+            <div class="name">⚡ place_order · 新建订单</div>
+            <div class="desc">规则：为客户创建一个新的 Order 对象（Create object）</div>
+          </div>
+          <div class="actcard-b">
+            <div class="field">
+              <label for="po-cust">参数 customer：object&lt;Customer&gt;（必填）</label>
+              <select id="po-cust"></select>
+            </div>
+            <div class="field">
+              <label for="po-item">参数 item_name：string（必填）</label>
+              <input id="po-item" type="text" placeholder="例如：无线鼠标">
+            </div>
+            <div class="field">
+              <label for="po-amt">参数 amount：double（必填）</label>
+              <input id="po-amt" type="number" step="0.01" placeholder="例如：129.00" oninput="refreshCriteria()">
+            </div>
+            <div class="crit">
+              <div class="ct">提交校验 Submission Criteria</div>
+              <div class="critline idle" id="po-crit">
+                <span class="mark">●</span><span>金额必须大于 0</span>
+              </div>
+            </div>
+            <button class="runbtn" onclick="runPlace()">执行动作</button>
+            <div class="result" id="po-result" role="status"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== 审计 ===== -->
+  <section class="panel" style="margin-top:20px" aria-labelledby="audit-title">
+    <div class="panel-h">
+      <span class="tag act">审计</span>
+      <h2 id="audit-title">审计日志 —— 每一次写与每一次拒绝都留痕</h2>
+    </div>
+    <div class="panel-b">
+      <div class="tscroll"><table id="audittable" style="display:none">
+        <thead><tr><th>时间</th><th>结果</th><th>动作</th><th>目标</th><th>明细</th><th>执行者</th></tr></thead>
+        <tbody id="auditbody"></tbody>
+      </table></div>
+      <div class="audit-empty" id="auditempty">还没有记录。执行右侧任意动作后，这里会出现审计条目 —— 包括被校验拒绝的尝试。</div>
+    </div>
+  </section>
+
+  <footer class="note">
+    这套页面完整对应 Palantir Foundry Ontology 的最小心智模型：对象类型（主键 + 标题 + 属性）、外键式链接（点紫色链接名可来回跳转）、动作类型（参数 + 提交校验 + 编辑规则 + 审计）。切换「底层表视角」可以看到同一份数据在数据库眼里的样子 —— Ontology 只是盖在表上面的那层"翻译"。数据仅存于本页内存，刷新即复位。
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ============ 迷你 Ontology 引擎（JS 版，与 Python demo 同构） ============ */
+const ONTO = {
+  types: {
+    Customer: {
+      pk: "customer_id", titleKey: "name", label: "客户",
+      cols: ["customer_id","name","tier","email"],
+      colTitles: {customer_id:"客户ID", name:"姓名", tier:"会员等级", email:"邮箱"},
+      rows: [
+        {customer_id:"C001", name:"张三", tier:"gold",   email:"zhangsan@example.com"},
+        {customer_id:"C002", name:"李四", tier:"silver", email:"lisi@example.com"},
+        {customer_id:"C003", name:"王五", tier:"bronze", email:"wangwu@example.com"},
+      ]
+    },
+    Order: {
+      pk: "order_id", titleKey: "item_name", label: "订单",
+      cols: ["order_id","order_number","customer_id","item_name","amount","status","created_at"],
+      colTitles: {order_id:"订单ID", order_number:"订单号", customer_id:"客户ID(外键)", item_name:"商品名称", amount:"金额", status:"状态", created_at:"下单日期"},
+      rows: [
+        {order_id:"O1001", order_number:"ORD-1001", customer_id:"C001", item_name:"机械键盘",     amount:399.00,  status:"unshipped", created_at:"2026-07-08"},
+        {order_id:"O1002", order_number:"ORD-1002", customer_id:"C001", item_name:"USB-C 数据线", amount:59.00,   status:"shipped",   created_at:"2026-07-05"},
+        {order_id:"O1003", order_number:"ORD-1003", customer_id:"C002", item_name:"4K 显示器",    amount:1899.00, status:"unshipped", created_at:"2026-07-10"},
+        {order_id:"O1004", order_number:"ORD-1004", customer_id:"C003", item_name:"鼠标垫",       amount:29.00,   status:"delivered", created_at:"2026-06-30"},
+        {order_id:"O1005", order_number:"ORD-1005", customer_id:"C001", item_name:"人体工学椅",   amount:1299.00, status:"cancelled", created_at:"2026-07-01"},
+      ]
+    }
+  },
+  links: [
+    {name:"customer", source:"Order", target:"Customer", fk:"customer_id", reverse:"orders"}
+  ],
+  audit: []
+};
+const CANCELLABLE = ["unshipped","pending"];
+const STATUS_CN = {pending:"待处理", unshipped:"未发货", shipped:"已发货", delivered:"已送达", cancelled:"已取消"};
+
+const get = (t, pk) => ONTO.types[t].rows.find(r => r[ONTO.types[t].pk] === pk) || null;
+function linked(typeName, pk, linkName){
+  const row = get(typeName, pk); if(!row) return [];
+  for(const l of ONTO.links){
+    if(l.name === linkName && l.source === typeName){
+      const tgt = get(l.target, row[l.fk]); return tgt ? [{type:l.target,row:tgt}] : [];
+    }
+    if(l.reverse === linkName && l.target === typeName){
+      return ONTO.types[l.source].rows.filter(r => r[l.fk] === pk).map(r => ({type:l.source,row:r}));
+    }
+  }
+  return [];
+}
+function logAudit(entry){
+  ONTO.audit.unshift(Object.assign({time:new Date().toLocaleTimeString("zh-CN",{hour12:false})}, entry));
+  renderAudit();
+}
+
+/* ============ 视图状态 ============ */
+let curType = "Order";
+let curView = "sem";          // sem | raw
+let selected = null;          // {type, pk}
+
+/* ============ 渲染：对象浏览器 ============ */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const statusPill = st => `<span class="pill st-${esc(st)}">${esc(STATUS_CN[st]||st)}</span>`;
+
+function switchType(t){
+  curType = t; selected = null;
+  document.getElementById("tab-Order").setAttribute("aria-selected", t==="Order");
+  document.getElementById("tab-Customer").setAttribute("aria-selected", t==="Customer");
+  renderTable(); renderDetail();
+}
+function switchView(v){
+  curView = v;
+  document.getElementById("vw-sem").setAttribute("aria-pressed", v==="sem");
+  document.getElementById("vw-raw").setAttribute("aria-pressed", v==="raw");
+  renderTable();
+}
+function selectObj(t, pk){ selected = {type:t, pk}; renderTable(); renderDetail(); }
+
+function renderTable(){
+  const T = ONTO.types[curType];
+  let html = "";
+  if(curView === "raw"){
+    html += "<thead><tr>" + T.cols.map(c=>`<th class="mono">${esc(c)}</th>`).join("") + "</tr></thead><tbody>";
+    for(const r of T.rows){
+      const sel = selected && selected.type===curType && r[T.pk]===selected.pk ? " selected":"";
+      html += `<tr class="rowbtn${sel}" tabindex="0" onclick="selectObj('${curType}','${esc(r[T.pk])}')" onkeydown="if(event.key==='Enter')this.click()">`
+            + T.cols.map(c=>`<td class="mono">${esc(r[c])}</td>`).join("") + "</tr>";
+    }
+  } else {
+    if(curType === "Order"){
+      html += "<thead><tr><th>标题（title key）</th><th>主键</th><th>所属客户 <span style='color:var(--lnk)'>▸链接</span></th><th class='num'>金额</th><th>状态</th></tr></thead><tbody>";
+      for(const r of T.rows){
+        const cust = linked("Order", r.order_id, "customer")[0];
+        const sel = selected && selected.type==="Order" && r.order_id===selected.pk ? " selected":"";
+        html += `<tr class="rowbtn${sel}" tabindex="0" onclick="selectObj('Order','${esc(r.order_id)}')" onkeydown="if(event.key==='Enter')this.click()">
+          <td><b>${esc(r.item_name)}</b></td>
+          <td class="mono">${esc(r.order_id)}</td>
+          <td style="color:var(--lnk);font-weight:600">${cust?esc(cust.row.name):"—"}</td>
+          <td class="mono num">¥${r.amount.toFixed(2)}</td>
+          <td>${statusPill(r.status)}</td></tr>`;
+      }
+    } else {
+      html += "<thead><tr><th>标题（title key）</th><th>主键</th><th>会员等级</th><th class='num'>订单数 <span style='color:var(--lnk)'>▸链接</span></th></tr></thead><tbody>";
+      for(const r of T.rows){
+        const n = linked("Customer", r.customer_id, "orders").length;
+        const sel = selected && selected.type==="Customer" && r.customer_id===selected.pk ? " selected":"";
+        html += `<tr class="rowbtn${sel}" tabindex="0" onclick="selectObj('Customer','${esc(r.customer_id)}')" onkeydown="if(event.key==='Enter')this.click()">
+          <td><b>${esc(r.name)}</b></td>
+          <td class="mono">${esc(r.customer_id)}</td>
+          <td>${esc(r.tier)}</td>
+          <td class="num" style="color:var(--lnk);font-weight:700">${n} 笔</td></tr>`;
+      }
+    }
+  }
+  html += "</tbody>";
+  document.getElementById("objtable").innerHTML = html;
+}
+
+function renderDetail(){
+  const box = document.getElementById("detail");
+  if(!selected){ box.innerHTML = ""; return; }
+  const T = ONTO.types[selected.type];
+  const row = get(selected.type, selected.pk);
+  if(!row){ box.innerHTML = ""; return; }
+
+  let html = `<div class="detail">
+    <h3>${esc(row[T.titleKey])} <span class="pk mono">（${esc(selected.type)} · 主键 ${esc(selected.pk)}）</span></h3>
+    <div class="props">` +
+    T.cols.map(c => `<div class="prop"><div class="k">${esc(T.colTitles[c]||c)}</div>
+      <div class="v ${c===T.pk?"mono":""}">${c==="status"?statusPill(row[c]):(c==="amount"?"¥"+row[c].toFixed(2):esc(row[c]??"—"))}</div></div>`).join("") +
+    `</div>`;
+
+  // 链接区
+  const linkDefs = selected.type==="Order" ? [["customer","▸ customer（这笔订单属于谁）"]] : [["orders","▸ orders（这位客户的全部订单）"]];
+  for(const [ln, label] of linkDefs){
+    const items = linked(selected.type, selected.pk, ln);
+    html += `<div class="linksec"><div class="lt">链接遍历 ${esc(label)}</div>`;
+    if(items.length === 0) html += `<div class="linkitem">（无关联对象）</div>`;
+    for(const it of items){
+      const tt = ONTO.types[it.type];
+      const extra = it.type==="Order" ? ` <span class="mono">${esc(it.row.order_id)}</span> ${statusPill(it.row.status)}` : ` <span class="mono">${esc(it.row.customer_id)}</span> · ${esc(it.row.tier)}`;
+      html += `<div class="linkitem"><button class="linkbtn" onclick="jumpTo('${it.type}','${esc(it.row[tt.pk])}')">${esc(it.row[tt.titleKey])}</button>${extra}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  if(selected.type === "Order"){
+    html += `<button class="useinact" onclick="prefillCancel('${esc(selected.pk)}')">⚡ 在动作面板中使用（填入 cancel_order）</button>`;
+  }
+  html += `</div>`;
+  box.innerHTML = html;
+}
+function jumpTo(t, pk){
+  if(t !== curType) switchType(t);
+  selectObj(t, pk);
+}
+
+/* ============ 动作面板 ============ */
+function fillSelectors(){
+  const co = document.getElementById("co-order");
+  const keep = co.value;
+  co.innerHTML = `<option value="">— 选择订单 —</option>` + ONTO.types.Order.rows.map(r =>
+    `<option value="${esc(r.order_id)}">${esc(r.order_id)} · ${esc(r.item_name)}（${esc(STATUS_CN[r.status]||r.status)}）</option>`).join("");
+  if([...co.options].some(o=>o.value===keep)) co.value = keep;
+
+  const po = document.getElementById("po-cust");
+  const keep2 = po.value;
+  po.innerHTML = `<option value="">— 选择客户 —</option>` + ONTO.types.Customer.rows.map(r =>
+    `<option value="${esc(r.customer_id)}">${esc(r.customer_id)} · ${esc(r.name)}（${esc(r.tier)}）</option>`).join("");
+  if([...po.options].some(o=>o.value===keep2)) po.value = keep2;
+  refreshCriteria();
+}
+function prefillCancel(pk){
+  document.getElementById("co-order").value = pk;
+  refreshCriteria();
+  document.getElementById("co-order").scrollIntoView({behavior:"smooth", block:"center"});
+}
+function refreshCriteria(){
+  const pk = document.getElementById("co-order").value;
+  const cLine = document.getElementById("co-crit");
+  if(!pk){ cLine.className = "critline idle"; cLine.querySelector(".mark").textContent = "●"; }
+  else {
+    const ok = CANCELLABLE.includes(get("Order", pk).status);
+    cLine.className = "critline " + (ok?"pass":"fail");
+    cLine.querySelector(".mark").textContent = ok ? "✓" : "✗";
+  }
+  const amt = parseFloat(document.getElementById("po-amt").value);
+  const pLine = document.getElementById("po-crit");
+  if(isNaN(amt)){ pLine.className = "critline idle"; pLine.querySelector(".mark").textContent = "●"; }
+  else {
+    const ok = amt > 0;
+    pLine.className = "critline " + (ok?"pass":"fail");
+    pLine.querySelector(".mark").textContent = ok ? "✓" : "✗";
+  }
+}
+function showResult(id, ok, msgHtml){
+  const el = document.getElementById(id);
+  el.className = "result " + (ok?"ok":"bad");
+  el.innerHTML = msgHtml;
+}
+
+function runCancel(){
+  const pk = document.getElementById("co-order").value;
+  const reason = document.getElementById("co-reason").value.trim();
+  if(!pk){ showResult("co-result", false, "缺少必填参数 order —— 请选择一笔订单。"); return; }
+  const row = get("Order", pk);
+  // 提交校验
+  if(!CANCELLABLE.includes(row.status)){
+    logAudit({op:"denied", action:"cancel_order", target:`Order ${pk}`, detail:`状态为「${STATUS_CN[row.status]}」，不满足校验`, by:"you@web"});
+    showResult("co-result", false,
+      `<b>动作被拒绝（数据未被改动）</b><ul class="why"><li>该订单当前状态是「${esc(STATUS_CN[row.status])}」，只有未发货 / 待处理的订单可取消。</li></ul>`);
+    return;
+  }
+  // 规则：Modify object
+  const before = row.status;
+  row.status = "cancelled";
+  row.cancel_reason = reason || null;
+  logAudit({op:"modify", action:"cancel_order", target:`Order ${pk}`, detail:`status: ${before} → cancelled${reason?"（原因："+reason+"）":""}`, by:"you@web"});
+  showResult("co-result", true,
+    `<b>动作执行成功</b><div class="edit mono">modify Order/${esc(pk)} · status: ${esc(before)} → cancelled</div>`);
+  renderTable(); renderDetail(); fillSelectors();
+}
+
+function runPlace(){
+  const cust = document.getElementById("po-cust").value;
+  const item = document.getElementById("po-item").value.trim();
+  const amt = parseFloat(document.getElementById("po-amt").value);
+  const missing = [];
+  if(!cust) missing.push("customer"); if(!item) missing.push("item_name"); if(isNaN(amt)) missing.push("amount");
+  if(missing.length){ showResult("po-result", false, `缺少必填参数：${missing.join("、")}。`); return; }
+  if(amt <= 0){
+    logAudit({op:"denied", action:"place_order", target:`Customer ${cust}`, detail:`金额 ${amt} ≤ 0，不满足校验`, by:"you@web"});
+    showResult("po-result", false, `<b>动作被拒绝（数据未被改动）</b><ul class="why"><li>金额必须大于 0。</li></ul>`);
+    return;
+  }
+  // 规则：Create object
+  const maxN = Math.max(...ONTO.types.Order.rows.map(r => parseInt(r.order_id.slice(1),10)));
+  const nid = "O" + (maxN + 1);
+  ONTO.types.Order.rows.push({
+    order_id:nid, order_number:"ORD-"+(maxN+1), customer_id:cust,
+    item_name:item, amount:amt, status:"pending", created_at:new Date().toISOString().slice(0,10)
+  });
+  logAudit({op:"create", action:"place_order", target:`Order ${nid}`, detail:`${item} · ¥${amt.toFixed(2)} · 客户 ${cust} · 状态 pending`, by:"you@web"});
+  showResult("po-result", true,
+    `<b>动作执行成功</b><div class="edit mono">create Order/${esc(nid)} · ${esc(item)} · ¥${amt.toFixed(2)} · status=pending</div>`);
+  document.getElementById("po-item").value = ""; document.getElementById("po-amt").value = "";
+  renderTable(); renderDetail(); fillSelectors();
+}
+
+/* ============ 审计 ============ */
+function renderAudit(){
+  const tbl = document.getElementById("audittable");
+  const empty = document.getElementById("auditempty");
+  const body = document.getElementById("auditbody");
+  if(ONTO.audit.length === 0){ tbl.style.display="none"; empty.style.display="block"; return; }
+  tbl.style.display="table"; empty.style.display="none";
+  body.innerHTML = ONTO.audit.map(e => `<tr>
+    <td class="mono">${esc(e.time)}</td>
+    <td><span class="op op-${esc(e.op)}">${e.op==="denied"?"已拒绝":(e.op==="modify"?"修改":"创建")}</span></td>
+    <td class="mono">${esc(e.action)}</td>
+    <td class="mono">${esc(e.target)}</td>
+    <td>${esc(e.detail)}</td>
+    <td class="mono">${esc(e.by)}</td></tr>`).join("");
+}
+
+/* ============ 启动 ============ */
+renderTable(); fillSelectors(); renderAudit();
+</script>
