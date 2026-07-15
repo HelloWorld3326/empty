@@ -4,6 +4,7 @@
     --bg:#f4f6f9; --surface:#ffffff; --surface2:#eef1f6;
     --ink:#1c2733; --muted:#5c6b7a; --line:#d9dfe8;
     --obj:#0e7490; --obj-soft:#e0f2f7;
+    --lnk:#6d5bd0; --lnk-soft:#ece9fa;
     --raw:#6b7a8c; --raw-soft:#eceff3;
     --ok:#15803d; --ok-soft:#e3f3e8;
     --bad:#b91c1c; --bad-soft:#fbe9e9;
@@ -14,6 +15,7 @@
       --bg:#141a22; --surface:#1c242f; --surface2:#232d3a;
       --ink:#e6ecf3; --muted:#93a1b0; --line:#33404f;
       --obj:#4cc4de; --obj-soft:#0f3a45;
+      --lnk:#a99bf0; --lnk-soft:#2c2750;
       --raw:#8b9aab; --raw-soft:#222b36;
       --ok:#5dc98a; --ok-soft:#123824;
       --bad:#ef7b7b; --bad-soft:#3f1a1a;
@@ -24,6 +26,7 @@
     --bg:#141a22; --surface:#1c242f; --surface2:#232d3a;
     --ink:#e6ecf3; --muted:#93a1b0; --line:#33404f;
     --obj:#4cc4de; --obj-soft:#0f3a45;
+    --lnk:#a99bf0; --lnk-soft:#2c2750;
     --raw:#8b9aab; --raw-soft:#222b36;
     --ok:#5dc98a; --ok-soft:#123824;
     --bad:#ef7b7b; --bad-soft:#3f1a1a;
@@ -33,6 +36,7 @@
     --bg:#f4f6f9; --surface:#ffffff; --surface2:#eef1f6;
     --ink:#1c2733; --muted:#5c6b7a; --line:#d9dfe8;
     --obj:#0e7490; --obj-soft:#e0f2f7;
+    --lnk:#6d5bd0; --lnk-soft:#ece9fa;
     --raw:#6b7a8c; --raw-soft:#eceff3;
     --ok:#15803d; --ok-soft:#e3f3e8;
     --bad:#b91c1c; --bad-soft:#fbe9e9;
@@ -162,7 +166,37 @@
   .browser h3{margin:0 0 4px; font-size:14.5px;}
   .browser h3 .mono{color:var(--muted); font-weight:400; font-size:12.5px;}
   .objchip{display:inline-block; margin:3px 4px 3px 0; padding:4px 12px; border-radius:999px;
-           background:var(--obj-soft); border:1px solid var(--obj); color:var(--obj); font-size:12.5px; font-weight:600;}
+           background:var(--obj-soft); border:1px solid var(--obj); color:var(--obj); font-size:12.5px; font-weight:600;
+           cursor:pointer; font-family:inherit;}
+  .objchip:hover{filter:brightness(.94);}
+  .objchip.active{background:var(--obj); color:#fff;}
+
+  /* link wizard & cards */
+  .tag.lnk{background:var(--lnk-soft); color:var(--lnk); border:1px solid var(--lnk);}
+  .lk-guide{color:var(--muted); font-size:13.5px;}
+  .three{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;}
+  @media (max-width:720px){ .three{grid-template-columns:1fr;} }
+  .fkcheck{margin:4px 0 12px; padding:9px 12px; border-radius:8px; font-size:12.5px; display:none;}
+  .fkcheck.ok{display:block; background:var(--ok-soft); border:1px solid var(--ok); color:var(--ok);}
+  .fkcheck.warn{display:block; background:var(--bad-soft); border:1px solid var(--bad); color:var(--bad);}
+  .lksavebtn{width:100%; padding:10px 0; border:0; border-radius:8px; cursor:pointer;
+             background:var(--lnk); color:#fff; font-weight:700; font-size:14px;}
+  .lksavebtn:disabled{opacity:.45; cursor:not-allowed;}
+  .lksavebtn:not(:disabled):hover{filter:brightness(1.08);}
+  .linkcards{display:flex; flex-direction:column; gap:8px; margin-top:16px;}
+  .linkcard{display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+            border:1px solid var(--lnk); background:var(--lnk-soft); border-radius:10px; padding:9px 14px; font-size:13.5px;}
+  .linkcard .endp{font-weight:700; color:var(--obj);}
+  .linkcard .via{color:var(--lnk); font-weight:600;}
+  .linkcard .names{color:var(--muted); font-size:12px; margin-left:auto;}
+
+  /* object detail with link traversal */
+  .objdetail{margin-top:12px; padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:var(--surface2);}
+  .objdetail h4{margin:0 0 6px; font-size:14px;}
+  .objdetail h4 .mono{color:var(--muted); font-weight:400; font-size:12px;}
+  .lksec{margin-top:10px; padding:10px 12px; border-radius:8px; background:var(--lnk-soft); border:1px solid var(--lnk);}
+  .lksec .lt{color:var(--lnk); font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:5px;}
+  .lksec .none{color:var(--muted); font-size:12.5px;}
 
   button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
   .smallbtn{border:1px solid var(--line); background:var(--surface); color:var(--muted); border-radius:7px; padding:4px 12px; font-size:12.5px; cursor:pointer;}
@@ -171,9 +205,9 @@
 
 <div class="wrap">
   <header class="top">
-    <p class="eyebrow">Mini Ontology Manager · 第一步</p>
-    <h1>从底层表创建对象类型</h1>
-    <p class="sub">这是 Ontology 成型的第一步：把一张原始数据表<b>映射</b>成业务对象 —— 选表、命名、挑属性、定主键和标题。左边是数据库眼里的"表"，右边的向导完成后，它就变成了业务眼里的"对象"。流程与 Palantir Ontology Manager 的 Create object type 向导一一对应。</p>
+    <p class="eyebrow">Mini Ontology Manager · 对象 + 链接</p>
+    <h1>从底层表创建对象与链接</h1>
+    <p class="sub">Ontology 成型的前两步：先把原始数据表<b>映射</b>成业务对象（选表、命名、挑属性、定主键和标题），再用外键把对象之间的关系固化成<b style="color:var(--lnk)">链接</b> —— 从此查关联数据不再写 JOIN，点一下就能沿关系跳转。流程与 Palantir Ontology Manager 的向导一一对应。</p>
   </header>
 
   <div class="grid">
@@ -244,6 +278,15 @@
     </section>
   </div>
 
+  <!-- ===== 创建链接类型 ===== -->
+  <section class="panel" style="margin-top:20px" aria-labelledby="lk-title">
+    <div class="panel-h">
+      <span class="tag lnk">语义层 · 关系</span>
+      <h2 id="lk-title">创建链接类型（Create Link Type）</h2>
+    </div>
+    <div class="panel-b" id="linkwizard"></div>
+  </section>
+
   <!-- ===== 已创建的对象类型 ===== -->
   <section class="panel" style="margin-top:20px" aria-labelledby="ot-title">
     <div class="panel-h">
@@ -258,7 +301,7 @@
   </section>
 
   <footer class="note">
-    教学提示：故意在第 4 步把主键选成一个有重复值的列（例如 all_orders 的 status），保存会被拦下 —— 这正是 Ontology Manager 中"主键必须每行唯一"的硬约束。数据仅存于本页内存，刷新即复位。做完这一步，下一课就是给对象之间连"链接"、再定义"动作"。
+    教学提示：① 故意在第 4 步把主键选成有重复值的列（如 all_orders 的 status），保存会被拦下 —— "主键必须每行唯一"是硬约束；② 建好 Order 和 Customer 后，用 customer_id 外键把它们连起来，再去成果区点任意对象，体验"沿链接跳转、零 JOIN"；③ 试着把外键选成一个对不上的列（如 order_number），看外键校验如何提示悬空引用。数据仅存于本页内存，刷新即复位。下一课：给对象定义"动作"。
   </footer>
 </div>
 
@@ -312,6 +355,9 @@ function inferType(values){
 let curDs = null;                 // 当前选中的数据表名
 let wiz = null;                   // 向导状态 {name, plural, props:{col:{include,title,type}}, pk, titleKey}
 const CREATED = {};               // 已创建的对象类型
+const LINKS = [];                 // 已创建的链接类型 {name, source, target, fk, reverse}
+let lk = {source:"", target:"", fk:"", name:"", reverse:""};   // 链接向导状态
+let curObj = null;                // 成果区当前选中的对象 {type, pk}
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 /* ================= 左侧：数据表列表与预览 ================= */
@@ -515,11 +561,174 @@ function saveObjectType(){
     props: inc.map(c => ({name:c, title:wiz.props[c].title, type:wiz.props[c].type})),
     rows: D.rows.map(r => Object.fromEntries(inc.map(c => [c, r[D.cols.indexOf(c)]])))
   };
-  renderCreated(); browseType(name);
+  renderCreated(); browseType(name); renderLinkWizard();
   // 重置向导
   document.getElementById("wz-ds").value = ""; curDs = null; wiz = null;
   renderDsList(); renderRaw(); lockSteps();
   document.getElementById("otcards").scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+/* ================= 链接向导 ================= */
+function renderLinkWizard(){
+  const box = document.getElementById("linkwizard");
+  const names = Object.keys(CREATED);
+  let html = "";
+
+  if(names.length < 2){
+    html = `<p class="lk-guide">链接 = 两个对象类型之间被固化、命名的关系（外键 → 目标主键）。
+      先在上方创建<b>至少两个</b>对象类型（例如用 all_orders 建 Order、用 customers 建 Customer），这里就能把它们连起来。
+      当前已创建 ${names.length} 个。</p>`;
+  } else {
+    const opts = (sel, excl) => `<option value="">— 选择 —</option>` +
+      names.filter(n => n !== excl).map(n => `<option value="${esc(n)}" ${sel===n?"selected":""}>${esc(n)}</option>`).join("");
+    const srcT = CREATED[lk.source];
+    const fkOpts = srcT
+      ? `<option value="">— 选择 —</option>` + srcT.props.map(p =>
+          `<option value="${esc(p.name)}" ${lk.fk===p.name?"selected":""}>${esc(p.name)}</option>`).join("")
+      : `<option value="">— 先选源对象 —</option>`;
+
+    html = `
+      <p class="lk-guide" style="margin-top:0">语义：<b>源对象</b>的某个属性（外键）指向<b>目标对象</b>的主键，
+        构成"多对一"关系 —— 例如 Order.customer_id → Customer（多笔订单属于一个客户）。</p>
+      <div class="three">
+        <div class="field"><label for="lk-src">源对象类型 Source（"多"的一方）</label>
+          <select id="lk-src" onchange="pickLinkSource(this.value)">${opts(lk.source, lk.target)}</select></div>
+        <div class="field"><label for="lk-fk">外键 Foreign Key（源对象上的属性）</label>
+          <select id="lk-fk" onchange="lk.fk=this.value; refreshLink();" ${srcT?"":"disabled"}>${fkOpts}</select></div>
+        <div class="field"><label for="lk-tgt">目标对象类型 Target（"一"的一方）</label>
+          <select id="lk-tgt" onchange="pickLinkTarget(this.value)">${opts(lk.target, lk.source)}</select></div>
+      </div>
+      <div class="fkcheck" id="fkcheck"></div>
+      <div class="two">
+        <div class="field"><label for="lk-name">正向名（源 → 目标，如 customer）</label>
+          <input id="lk-name" type="text" value="${esc(lk.name)}" oninput="lk.name=this.value; refreshLink();"></div>
+        <div class="field"><label for="lk-rev">反向名（目标 → 源，如 orders）</label>
+          <input id="lk-rev" type="text" value="${esc(lk.reverse)}" oninput="lk.reverse=this.value; refreshLink();"></div>
+      </div>
+      <div class="warnmsg" id="lkerr"></div>
+      <button class="lksavebtn" id="lksave" onclick="saveLink()" disabled>保存 —— 生成链接类型</button>`;
+  }
+
+  // 已创建的链接卡片
+  if(LINKS.length){
+    html += `<div class="linkcards">` + LINKS.map(l => `
+      <div class="linkcard">
+        <span class="endp">${esc(l.source)}</span>
+        <span class="via mono">──${esc(l.fk)}──▸</span>
+        <span class="endp">${esc(l.target)}</span>
+        <span class="names">正向 <b class="mono">${esc(l.name)}</b> · 反向 <b class="mono">${esc(l.reverse)}</b>（1 对多）</span>
+      </div>`).join("") + `</div>`;
+  }
+  box.innerHTML = html;
+  if(names.length >= 2) refreshLink();
+}
+function pickLinkSource(v){
+  lk.source = v; lk.fk = "";
+  autoSuggestLink(); renderLinkWizard();
+}
+function pickLinkTarget(v){
+  lk.target = v;
+  autoSuggestLink(); renderLinkWizard();
+}
+function autoSuggestLink(){
+  const src = CREATED[lk.source], tgt = CREATED[lk.target];
+  // 外键自动建议:源对象里恰好叫"目标主键名"的属性(如 customer_id)
+  if(src && tgt && !lk.fk){
+    const hit = src.props.find(p => p.name === tgt.pk);
+    if(hit) lk.fk = hit.name;
+  }
+  if(tgt && !lk.name) lk.name = tgt.pk.replace(/_id$/, "") || lk.target.toLowerCase();
+  if(src && !lk.reverse) lk.reverse = (src.plural || lk.source + "s").toLowerCase();
+}
+function fkMatchInfo(){
+  const src = CREATED[lk.source], tgt = CREATED[lk.target];
+  if(!src || !tgt || !lk.fk) return null;
+  const pkSet = new Set(tgt.rows.map(r => r[tgt.pk]));
+  const total = src.rows.length;
+  const matched = src.rows.filter(r => pkSet.has(r[lk.fk])).length;
+  return {total, matched};
+}
+function refreshLink(){
+  const chk = document.getElementById("fkcheck");
+  const btn = document.getElementById("lksave");
+  if(!chk || !btn) return;
+  const info = fkMatchInfo();
+  let structOk = false;
+  if(!info){ chk.className = "fkcheck"; }
+  else if(info.matched === info.total){
+    chk.className = "fkcheck ok";
+    chk.innerHTML = `✓ 外键校验通过：${lk.source} 的 ${info.total} 条记录，全部能通过 <span class="mono">${esc(lk.fk)}</span> 找到对应的 ${lk.target} 对象。`;
+    structOk = true;
+  } else {
+    chk.className = "fkcheck warn";
+    chk.innerHTML = `⚠ 悬空引用：只有 ${info.matched}/${info.total} 条记录能对应到 ${lk.target} 对象，其余 ${info.total - info.matched} 条的 <span class="mono">${esc(lk.fk)}</span> 值在目标主键里找不到。这多半说明外键选错了列（也可能是脏数据），换 <span class="mono">${esc(CREATED[lk.target].pk)}</span> 这类列试试。`;
+    structOk = info.matched > 0;   // 允许带少量脏数据保存,全对不上则不允许
+  }
+  btn.disabled = !(structOk && lk.source && lk.target && lk.fk && lk.name.trim() && lk.reverse.trim());
+}
+function saveLink(){
+  const err = document.getElementById("lkerr");
+  err.classList.remove("show");
+  const name = lk.name.trim(), rev = lk.reverse.trim();
+  const clash = LINKS.some(l => l.name === name || l.reverse === name || l.name === rev || l.reverse === rev);
+  if(clash){ err.textContent = `链接名 ${name} / ${rev} 与已有链接冲突，换个名字。`; err.classList.add("show"); return; }
+  LINKS.push({name, source:lk.source, target:lk.target, fk:lk.fk, reverse:rev});
+  lk = {source:"", target:"", fk:"", name:"", reverse:""};
+  renderLinkWizard();
+  if(curObj) showObjDetail(curObj.type, curObj.pk);     // 刷新已打开的对象详情
+  else if(document.getElementById("browser").style.display !== "none"){
+    const m = document.querySelector("#browser h3");
+    if(m) browseType(m.dataset.type);
+  }
+}
+
+/* ================= 链接遍历 ================= */
+function linkedObjects(type, pk){
+  const out = [];
+  const row = CREATED[type] ? CREATED[type].rows.find(r => r[CREATED[type].pk] === pk) : null;
+  if(!row) return out;
+  for(const l of LINKS){
+    if(l.source === type){
+      const tgt = CREATED[l.target];
+      const hit = tgt.rows.find(r => r[tgt.pk] === row[l.fk]);
+      out.push({label:`▸ ${l.name}（这个 ${type} 属于哪个 ${l.target}）`, type:l.target,
+                items: hit ? [hit] : []});
+    }
+    if(l.target === type){
+      const src = CREATED[l.source];
+      const items = src.rows.filter(r => r[l.fk] === pk);
+      out.push({label:`▸ ${l.reverse}（这个 ${type} 关联的全部 ${l.source}，共 ${items.length} 个）`, type:l.source, items});
+    }
+  }
+  return out;
+}
+function showObjDetail(type, pk){
+  curObj = {type, pk};
+  browseType(type, true);
+  const T = CREATED[type];
+  const row = T.rows.find(r => r[T.pk] === pk);
+  const box = document.getElementById("objdetail");
+  if(!row || !box) return;
+
+  let html = `<h4>&lt;${esc(type)} ${esc(pk)}: ${esc(row[T.titleKey])}&gt;
+      <span class="mono">主键 ${esc(T.pk)} · 标题 ${esc(T.titleKey)}</span></h4>
+    <div style="font-size:13px">` +
+    T.props.map(p => `<span style="display:inline-block;margin:2px 14px 2px 0"><span style="color:var(--muted)">${esc(p.title)}:</span> <b class="mono">${esc(row[p.name])}</b></span>`).join("") +
+    `</div>`;
+
+  const secs = linkedObjects(type, pk);
+  if(secs.length === 0){
+    html += `<div class="lksec"><div class="lt">链接遍历</div><div class="none">这个对象类型还没有参与任何链接。在上方"创建链接类型"里连一条，再回来点它试试。</div></div>`;
+  }
+  for(const s of secs){
+    const tt = CREATED[s.type];
+    html += `<div class="lksec"><div class="lt">链接遍历 ${esc(s.label)}</div>` +
+      (s.items.length === 0 ? `<div class="none">（没有找到关联对象 —— 可能是悬空引用）</div>` :
+        s.items.map(r => `<button class="objchip mono" onclick="showObjDetail('${esc(s.type)}','${esc(r[tt.pk])}')">&lt;${esc(s.type)} ${esc(r[tt.pk])}: ${esc(r[tt.titleKey])}&gt;</button>`).join("")) +
+      `</div>`;
+  }
+  box.innerHTML = html;
+  box.style.display = "block";
 }
 
 /* ================= 成果区:已创建对象类型 + 浏览 ================= */
@@ -538,13 +747,18 @@ function renderCreated(){
     </button>`;
   }).join("");
 }
-function browseType(name){
+function browseType(name, keepDetail){
   const T = CREATED[name];
   const b = document.getElementById("browser");
+  if(!keepDetail) curObj = null;
   b.style.display = "block";
   b.innerHTML = `
-    <h3>${esc(name)} 的对象实例 <span class="mono">(表 ${esc(T.backing)} 的每一行,现在都是一个对象)</span></h3>
-    <div>${T.rows.map(r => `<span class="objchip mono">&lt;${esc(name)} ${esc(r[T.pk])}: ${esc(r[T.titleKey])}&gt;</span>`).join("")}</div>
+    <h3 data-type="${esc(name)}">${esc(name)} 的对象实例 <span class="mono">(表 ${esc(T.backing)} 的每一行,现在都是一个对象 —— 点击 chip 查看详情与链接)</span></h3>
+    <div>${T.rows.map(r => {
+      const active = curObj && curObj.type===name && curObj.pk===r[T.pk] ? " active" : "";
+      return `<button class="objchip mono${active}" onclick="showObjDetail('${esc(name)}','${esc(r[T.pk])}')">&lt;${esc(name)} ${esc(r[T.pk])}: ${esc(r[T.titleKey])}&gt;</button>`;
+    }).join("")}</div>
+    <div class="objdetail" id="objdetail" style="display:none"></div>
     <div class="tscroll" style="margin-top:10px"><table>
       <thead><tr>${T.props.map(p=>`<th>${esc(p.title)}<span style="opacity:.55;text-transform:none;letter-spacing:0"> · ${esc(p.type)}</span></th>`).join("")}</tr></thead>
       <tbody>${T.rows.map(r=>`<tr>${T.props.map(p=>`<td class="mono${p.name===T.pk?" hl-pk":""}${p.name===T.titleKey?" hl-title":""}">${esc(r[p.name])}</td>`).join("")}</tr>`).join("")}</tbody>
@@ -552,5 +766,5 @@ function browseType(name){
 }
 
 /* ================= 启动 ================= */
-renderDsList(); renderRaw(); renderCreated();
+renderDsList(); renderRaw(); renderCreated(); renderLinkWizard();
 </script>
