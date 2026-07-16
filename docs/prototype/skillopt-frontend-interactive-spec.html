@@ -197,7 +197,7 @@
       原型里的「启动训练」可以真的点 —— 会走一遍完整的状态流转（预检 → 运行 → 日志滚动 → 完成）。</p>
     <div class="legend">
       <label class="toggle"><input type="checkbox" id="notesToggle" checked> 接口标注（紫色 = 开发说明，非产品 UI）</label>
-      <label class="toggle"><input type="checkbox" id="failToggle"> 模拟「预检失败」（未配置模型密钥的报错路径）</label>
+      <label class="toggle"><input type="checkbox" id="failToggle"> 模拟「预检失败」（所选模型连通性测试不通过的报错路径）</label>
     </div>
   </header>
 
@@ -221,60 +221,29 @@
           <div class="tab active" data-page="new" role="tab" tabindex="0">新建训练</div>
           <div class="tab" data-page="monitor" role="tab" tabindex="0">训练监控</div>
           <div class="tab" data-page="results" role="tab" tabindex="0">结果产物</div>
-          <div class="tab" data-page="secrets" role="tab" tabindex="0">密钥设置</div>
+          <div class="tab" data-page="models" role="tab" tabindex="0">模型配置</div>
         </div>
 
         <!-- ── 页 1：新建训练 ── -->
         <section class="page active" id="page-new">
           <div class="card">
-            <div class="hd">选择 Benchmark 预设
-              <span class="api-chip" role="button" tabindex="0" data-api="configs-list">GET /configs</span></div>
-            <div class="bd grid2">
-              <div class="field"><label>预设（configs/ 下的 YAML，服务端返回列表）</label>
-                <select id="presetSel">
-                  <option value="docvqa">configs/docvqa/default.yaml — 文档视觉问答</option>
-                  <option value="searchqa">configs/searchqa/default.yaml — 检索问答</option>
-                  <option value="alfworld">configs/alfworld/default.yaml — 具身任务</option>
-                </select>
-                <div class="help">切换预设后重新拉取配置与字段元数据，回填整张表单
-                  <span class="api-chip" role="button" tabindex="0" data-api="configs-detail">GET /configs/{name}</span></div>
-              </div>
-              <div class="field"><label>任务备注（仅前端展示用，可选）</label>
-                <input type="text" placeholder="例如：docvqa 首轮调参"></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="hd">技能种子与数据集
-              <span class="muted" style="font-weight:400;font-size:12px">原始项目靠「SSH 放文件 + 改 YAML 路径」，这里全部按钮化</span></div>
+            <div class="hd">技能与数据集（两项均必填）
+              <span class="muted" style="font-weight:400;font-size:12px">不上传无法启动训练</span></div>
             <div class="bd grid2">
               <div class="field">
-                <label>初始技能 skill_init
+                <label><b style="color:var(--err)">*</b> 初始技能（markdown）
                   <span class="api-chip" role="button" tabindex="0" data-api="uploads-skill">POST /uploads/skill</span></label>
-                <div class="seg" id="skillSeg">
-                  <button class="on" data-v="preset">预设自带种子</button>
-                  <button data-v="ckpt">官方成品技能</button>
-                  <button data-v="upload">上传 .md</button>
-                  <button data-v="none">从零开始</button>
-                </div>
-                <div id="skillPathRow" style="margin-top:8px">
-                  <input type="text" id="skillPathInput" value="skillopt/envs/docvqa/skills/initial.md" readonly></div>
-                <div id="skillUploadRow" style="display:none;margin-top:8px">
-                  <div class="upload" id="skillUpload">点击上传 markdown 技能文件（≤ 64 KB）</div></div>
-                <div class="help">上传后服务端存入任务目录并覆盖 env.skill_init；「从零开始」= 空技能，由训练自行生长（引擎原生支持）</div>
+                <div class="upload" id="skillUpload">点击上传技能文件 .md（≤ 64 KB）</div>
+                <div class="help">训练以这份技能文档为起点不断增删改；服务端存入任务目录并设 env.skill_init</div>
               </div>
               <div class="field">
-                <label>数据集（训练 / 验证 / 测试）
+                <label><b style="color:var(--err)">*</b> 数据集（训练 / 验证 / 测试）
                   <span class="api-chip" role="button" tabindex="0" data-api="uploads-dataset">POST /uploads/dataset</span></label>
                 <div class="seg" id="dataSeg">
-                  <button class="on" data-v="builtin">预设自带划分</button>
-                  <button data-v="raw">上传原始数据 · 自动切分</button>
+                  <button class="on" data-v="raw">上传原始数据 · 自动切分</button>
                   <button data-v="split">上传已划分 zip</button>
                 </div>
-                <div id="dataBuiltinRow" style="margin-top:8px">
-                  <input type="text" value="data/docvqa/splits（split_mode=split_dir）" readonly>
-                  <div class="help">⚠ 仓库自带 data/*_id_split 只是 ID 清单，需先物化成完整样本才能训练</div></div>
-                <div id="dataRawRow" style="display:none;margin-top:8px">
+                <div id="dataRawRow" style="margin-top:8px">
                   <div class="upload" id="dataUpload">上传一份 JSON / JSONL（全部样本，引擎确定性自动切分）</div>
                   <div style="display:flex;gap:10px;margin-top:8px">
                     <div style="flex:1"><label>切分比例 train:val:test</label><input type="text" value="2:1:7"></div>
@@ -289,7 +258,8 @@
           </div>
 
           <details class="sec" open>
-            <summary>训练参数<span class="muted" style="font-weight:400;font-size:12px">（字段由接口返回的元数据动态渲染：数字→InputNumber，布尔→Switch，枚举→Select）</span></summary>
+            <summary>训练参数<span class="muted" style="font-weight:400;font-size:12px">（字段由接口返回的元数据动态渲染：数字→InputNumber，布尔→Switch，枚举→Select）</span>
+              <span class="api-chip" role="button" tabindex="0" data-api="form-schema">GET /config/schema</span></summary>
             <div class="bd grid2">
               <div class="field"><label>训练轮数 num_epochs</label><input type="number" value="4" id="fEpochs"></div>
               <div class="field"><label>批大小 batch_size（每步任务数）</label><input type="number" value="40"></div>
@@ -302,31 +272,40 @@
             </div>
           </details>
 
-          <details class="sec">
-            <summary>模型与后端<span class="muted" style="font-weight:400;font-size:12px">（secret 字段渲染为密码框；回显 ****** 表示已配置）</span></summary>
+          <details class="sec" open>
+            <summary>模型选择<span class="muted" style="font-weight:400;font-size:12px">（下拉项来自「模型配置」页已配置的模型，不在这里填 URL/Key）</span></summary>
             <div class="bd grid2">
-              <div class="field"><label>优化器模型</label><input type="text" value="gpt-5.5"></div>
-              <div class="field"><label>目标模型</label><input type="text" value="gpt-5.5"></div>
-              <div class="field"><label>Azure OpenAI Endpoint</label><input type="text" placeholder="https://xx.openai.azure.com/"></div>
-              <div class="field"><label>Azure OpenAI API Key</label><input type="password" value="******"></div>
+              <div class="field"><label>优化器模型（执行技能编辑）
+                  <span class="api-chip" role="button" tabindex="0" data-api="models-list">GET /models</span></label>
+                <select id="optModelSel">
+                  <option value="m_01">gpt-5.5 · Azure OpenAI（✓ 已测试连通）</option>
+                  <option value="m_02">qwen3-72b · vLLM 自建（未测试）</option>
+                </select>
+                <div class="help">没有想要的模型？去「模型配置」页添加并做连通性测试</div></div>
+              <div class="field"><label>目标模型（被优化技能所服务的执行模型）</label>
+                <select id="tgtModelSel">
+                  <option value="m_01">gpt-5.5 · Azure OpenAI（✓ 已测试连通）</option>
+                  <option value="m_02">qwen3-72b · vLLM 自建（未测试）</option>
+                </select></div>
             </div>
           </details>
 
           <details class="sec">
-            <summary>高级配置（YAML）<span class="muted" style="font-weight:400;font-size:12px">（元数据未覆盖的字段兜底：benchmark 特有键在这里改，Monaco/CodeMirror 均可）</span></summary>
-            <div class="bd"><div class="term" style="height:110px">env:
-  split_mode: split_dir
-  split_dir: data/docvqa/splits
-  max_turns: 1
-  workers: 16</div></div>
+            <summary>高级配置（可选，上传 YAML）<span class="muted" style="font-weight:400;font-size:12px">（覆盖表单未暴露的底层字段：任务环境 env.*、gradient 细节等）</span></summary>
+            <div class="bd">
+              <div class="upload" id="yamlUpload">点击上传 YAML 覆盖文件（与表单值合并，YAML 优先级更高）
+                <span class="api-chip" role="button" tabindex="0" data-api="uploads-config">POST /uploads/config</span></div>
+              <div class="help" style="margin-top:6px">未上传时使用服务端默认基础配置；上传的 YAML 由服务端做字段校验，非法字段返回 400 并逐条列出</div>
+            </div>
           </details>
 
-          <div class="alert error" id="preflightErr"><b>预检失败：</b>Model backend is not ready —— 缺少 Azure/OpenAI 兼容 endpoint（optimizer, target）。请在「密钥设置」配置 AZURE_OPENAI_ENDPOINT，或改用其它后端。<a href="#" onclick="return false">去密钥设置</a></div>
+          <div class="alert error" id="needUploads"><b>无法启动：</b>请先上传初始技能文件和数据集（带 * 的两项为必填）。</div>
+          <div class="alert error" id="preflightErr"><b>预检失败：</b>Model backend is not ready —— 所选模型「qwen3-72b」连通性测试未通过（connection timeout）。请到「模型配置」页检查 URL/Key 并重新测试。<a href="#" id="gotoModels">去模型配置</a></div>
 
           <div style="display:flex;gap:10px;align-items:center">
             <button class="btn primary" id="startBtn">启 动 训 练</button>
             <span class="api-chip" role="button" tabindex="0" data-api="start">POST /train/start</span>
-            <span class="muted" style="font-size:12.5px">点击后：接口内部先预检（缺密钥/服务不可达返回 400 + 原因，用 message.error 弹出）；成功则自动切到「训练监控」页</span>
+            <span class="muted" style="font-size:12.5px">前端先校验两个必填上传；接口内部再做模型连通性预检（失败返回 400 + 原因）；成功自动切到「训练监控」页</span>
           </div>
         </section>
 
@@ -386,23 +365,46 @@
           </div>
         </section>
 
-        <!-- ── 页 4：密钥设置 ── -->
-        <section class="page" id="page-secrets">
-          <div class="card"><div class="hd">模型服务密钥
-              <span style="display:flex;align-items:center;gap:4px">
-                <span class="api-chip" role="button" tabindex="0" data-api="secrets-get">GET /settings/secrets</span>
-                <button class="btn primary">保 存</button>
-                <span class="api-chip" role="button" tabindex="0" data-api="secrets-put">PUT /settings/secrets</span></span></div>
-            <div class="bd grid2">
-              <div class="field"><label>AZURE_OPENAI_ENDPOINT</label><input type="text" placeholder="https://xx.openai.azure.com/"></div>
-              <div class="field"><label>AZURE_OPENAI_API_KEY</label><input type="password" value="******">
-                <div class="help">回显 ****** = 已配置；不修改就原样提交，服务端会跳过</div></div>
-              <div class="field"><label>QWEN_CHAT_BASE_URL</label><input type="text" placeholder="http://vllm:8000/v1"></div>
-              <div class="field"><label>MINIMAX_API_KEY</label><input type="password" placeholder="未配置"></div>
+        <!-- ── 页 4：模型配置 ── -->
+        <section class="page" id="page-models">
+          <div class="card"><div class="hd">已配置的模型
+              <span class="api-chip" role="button" tabindex="0" data-api="models-list">GET /models</span></div>
+            <div class="bd tbl-wrap"><table>
+              <thead><tr><th>模型名称</th><th>类型</th><th>模型 URL</th><th>API Key</th><th>连通性</th><th>操作</th></tr></thead>
+              <tbody id="modelsBody">
+                <tr><td class="mono">gpt-5.5</td><td>Azure OpenAI</td>
+                  <td class="mono">https://xx.openai.azure.com/</td><td class="mono">******</td>
+                  <td><span class="pill ok test-state">连通</span></td>
+                  <td style="white-space:nowrap"><button class="btn test-btn" data-fail="0">测 试</button>
+                    <span class="api-chip" role="button" tabindex="0" data-api="models-test">POST /models/{id}/test</span></td></tr>
+                <tr><td class="mono">qwen3-72b</td><td>OpenAI 兼容（vLLM 自建）</td>
+                  <td class="mono">http://vllm:8000/v1</td><td class="mono">—</td>
+                  <td><span class="pill idle test-state">未测试</span></td>
+                  <td style="white-space:nowrap"><button class="btn test-btn" data-fail="1">测 试</button></td></tr>
+              </tbody></table></div>
+          </div>
+          <div class="card"><div class="hd">新增模型
+              <span class="api-chip" role="button" tabindex="0" data-api="models-save">POST /models</span></div>
+            <div class="bd">
+              <div class="grid2">
+                <div class="field"><label><b style="color:var(--err)">*</b> 模型名称（调用时的 model 名）</label>
+                  <input type="text" id="nmName" placeholder="例如 deepseek-v3 / gpt-5.5"></div>
+                <div class="field"><label><b style="color:var(--err)">*</b> 类型</label>
+                  <select id="nmType"><option>OpenAI 兼容</option><option>Azure OpenAI</option><option>MiniMax</option><option>Anthropic</option></select></div>
+                <div class="field"><label><b style="color:var(--err)">*</b> 模型 URL（Base URL / Endpoint）</label>
+                  <input type="text" id="nmUrl" placeholder="https://api.example.com/v1"></div>
+                <div class="field"><label>API Key</label>
+                  <input type="password" id="nmKey" placeholder="自建无鉴权服务可留空">
+                  <div class="help">保存后不回显明文，列表里只显示 ******</div></div>
+              </div>
+              <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+                <button class="btn primary" id="addModelBtn">保存并测试连通性</button>
+                <span class="muted" style="font-size:12.5px">保存成功后自动出现在「新建训练 → 模型选择」的下拉里</span>
+              </div>
             </div>
           </div>
-          <p class="spec-note" style="font-size:13px">密钥永不回传明文：GET 只返回 key 名 + 掩码。表单结构由接口的
-            <code>well_known</code> 列表驱动（key、中文说明、是否 secret），允许「新增自定义键」。</p>
+          <p class="spec-note" style="font-size:13px">连通性测试 = 服务端向该 URL 发一次最小请求（TCP/鉴权探测），返回可读结论；
+            训练启动预检会复用同一逻辑。API Key 落盘服务端密钥文件，永不回传明文。</p>
         </section>
       </div>
     </div>
@@ -426,17 +428,19 @@
     <div class="bd tbl-wrap"><table>
       <thead><tr><th></th><th>路径（前端实际请求 /api/skillopt + 路径）</th><th>用途</th><th>调用时机</th></tr></thead>
       <tbody>
-        <tr><td><span class="method">GET</span></td><td class="mono">/api/configs</td><td>benchmark 预设列表</td><td>进入「新建训练」页</td></tr>
-        <tr><td><span class="method">GET</span></td><td class="mono">/api/configs/{name}</td><td>解析后的配置 + 字段元数据（渲染表单）</td><td>切换预设</td></tr>
-        <tr><td><span class="method POST">POST</span></td><td class="mono">/uploads/skill</td><td>上传技能种子 .md → file_id</td><td>技能种子选「上传 .md」</td></tr>
-        <tr><td><span class="method POST">POST</span></td><td class="mono">/uploads/dataset</td><td>上传数据集（raw 单文件 / split zip）→ file_id + 样本统计</td><td>数据集选上传模式</td></tr>
-        <tr><td><span class="method POST">POST</span></td><td class="mono">/train/start</td><td>启动训练（内含预检；uploads 字段引用已上传文件）</td><td>点「启动训练」</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/config/schema</td><td>表单字段元数据 + 默认值（动态渲染表单）</td><td>进入「新建训练」页</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/models</td><td>已配置模型列表（key 掩码）</td><td>模型配置页 + 模型选择下拉</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/models</td><td>新增/编辑模型（名称/类型/URL/Key）</td><td>模型配置页「保存」</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/models/{id}/test</td><td>连通性测试（返回 ok/latency 或可读错误）</td><td>模型配置页「测试」；保存后自动触发</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/uploads/skill</td><td>上传初始技能 .md → file_id（必填）</td><td>新建训练页技能上传</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/uploads/dataset</td><td>上传数据集（raw 单文件 / split zip）→ file_id + 样本统计（必填）</td><td>新建训练页数据集上传</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/uploads/config</td><td>上传 YAML 覆盖文件（服务端校验字段）</td><td>高级配置上传（可选）</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/train/start</td><td>启动训练（引用模型 id + 上传 file_id；内含连通性预检）</td><td>点「启动训练」</td></tr>
         <tr><td><span class="method POST">POST</span></td><td class="mono">/train/stop</td><td>停止训练</td><td>点「停止训练」</td></tr>
         <tr><td><span class="method">GET</span></td><td class="mono">/train/status</td><td>状态/阶段/epoch/step/百分比</td><td>监控页 2s 轮询</td></tr>
         <tr><td><span class="method">GET</span></td><td class="mono">/train/logs?offset=N</td><td>增量日志</td><td>监控页 2s 轮询（带上次 next_offset）</td></tr>
         <tr><td><span class="method">GET</span></td><td class="mono">/results</td><td>历史 run 列表</td><td>进入「结果产物」页</td></tr>
         <tr><td><span class="method">GET</span></td><td class="mono">/results/{run}/best-skill</td><td>best_skill.md 内容/下载</td><td>点「查看 / 下载」</td></tr>
-        <tr><td><span class="method">GET</span></td><td class="mono">/settings/secrets · PUT 同路径</td><td>密钥读（掩码）/写</td><td>「密钥设置」页</td></tr>
       </tbody></table>
       <p class="spec-note" style="margin-top:12px">统一响应 <code>{"code":0,"message":"ok","data":…}</code>；
         <code>code≠0</code> 时直接 <code>message.error(res.message)</code>。关键错误码：<code>40001</code> 预检/参数失败（message 为可读原因，如缺 endpoint）、
@@ -464,12 +468,13 @@
   <section class="doc card"><div class="hd">④ 联调清单（我们俩对接用）</div>
     <div class="bd doc"><ol>
       <li>后端起服务后给你 Swagger 地址（<code>http://…:8600/docs</code>），本地开发可在 next dev 里把 <code>/api/skillopt</code> 代理到它。</li>
-      <li>用例 A：列预设 → 切换预设表单回填。</li>
-      <li>用例 B：不配密钥直接启动 → 预检 400，确认报错文案展示（本原型勾选「模拟预检失败」可预览）。</li>
-      <li>用例 C：启动 → 监控页阶段/进度/日志滚动 → 停止 → 状态变「已停止」。</li>
+      <li>用例 A：模型配置页新增模型 → 自动连通性测试 → 出现在「模型选择」下拉；改错 URL 再测 → 失败态与可读错误展示。</li>
+      <li>用例 B：不上传技能/数据直接启动 → 前端必填校验拦截；上传后选一个未连通的模型启动 → 预检 400 报错展示（本原型勾选「模拟预检失败」可预览）。</li>
+      <li>用例 C：上传技能 .md + 数据集（raw 与 zip 两种各测一次）→ 启动 → 监控页阶段/进度/日志滚动 → 停止 → 状态变「已停止」。</li>
       <li>用例 D：同配置再启动 → 日志出现断点续训标记。</li>
-      <li>用例 E：完成后结果页出现新 run，best_skill.md 可预览、可下载。</li>
-      <li>用例 F：运行中再点启动 → 40901 提示；刷新浏览器 → 监控页状态恢复。</li>
+      <li>用例 E：上传含非法字段的 YAML → 400 逐条错误展示；合法 YAML → 启动生效。</li>
+      <li>用例 F：完成后结果页出现新 run，best_skill.md 可预览、可下载。</li>
+      <li>用例 G：运行中再点启动 → 40901 提示；刷新浏览器 → 监控页状态恢复。</li>
     </ol></div>
   </section>
 </div>
@@ -490,19 +495,27 @@
 const API = {
   "menu":{m:"—",p:"SideNavigation.tsx / ROUTE_CONFIG",d:"这里不是接口：在菜单配置数组中新增一项，并补 zh/en 的 i18n 键。菜单显隐由数据库权限行控制（后端执行 SQL 迁移）。",
     req:null,resp:`{ path: "/skill-opt", Icon: Wrench,\n  labelKey: "sidebar.skillOpt", order: 65 }`},
-  "configs-list":{m:"GET",p:"/api/skillopt/api/configs",d:"benchmark 预设列表。进入新建训练页时调用一次。",req:null,
-    resp:`{"code":0,"message":"ok","data":{"configs":[\n  "configs/docvqa/default.yaml",\n  "configs/searchqa/default.yaml",\n  "configs/alfworld/default.yaml"]}}`},
-  "configs-detail":{m:"GET",p:"/api/skillopt/api/configs/configs%2Fdocvqa%2Fdefault.yaml",d:"解析 _base_ 继承后的完整配置 + 字段元数据。values 渲染表单，extra 进高级 YAML，schema.fields 决定控件类型。",req:null,
-    resp:`{"code":0,"data":{\n "values":{"train":{"num_epochs":4,"batch_size":40}, …},\n "extra":{"env":{"max_turns":1,"workers":16}},\n "schema":{"sections":[{"name":"train","label_zh":"训练参数"},…],\n   "fields":[{"section":"train","key":"num_epochs","type":"int",\n     "label_zh":"训练轮数","enum":null,"secret":false,"advanced":false},…]}}}`},
+  "form-schema":{m:"GET",p:"/api/skillopt/api/config/schema",d:"表单字段元数据 + 服务端默认值：schema.fields 决定控件类型（int→InputNumber，bool→Switch，enum→Select），values 为默认值。进入新建训练页调用一次。",req:null,
+    resp:`{"code":0,"data":{\n "values":{"train":{"num_epochs":4,"batch_size":40}, …},\n "schema":{"sections":[{"name":"train","label_zh":"训练参数"},…],\n   "fields":[{"section":"train","key":"num_epochs","type":"int",\n     "label_zh":"训练轮数","enum":null,"advanced":false},…]}}}`},
+  "models-list":{m:"GET",p:"/api/skillopt/api/models",d:"已配置模型列表。「模型配置」页表格与「新建训练 → 模型选择」下拉共用此接口；key 只回掩码。",req:null,
+    resp:`{"code":0,"data":{"models":[\n {"id":"m_01","name":"gpt-5.5","type":"azure_openai",\n  "base_url":"https://xx.openai.azure.com/","has_key":true,\n  "last_test":{"ok":true,"at":"2026-07-16T09:30:00Z"}},\n {"id":"m_02","name":"qwen3-72b","type":"openai_compatible",\n  "base_url":"http://vllm:8000/v1","has_key":false,"last_test":null}]}}`},
+  "models-save":{m:"POST",p:"/api/skillopt/api/models",d:"新增/编辑模型（带 id 为编辑）。api_key 只写不读；服务端落盘密钥文件。",
+    req:`{"name":"deepseek-v3","type":"openai_compatible",\n "base_url":"https://api.example.com/v1","api_key":"sk-…"}`,
+    resp:`{"code":0,"data":{"id":"m_03"}}\n重名(HTTP 409) → {"code":40901,"message":"model name already exists"}`},
+  "models-test":{m:"POST",p:"/api/skillopt/api/models/{id}/test",d:"连通性测试：服务端向该模型 URL 发最小探测请求（TCP + 鉴权）。训练启动预检复用同一逻辑。",req:"{}",
+    resp:`成功 → {"code":0,"data":{"ok":true,"latency_ms":230}}\n失败 → {"code":0,"data":{"ok":false,\n  "error":"connection timeout to http://vllm:8000/v1"}}`},
+  "uploads-config":{m:"POST",p:"/api/skillopt/api/uploads/config",d:"上传 YAML 覆盖文件（高级配置）。服务端逐字段校验，非法字段 400 并列出；启动训练时通过 uploads.config_yaml 引用，优先级高于表单值。",
+    req:`multipart/form-data\n  file: override.yaml`,
+    resp:`{"code":0,"data":{"file_id":"up_77aa","valid_fields":12}}\n非法字段(HTTP 400) → {"code":40001,\n  "message":"unknown field: optimizer.foo; env.exec_timeout must be int"}`},
   "uploads-skill":{m:"POST",p:"/api/skillopt/api/uploads/skill",d:"multipart 上传 .md 技能种子。服务端存入上传区并返回 file_id；启动训练时通过 uploads.skill 引用，服务端将其落到任务目录并覆盖 env.skill_init。",
     req:`multipart/form-data\n  file: docvqa_skill_v2.md (text/markdown, ≤64KB)`,
     resp:`{"code":0,"data":{"file_id":"up_9f3a","name":"docvqa_skill_v2.md","size":2048}}\n格式不对(HTTP 400) → {"code":40001,"message":"only .md files are accepted"}`},
   "uploads-dataset":{m:"POST",p:"/api/skillopt/api/uploads/dataset",d:"上传数据集，type 二选一：raw = 单个 JSON/JSONL（配 split_ratio/split_seed，引擎自动切分）；split = zip 包（train/val/test/items.json 三件套，服务端解压校验结构）。返回 file_id + 样本统计，供前端展示确认。",
     req:`multipart/form-data\n  type: "raw" | "split"\n  file: docvqa_all.jsonl 或 docvqa_splits.zip`,
     resp:`raw → {"code":0,"data":{"file_id":"up_c1d2","items":534}}\nsplit → {"code":0,"data":{"file_id":"up_c1d2",\n  "counts":{"train":107,"val":53,"test":374}}}\n结构不对(HTTP 400) → {"code":40001,"message":"zip must contain train/val/test/items.json"}`},
-  "start":{m:"POST",p:"/api/skillopt/api/train/start",d:"启动训练。服务端先预检（密钥/端点连通性），失败返回 400 + 可读原因；已有任务运行返回 40901。uploads 字段可选，引用上传接口返回的 file_id（服务端据此覆盖 env.skill_init / env.data_path / env.split_dir）。",
-    req:`{"config":"configs/docvqa/default.yaml",\n "overrides":{"train.num_epochs":4,"optimizer.learning_rate":4,\n   "optimizer.lr_scheduler":"cosine","evaluation.use_gate":true},\n "uploads":{"skill":"up_9f3a",\n   "dataset":{"file_id":"up_c1d2","type":"raw",\n     "split_ratio":"2:1:7","split_seed":42}}}`,
-    resp:`成功 → {"code":0,"data":{"started":true}}\n预检失败(HTTP 400) → {"code":40001,"message":"preflight failed: Model backend is not ready: missing Azure/OpenAI-compatible endpoint for optimizer, target. …"}\n已在运行(HTTP 409) → {"code":40901,"message":"training already running"}`},
+  "start":{m:"POST",p:"/api/skillopt/api/train/start",d:"启动训练。skill 与 dataset 的 file_id 必填（服务端据此设 env.skill_init / env.data_path / env.split_dir）；models 引用「模型配置」里的模型 id；config_yaml 可选。服务端先做模型连通性预检，失败返回 400 + 可读原因；已有任务运行返回 40901。",
+    req:`{"models":{"optimizer":"m_01","target":"m_01"},\n "overrides":{"train.num_epochs":4,"optimizer.learning_rate":4,\n   "optimizer.lr_scheduler":"cosine","evaluation.use_gate":true},\n "uploads":{"skill":"up_9f3a",\n   "dataset":{"file_id":"up_c1d2","type":"raw",\n     "split_ratio":"2:1:7","split_seed":42},\n   "config_yaml":"up_77aa"}}`,
+    resp:`成功 → {"code":0,"data":{"started":true}}\n缺必填(HTTP 400) → {"code":40001,"message":"skill upload is required"}\n预检失败(HTTP 400) → {"code":40001,"message":"preflight failed: model qwen3-72b is not reachable (connection timeout)"}\n已在运行(HTTP 409) → {"code":40901,"message":"training already running"}`},
   "stop":{m:"POST",p:"/api/skillopt/api/train/stop",d:"停止当前训练（服务端 kill 整个训练进程组）。",req:"{}",
     resp:`{"code":0,"data":{"stopped":true}}`},
   "status":{m:"GET",p:"/api/skillopt/api/train/status",d:"监控页 2 秒轮询。stage 为六阶段之一；percent = step/total_steps。",req:null,
@@ -513,17 +526,13 @@ const API = {
     resp:`{"code":0,"data":{"runs":[{"name":"skillopt_docvqa_gpt5.5_0712-0930",\n "benchmark":"docvqa","best_score":0.8125,"steps":16,"finished":true}]}}`},
   "best":{m:"GET",p:"/api/skillopt/api/results/{run}/best-skill",d:"best_skill.md 内容；加 ?download=1 走浏览器下载。",req:null,
     resp:`{"code":0,"data":{"content":"# Document VQA Skill\\n1. Read the question…",\n "updated_at":"2026-07-12T09:58:00Z"}}`},
-  "secrets-get":{m:"GET",p:"/api/skillopt/api/settings/secrets",d:"密钥读取：只回 key 名 + 掩码，永不回明文。well_known 驱动表单结构。",req:null,
-    resp:`{"code":0,"data":{\n "entries":[{"key":"AZURE_OPENAI_API_KEY","value":"******"},\n            {"key":"AZURE_OPENAI_ENDPOINT","value":"https://xx.openai.azure.com/"}],\n "well_known":[{"key":"AZURE_OPENAI_ENDPOINT","label_zh":"Azure OpenAI Endpoint","secret":false},…]}}`},
-  "secrets-put":{m:"PUT",p:"/api/skillopt/api/settings/secrets",d:"密钥写入：value 传 ****** 表示未修改（服务端跳过）；传 null 删除该键。",
-    req:`{"entries":{"AZURE_OPENAI_API_KEY":"sk-…",\n "AZURE_OPENAI_ENDPOINT":"https://xx.openai.azure.com/",\n "MINIMAX_API_KEY":null}}`,
-    resp:`{"code":0,"data":{"count":2}}`},
 };
 
 /* ── 标注开关 / 弹层 ── */
 const body=document.body;
 body.classList.add("notes-on");
 notesToggle.onchange=()=>body.classList.toggle("notes-on",notesToggle.checked);
+failToggle.onchange=()=>{if(!failToggle.checked)preflightErr.classList.remove("show")};
 const dlg=document.getElementById("apiDlg");
 document.addEventListener("click",e=>{
   const chip=e.target.closest(".api-chip");
@@ -575,7 +584,9 @@ function setStage(idx){ /* idx: 1-6, 0=none */
   kvStage.textContent=idx?STAGE_NAMES[idx-1]:"–";
 }
 document.getElementById("startBtn").onclick=()=>{
-  preflightErr.classList.remove("show");
+  preflightErr.classList.remove("show");needUploads.classList.remove("show");
+  if(!skillUpload.classList.contains("done")||!datasetUploaded()){
+    needUploads.classList.add("show");return}
   if(failToggle.checked){preflightErr.classList.add("show");return}
   if(timer)return;
   go("monitor");doneAlert.classList.remove("show");
@@ -621,24 +632,54 @@ stopBtn.onclick=()=>{
 };
 gotoResults.onclick=e=>{e.preventDefault();go("results")};
 
-/* ── 技能种子 / 数据集 选择与模拟上传 ── */
+/* ── 数据集模式切换 / 模拟上传 ── */
 function seg(el,cb){[...el.querySelectorAll("button")].forEach(b=>b.onclick=()=>{
   el.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));cb(b.dataset.v)})}
-seg(document.getElementById("skillSeg"),v=>{
-  skillPathRow.style.display=(v==="preset"||v==="ckpt")?"":"none";
-  skillUploadRow.style.display=v==="upload"?"":"none";
-  if(v==="preset")skillPathInput.value="skillopt/envs/docvqa/skills/initial.md";
-  if(v==="ckpt")skillPathInput.value="ckpt/docvqa/gpt5.5_skill.md";
-});
 seg(document.getElementById("dataSeg"),v=>{
-  dataBuiltinRow.style.display=v==="builtin"?"":"none";
   dataRawRow.style.display=v==="raw"?"":"none";
   dataSplitRow.style.display=v==="split"?"":"none";
 });
-[["skillUpload","docvqa_skill_v2.md · file_id: up_9f3a"],
- ["dataUpload","docvqa_all.jsonl · 534 条样本 · file_id: up_c1d2"],
- ["zipUpload","docvqa_splits.zip · train 107 / val 53 / test 374 · file_id: up_c1d2"]]
+[["skillUpload","my_skill_v1.md · file_id: up_9f3a"],
+ ["dataUpload","tasks_all.jsonl · 534 条样本 · file_id: up_c1d2"],
+ ["zipUpload","tasks_splits.zip · train 107 / val 53 / test 374 · file_id: up_c1d2"],
+ ["yamlUpload","override.yaml · 12 个字段通过校验 · file_id: up_77aa"]]
 .forEach(([id,msg])=>{const el=document.getElementById(id);
-  el.onclick=()=>{if(el.classList.contains("done"))return;
-    el.classList.add("done");el.textContent="✓ 已上传（模拟）— "+msg}});
+  el.onclick=e=>{if(e.target.closest(".api-chip"))return;
+    if(el.classList.contains("done"))return;
+    el.classList.add("done");
+    el.childNodes[0].textContent="✓ 已上传（模拟）— "+msg}});
+function datasetUploaded(){
+  const mode=document.querySelector("#dataSeg button.on").dataset.v;
+  return (mode==="raw"?dataUpload:zipUpload).classList.contains("done");
+}
+gotoModels.onclick=e=>{e.preventDefault();go("models")};
+
+/* ── 模型配置页：连通性测试 / 新增模型 ── */
+function bindTest(btn){
+  btn.onclick=()=>{
+    const state=btn.closest("tr").querySelector(".test-state");
+    state.className="pill run test-state";state.textContent="测试中…";
+    btn.disabled=true;
+    setTimeout(()=>{
+      btn.disabled=false;
+      if(btn.dataset.fail==="1"){state.className="pill err test-state";state.textContent="失败：连接超时"}
+      else{state.className="pill ok test-state";state.textContent="连通"}
+    },900);
+  };
+}
+document.querySelectorAll(".test-btn").forEach(bindTest);
+addModelBtn.onclick=()=>{
+  const name=nmName.value.trim(),url=nmUrl.value.trim();
+  if(!name||!url){alert("模型名称与模型 URL 为必填");return}
+  const tr=document.createElement("tr");
+  tr.innerHTML=`<td class="mono">${name}</td><td>${nmType.value}</td>
+    <td class="mono">${url}</td><td class="mono">${nmKey.value?"******":"—"}</td>
+    <td><span class="pill idle test-state">未测试</span></td>
+    <td style="white-space:nowrap"><button class="btn test-btn" data-fail="0">测 试</button></td>`;
+  modelsBody.appendChild(tr);
+  const btn=tr.querySelector(".test-btn");bindTest(btn);btn.click();
+  [optModelSel,tgtModelSel].forEach(sel=>{
+    const o=document.createElement("option");o.textContent=`${name} · ${nmType.value}`;sel.appendChild(o)});
+  nmName.value=nmUrl.value=nmKey.value="";
+};
 </script>
