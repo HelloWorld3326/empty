@@ -110,6 +110,17 @@
   .alert.error{background:var(--err-weak);border:1px solid var(--err);color:var(--text)}
   .alert.success{background:var(--ok-weak);border:1px solid var(--ok);color:var(--text)}
 
+  /* 分段选择 + 上传框 */
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;flex-wrap:wrap}
+  .seg button{border:none;background:var(--panel);color:var(--text-2);padding:5px 12px;cursor:pointer;
+    font:inherit;font-size:12.5px;white-space:nowrap}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button.on{background:var(--primary-weak);color:var(--primary);font-weight:600}
+  .upload{border:1.5px dashed var(--line);border-radius:var(--radius);padding:13px;text-align:center;
+    color:var(--text-2);cursor:pointer;font-size:12.5px;transition:border-color .15s}
+  .upload:hover{border-color:var(--primary);color:var(--primary)}
+  .upload.done{border-style:solid;border-color:var(--ok);color:var(--ok);cursor:default}
+
   /* 监控页 */
   .stages{display:flex;gap:0;align-items:center;flex-wrap:wrap;row-gap:10px}
   .stage{display:flex;align-items:center;gap:8px}
@@ -230,6 +241,50 @@
               </div>
               <div class="field"><label>任务备注（仅前端展示用，可选）</label>
                 <input type="text" placeholder="例如：docvqa 首轮调参"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="hd">技能种子与数据集
+              <span class="muted" style="font-weight:400;font-size:12px">原始项目靠「SSH 放文件 + 改 YAML 路径」，这里全部按钮化</span></div>
+            <div class="bd grid2">
+              <div class="field">
+                <label>初始技能 skill_init
+                  <span class="api-chip" role="button" tabindex="0" data-api="uploads-skill">POST /uploads/skill</span></label>
+                <div class="seg" id="skillSeg">
+                  <button class="on" data-v="preset">预设自带种子</button>
+                  <button data-v="ckpt">官方成品技能</button>
+                  <button data-v="upload">上传 .md</button>
+                  <button data-v="none">从零开始</button>
+                </div>
+                <div id="skillPathRow" style="margin-top:8px">
+                  <input type="text" id="skillPathInput" value="skillopt/envs/docvqa/skills/initial.md" readonly></div>
+                <div id="skillUploadRow" style="display:none;margin-top:8px">
+                  <div class="upload" id="skillUpload">点击上传 markdown 技能文件（≤ 64 KB）</div></div>
+                <div class="help">上传后服务端存入任务目录并覆盖 env.skill_init；「从零开始」= 空技能，由训练自行生长（引擎原生支持）</div>
+              </div>
+              <div class="field">
+                <label>数据集（训练 / 验证 / 测试）
+                  <span class="api-chip" role="button" tabindex="0" data-api="uploads-dataset">POST /uploads/dataset</span></label>
+                <div class="seg" id="dataSeg">
+                  <button class="on" data-v="builtin">预设自带划分</button>
+                  <button data-v="raw">上传原始数据 · 自动切分</button>
+                  <button data-v="split">上传已划分 zip</button>
+                </div>
+                <div id="dataBuiltinRow" style="margin-top:8px">
+                  <input type="text" value="data/docvqa/splits（split_mode=split_dir）" readonly>
+                  <div class="help">⚠ 仓库自带 data/*_id_split 只是 ID 清单，需先物化成完整样本才能训练</div></div>
+                <div id="dataRawRow" style="display:none;margin-top:8px">
+                  <div class="upload" id="dataUpload">上传一份 JSON / JSONL（全部样本，引擎确定性自动切分）</div>
+                  <div style="display:flex;gap:10px;margin-top:8px">
+                    <div style="flex:1"><label>切分比例 train:val:test</label><input type="text" value="2:1:7"></div>
+                    <div style="width:110px;flex:none"><label>切分种子</label><input type="number" value="42"></div>
+                  </div>
+                  <div class="help">服务端设 split_mode=ratio + data_path，验证集用于门控 Gate 判定编辑是否被接受</div></div>
+                <div id="dataSplitRow" style="display:none;margin-top:8px">
+                  <div class="upload" id="zipUpload">上传 zip：内含 train / val / test 三目录，各含 items.json</div>
+                  <div class="help">服务端解压并校验目录结构后，设 split_mode=split_dir 指向解压目录</div></div>
+              </div>
             </div>
           </div>
 
@@ -373,7 +428,9 @@
       <tbody>
         <tr><td><span class="method">GET</span></td><td class="mono">/api/configs</td><td>benchmark 预设列表</td><td>进入「新建训练」页</td></tr>
         <tr><td><span class="method">GET</span></td><td class="mono">/api/configs/{name}</td><td>解析后的配置 + 字段元数据（渲染表单）</td><td>切换预设</td></tr>
-        <tr><td><span class="method POST">POST</span></td><td class="mono">/train/start</td><td>启动训练（内含预检）</td><td>点「启动训练」</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/uploads/skill</td><td>上传技能种子 .md → file_id</td><td>技能种子选「上传 .md」</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/uploads/dataset</td><td>上传数据集（raw 单文件 / split zip）→ file_id + 样本统计</td><td>数据集选上传模式</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/train/start</td><td>启动训练（内含预检；uploads 字段引用已上传文件）</td><td>点「启动训练」</td></tr>
         <tr><td><span class="method POST">POST</span></td><td class="mono">/train/stop</td><td>停止训练</td><td>点「停止训练」</td></tr>
         <tr><td><span class="method">GET</span></td><td class="mono">/train/status</td><td>状态/阶段/epoch/step/百分比</td><td>监控页 2s 轮询</td></tr>
         <tr><td><span class="method">GET</span></td><td class="mono">/train/logs?offset=N</td><td>增量日志</td><td>监控页 2s 轮询（带上次 next_offset）</td></tr>
@@ -437,8 +494,14 @@ const API = {
     resp:`{"code":0,"message":"ok","data":{"configs":[\n  "configs/docvqa/default.yaml",\n  "configs/searchqa/default.yaml",\n  "configs/alfworld/default.yaml"]}}`},
   "configs-detail":{m:"GET",p:"/api/skillopt/api/configs/configs%2Fdocvqa%2Fdefault.yaml",d:"解析 _base_ 继承后的完整配置 + 字段元数据。values 渲染表单，extra 进高级 YAML，schema.fields 决定控件类型。",req:null,
     resp:`{"code":0,"data":{\n "values":{"train":{"num_epochs":4,"batch_size":40}, …},\n "extra":{"env":{"max_turns":1,"workers":16}},\n "schema":{"sections":[{"name":"train","label_zh":"训练参数"},…],\n   "fields":[{"section":"train","key":"num_epochs","type":"int",\n     "label_zh":"训练轮数","enum":null,"secret":false,"advanced":false},…]}}}`},
-  "start":{m:"POST",p:"/api/skillopt/api/train/start",d:"启动训练。服务端先预检（密钥/端点连通性），失败返回 400 + 可读原因；已有任务运行返回 40901。",
-    req:`{"config":"configs/docvqa/default.yaml",\n "overrides":{"train.num_epochs":4,"optimizer.learning_rate":4,\n   "optimizer.lr_scheduler":"cosine","evaluation.use_gate":true}}`,
+  "uploads-skill":{m:"POST",p:"/api/skillopt/api/uploads/skill",d:"multipart 上传 .md 技能种子。服务端存入上传区并返回 file_id；启动训练时通过 uploads.skill 引用，服务端将其落到任务目录并覆盖 env.skill_init。",
+    req:`multipart/form-data\n  file: docvqa_skill_v2.md (text/markdown, ≤64KB)`,
+    resp:`{"code":0,"data":{"file_id":"up_9f3a","name":"docvqa_skill_v2.md","size":2048}}\n格式不对(HTTP 400) → {"code":40001,"message":"only .md files are accepted"}`},
+  "uploads-dataset":{m:"POST",p:"/api/skillopt/api/uploads/dataset",d:"上传数据集，type 二选一：raw = 单个 JSON/JSONL（配 split_ratio/split_seed，引擎自动切分）；split = zip 包（train/val/test/items.json 三件套，服务端解压校验结构）。返回 file_id + 样本统计，供前端展示确认。",
+    req:`multipart/form-data\n  type: "raw" | "split"\n  file: docvqa_all.jsonl 或 docvqa_splits.zip`,
+    resp:`raw → {"code":0,"data":{"file_id":"up_c1d2","items":534}}\nsplit → {"code":0,"data":{"file_id":"up_c1d2",\n  "counts":{"train":107,"val":53,"test":374}}}\n结构不对(HTTP 400) → {"code":40001,"message":"zip must contain train/val/test/items.json"}`},
+  "start":{m:"POST",p:"/api/skillopt/api/train/start",d:"启动训练。服务端先预检（密钥/端点连通性），失败返回 400 + 可读原因；已有任务运行返回 40901。uploads 字段可选，引用上传接口返回的 file_id（服务端据此覆盖 env.skill_init / env.data_path / env.split_dir）。",
+    req:`{"config":"configs/docvqa/default.yaml",\n "overrides":{"train.num_epochs":4,"optimizer.learning_rate":4,\n   "optimizer.lr_scheduler":"cosine","evaluation.use_gate":true},\n "uploads":{"skill":"up_9f3a",\n   "dataset":{"file_id":"up_c1d2","type":"raw",\n     "split_ratio":"2:1:7","split_seed":42}}}`,
     resp:`成功 → {"code":0,"data":{"started":true}}\n预检失败(HTTP 400) → {"code":40001,"message":"preflight failed: Model backend is not ready: missing Azure/OpenAI-compatible endpoint for optimizer, target. …"}\n已在运行(HTTP 409) → {"code":40901,"message":"training already running"}`},
   "stop":{m:"POST",p:"/api/skillopt/api/train/stop",d:"停止当前训练（服务端 kill 整个训练进程组）。",req:"{}",
     resp:`{"code":0,"data":{"stopped":true}}`},
@@ -557,4 +620,25 @@ stopBtn.onclick=()=>{
   setPill("stop","已停止");stopBtn.disabled=true;setStage(0);
 };
 gotoResults.onclick=e=>{e.preventDefault();go("results")};
+
+/* ── 技能种子 / 数据集 选择与模拟上传 ── */
+function seg(el,cb){[...el.querySelectorAll("button")].forEach(b=>b.onclick=()=>{
+  el.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));cb(b.dataset.v)})}
+seg(document.getElementById("skillSeg"),v=>{
+  skillPathRow.style.display=(v==="preset"||v==="ckpt")?"":"none";
+  skillUploadRow.style.display=v==="upload"?"":"none";
+  if(v==="preset")skillPathInput.value="skillopt/envs/docvqa/skills/initial.md";
+  if(v==="ckpt")skillPathInput.value="ckpt/docvqa/gpt5.5_skill.md";
+});
+seg(document.getElementById("dataSeg"),v=>{
+  dataBuiltinRow.style.display=v==="builtin"?"":"none";
+  dataRawRow.style.display=v==="raw"?"":"none";
+  dataSplitRow.style.display=v==="split"?"":"none";
+});
+[["skillUpload","docvqa_skill_v2.md · file_id: up_9f3a"],
+ ["dataUpload","docvqa_all.jsonl · 534 条样本 · file_id: up_c1d2"],
+ ["zipUpload","docvqa_splits.zip · train 107 / val 53 / test 374 · file_id: up_c1d2"]]
+.forEach(([id,msg])=>{const el=document.getElementById(id);
+  el.onclick=()=>{if(el.classList.contains("done"))return;
+    el.classList.add("done");el.textContent="✓ 已上传（模拟）— "+msg}});
 </script>
