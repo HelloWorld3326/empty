@@ -191,10 +191,10 @@
 
 <div class="wrap">
   <header class="doc">
-    <h1>SkillOpt「技能优化」前端交互说明</h1>
-    <p class="muted">给前端同学：下面是一个<b>可点击的交互原型</b>。它模拟了你要在 nexent 里实现的页面（antd 6 风格）。
-      打开右侧「接口标注」后，每个交互元素旁会出现紫色小标签，<b>点击标签</b>可查看该操作要调用的接口和请求/响应示例。
-      原型里的「启动训练」可以真的点 —— 会走一遍完整的状态流转（预检 → 运行 → 日志滚动 → 完成）。</p>
+    <h1>SkillOpt「技能优化」— nexent 原生集成交互与接口说明</h1>
+    <p class="muted">这是<b>可点击的交互原型 + 后端接口评审稿</b>：SkillOpt 作为 nexent 原生功能集成——权限走 nexent JWT/租户体系、
+      模型直接用 nexent「模型管理」中已配置的 LLM（本功能不做模型配置）、后端为新增的 nexent-skillopt 服务（本次只交付后端）。
+      打开「接口标注」后点击紫色标签可查看每个操作的接口与请求/响应示例；「启动训练」可以真的点——会走完整状态流转（必填校验 → 预检 → 运行 → 日志滚动 → 完成）。</p>
     <div class="legend">
       <label class="toggle"><input type="checkbox" id="notesToggle" checked> 接口标注（紫色 = 开发说明，非产品 UI）</label>
       <label class="toggle"><input type="checkbox" id="failToggle"> 模拟「预检失败」（所选模型连通性测试不通过的报错路径）</label>
@@ -204,7 +204,7 @@
   <!-- ═══════════ 应用原型 ═══════════ -->
   <div class="frame">
     <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-      <span style="margin-left:8px">nexent — /zh/skill-opt（新增页面，经 server.js 网关代理到 SkillOpt 服务）</span></div>
+      <span style="margin-left:8px">nexent — /zh/skill-opt（nexent 原生功能：后端为 nexent-skillopt 服务，鉴权/租户/模型全走 nexent 体系）</span></div>
     <div class="app">
       <aside class="sider">
         <div class="brand">nexent</div>
@@ -221,7 +221,6 @@
           <div class="tab active" data-page="new" role="tab" tabindex="0">新建训练</div>
           <div class="tab" data-page="monitor" role="tab" tabindex="0">训练监控</div>
           <div class="tab" data-page="results" role="tab" tabindex="0">结果产物</div>
-          <div class="tab" data-page="models" role="tab" tabindex="0">模型配置</div>
         </div>
 
         <!-- ── 页 1：新建训练 ── -->
@@ -273,20 +272,21 @@
           </details>
 
           <details class="sec" open>
-            <summary>模型选择<span class="muted" style="font-weight:400;font-size:12px">（下拉项来自「模型配置」页已配置的模型，不在这里填 URL/Key）</span></summary>
+            <summary>模型选择<span class="muted" style="font-weight:400;font-size:12px">（下拉项 = nexent「模型管理」中当前租户已配置的 LLM，本功能不做任何模型配置）</span></summary>
             <div class="bd grid2">
               <div class="field"><label>优化器模型（执行技能编辑）
-                  <span class="api-chip" role="button" tabindex="0" data-api="models-list">GET /models</span></label>
+                  <span class="api-chip" role="button" tabindex="0" data-api="models-list">GET /api/model/llm_list（nexent 现有）</span></label>
                 <select id="optModelSel">
-                  <option value="m_01">gpt-5.5 · Azure OpenAI（✓ 已测试连通）</option>
-                  <option value="m_02">qwen3-72b · vLLM 自建（未测试）</option>
+                  <option value="101">deepseek-v3（可用）</option>
+                  <option value="102">qwen3-72b（不可用）</option>
                 </select>
-                <div class="help">没有想要的模型？去「模型配置」页添加并做连通性测试</div></div>
+                <div class="help">没有想要的模型？去 nexent「模型管理」添加；连通状态也由 nexent 健康检查维护</div></div>
               <div class="field"><label>目标模型（被优化技能所服务的执行模型）</label>
                 <select id="tgtModelSel">
-                  <option value="m_01">gpt-5.5 · Azure OpenAI（✓ 已测试连通）</option>
-                  <option value="m_02">qwen3-72b · vLLM 自建（未测试）</option>
-                </select></div>
+                  <option value="101">deepseek-v3（可用）</option>
+                  <option value="102">qwen3-72b（不可用）</option>
+                </select>
+                <div class="help">启动时只传 model_id，后端按租户从 model_record_t 解析 base_url / api_key / model_name</div></div>
             </div>
           </details>
 
@@ -300,7 +300,7 @@
           </details>
 
           <div class="alert error" id="needUploads"><b>无法启动：</b>请先上传初始技能文件和数据集（带 * 的两项为必填）。</div>
-          <div class="alert error" id="preflightErr"><b>预检失败：</b>Model backend is not ready —— 所选模型「qwen3-72b」连通性测试未通过（connection timeout）。请到「模型配置」页检查 URL/Key 并重新测试。<a href="#" id="gotoModels">去模型配置</a></div>
+          <div class="alert error" id="preflightErr"><b>预检失败（HTTP 400）：</b>model "qwen3-72b" is not available —— 所选模型在 nexent 模型管理中连通状态为「不可用」。请到 nexent「模型管理」页检查该模型并重新做健康检查。</div>
 
           <div style="display:flex;gap:10px;align-items:center">
             <button class="btn primary" id="startBtn">启 动 训 练</button>
@@ -365,86 +365,49 @@
           </div>
         </section>
 
-        <!-- ── 页 4：模型配置 ── -->
-        <section class="page" id="page-models">
-          <div class="card"><div class="hd">已配置的模型
-              <span class="api-chip" role="button" tabindex="0" data-api="models-list">GET /models</span></div>
-            <div class="bd tbl-wrap"><table>
-              <thead><tr><th>模型名称</th><th>类型</th><th>模型 URL</th><th>API Key</th><th>连通性</th><th>操作</th></tr></thead>
-              <tbody id="modelsBody">
-                <tr><td class="mono">gpt-5.5</td><td>Azure OpenAI</td>
-                  <td class="mono">https://xx.openai.azure.com/</td><td class="mono">******</td>
-                  <td><span class="pill ok test-state">连通</span></td>
-                  <td style="white-space:nowrap"><button class="btn test-btn" data-fail="0">测 试</button>
-                    <span class="api-chip" role="button" tabindex="0" data-api="models-test">POST /models/{id}/test</span></td></tr>
-                <tr><td class="mono">qwen3-72b</td><td>OpenAI 兼容（vLLM 自建）</td>
-                  <td class="mono">http://vllm:8000/v1</td><td class="mono">—</td>
-                  <td><span class="pill idle test-state">未测试</span></td>
-                  <td style="white-space:nowrap"><button class="btn test-btn" data-fail="1">测 试</button></td></tr>
-              </tbody></table></div>
-          </div>
-          <div class="card"><div class="hd">新增模型
-              <span class="api-chip" role="button" tabindex="0" data-api="models-save">POST /models</span></div>
-            <div class="bd">
-              <div class="grid2">
-                <div class="field"><label><b style="color:var(--err)">*</b> 模型名称（调用时的 model 名）</label>
-                  <input type="text" id="nmName" placeholder="例如 deepseek-v3 / gpt-5.5"></div>
-                <div class="field"><label><b style="color:var(--err)">*</b> 类型</label>
-                  <select id="nmType"><option>OpenAI 兼容</option><option>Azure OpenAI</option><option>MiniMax</option><option>Anthropic</option></select></div>
-                <div class="field"><label><b style="color:var(--err)">*</b> 模型 URL（Base URL / Endpoint）</label>
-                  <input type="text" id="nmUrl" placeholder="https://api.example.com/v1"></div>
-                <div class="field"><label>API Key</label>
-                  <input type="password" id="nmKey" placeholder="自建无鉴权服务可留空">
-                  <div class="help">保存后不回显明文，列表里只显示 ******</div></div>
-              </div>
-              <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
-                <button class="btn primary" id="addModelBtn">保存并测试连通性</button>
-                <span class="muted" style="font-size:12.5px">保存成功后自动出现在「新建训练 → 模型选择」的下拉里</span>
-              </div>
-            </div>
-          </div>
-          <p class="spec-note" style="font-size:13px">连通性测试 = 服务端向该 URL 发一次最小请求（TCP/鉴权探测），返回可读结论；
-            训练启动预检会复用同一逻辑。API Key 落盘服务端密钥文件，永不回传明文。</p>
-        </section>
+
       </div>
     </div>
   </div>
 
   <!-- ═══════════ 开发说明 ═══════════ -->
-  <section class="doc card"><div class="hd">① 你要改哪些文件（nexent 侧，共 5 处前端改动）</div>
+  <section class="doc card"><div class="hd">① 集成方式与交付边界（本次只交付后端）</div>
     <div class="bd doc">
+      <p><b>架构：</b>SkillOpt 作为 nexent 的原生功能集成——新增独立后端服务 <code>nexent-skillopt</code>（自带 SkillOpt 引擎依赖的容器，遵循 nexent 多服务模式），鉴权/租户/模型全部走 nexent 现有体系，不自建任何账号或模型配置。</p>
+      <p style="margin-top:4px"><b>本次后端交付（写进 nexent 仓库）：</b></p>
       <ol>
-        <li><b>新页面</b>：<span class="file">frontend/app/[locale]/skill-opt/page.tsx</span> —— 即上方原型的四个 Tab。参照仓库里 dify/datamate 外部服务集成页的写法（antd 6 + Tailwind，共用主题与布局）。</li>
-        <li><b>侧边栏菜单</b>：<span class="file">frontend/components/navigation/SideNavigation.tsx</span> 的 <code>ROUTE_CONFIG</code> 数组加一项 <code>{ path:"/skill-opt", Icon: Wrench, labelKey:"sidebar.skillOpt", order:… }</code>。注意菜单会按数据库权限过滤 —— 权限 SQL 由后端（我）执行，你本地联调时可先用管理员角色。</li>
-        <li><b>i18n</b>：<span class="file">frontend/public/locales/zh/common.json</span> 与 <span class="file">…/en/common.json</span> 加 <code>"sidebar.skillOpt": "技能优化" / "Skill Optimizer"</code> 及页面内文案键。</li>
-        <li><b>服务层</b>：新建 <span class="file">frontend/services/skillOptService.ts</span>，端点注册进 <span class="file">frontend/services/api.ts</span>。全部走 <code>/api/skillopt/*</code>，<b>不需要处理鉴权头</b>（server.js 网关自动注入 JWT）。</li>
-        <li><b>网关代理</b>：<span class="file">frontend/server.js</span> 加一条前缀规则：<code>/api/skillopt/*</code> → 环境变量 <code>SKILLOPT_BACKEND</code>（默认 <code>http://nexent-skillopt:8600</code>），转发时去掉 <code>/skillopt</code> 前缀。（两行级别，谁顺手谁做）</li>
+        <li><b>路由层</b>：<span class="file">backend/apps/skillopt_app.py</span> —— APIRouter(prefix="/skillopt")，每个端点 <code>Header(authorization)</code> → <code>get_current_user_id()</code> 解析 (user_id, tenant_id)，遵循 nexent App 层约定（校验入参、委托 service、JSONResponse {message,data}）。</li>
+        <li><b>服务层</b>：<span class="file">backend/services/skillopt_service.py</span> —— 训练子进程管理（Popen scripts/train.py / killpg / 断点续训）、上传校验、模型解析（复用 <code>model_management_db.get_model_by_model_id</code> + <code>model_health_service.check_model_connectivity</code>）、进度解析。</li>
+        <li><b>数据层</b>：<span class="file">backend/database/skillopt_db.py</span> + <span class="file">db_models.py</span> 新增 <code>skillopt_job_t</code> 表（tenant_id/user_id/status/参数快照/out_root/pid…），任务记录持久化、按租户隔离。</li>
+        <li><b>服务入口</b>：<span class="file">backend/skillopt_service_main.py</span>（uvicorn，端口 5016，app_factory.create_app 装配）。</li>
+        <li><b>SQL 迁移</b>：建表 + <code>role_permission_t</code> 菜单权限行（权限体系复用 nexent：菜单显隐按角色，接口按 JWT 租户隔离）。</li>
+        <li><b>部署</b>：<span class="file">docker/</span> 下 nexent-skillopt 镜像（含 SkillOpt 引擎源码与依赖）+ compose 服务定义。</li>
       </ol>
-      <p class="muted">SkillOpt 服务本身、SQL 迁移、docker-compose 由后端负责，你不用管。</p>
+      <p style="margin-top:4px"><b>前端待办（不在本次交付，由前端同学按本原型实现）：</b>新页面 <span class="file">frontend/app/[locale]/skill-opt/page.tsx</span>（上方三个 Tab）、SideNavigation 菜单项、zh/en i18n、<span class="file">services/skillOptService.ts</span>、server.js 加 <code>/api/skillopt/*</code> → 5016 转发规则。前端不用管鉴权头（网关自动注入）。</p>
+      <p class="muted">模型配置完全复用 nexent「模型管理」页——本功能不新增任何模型配置界面或接口。</p>
     </div>
   </section>
 
-  <section class="doc card"><div class="hd">② 接口一览（点上方紫色标签看示例；联调时以 Swagger <code>/docs</code> 为准）</div>
+  <section class="doc card"><div class="hd">② 接口一览（点上方紫色标签看请求/响应示例；联调以 Swagger 为准）</div>
     <div class="bd tbl-wrap"><table>
-      <thead><tr><th></th><th>路径（前端实际请求 /api/skillopt + 路径）</th><th>用途</th><th>调用时机</th></tr></thead>
+      <thead><tr><th></th><th>路径</th><th>用途</th><th>调用时机</th></tr></thead>
       <tbody>
-        <tr><td><span class="method">GET</span></td><td class="mono">/config/schema</td><td>表单字段元数据 + 默认值（动态渲染表单）</td><td>进入「新建训练」页</td></tr>
-        <tr><td><span class="method">GET</span></td><td class="mono">/models</td><td>已配置模型列表（key 掩码）</td><td>模型配置页 + 模型选择下拉</td></tr>
-        <tr><td><span class="method POST">POST</span></td><td class="mono">/models</td><td>新增/编辑模型（名称/类型/URL/Key）</td><td>模型配置页「保存」</td></tr>
-        <tr><td><span class="method POST">POST</span></td><td class="mono">/models/{id}/test</td><td>连通性测试（返回 ok/latency 或可读错误）</td><td>模型配置页「测试」；保存后自动触发</td></tr>
-        <tr><td><span class="method POST">POST</span></td><td class="mono">/uploads/skill</td><td>上传初始技能 .md → file_id（必填）</td><td>新建训练页技能上传</td></tr>
-        <tr><td><span class="method POST">POST</span></td><td class="mono">/uploads/dataset</td><td>上传数据集（raw 单文件 / split zip）→ file_id + 样本统计（必填）</td><td>新建训练页数据集上传</td></tr>
-        <tr><td><span class="method POST">POST</span></td><td class="mono">/uploads/config</td><td>上传 YAML 覆盖文件（服务端校验字段）</td><td>高级配置上传（可选）</td></tr>
-        <tr><td><span class="method POST">POST</span></td><td class="mono">/train/start</td><td>启动训练（引用模型 id + 上传 file_id；内含连通性预检）</td><td>点「启动训练」</td></tr>
-        <tr><td><span class="method POST">POST</span></td><td class="mono">/train/stop</td><td>停止训练</td><td>点「停止训练」</td></tr>
-        <tr><td><span class="method">GET</span></td><td class="mono">/train/status</td><td>状态/阶段/epoch/step/百分比</td><td>监控页 2s 轮询</td></tr>
-        <tr><td><span class="method">GET</span></td><td class="mono">/train/logs?offset=N</td><td>增量日志</td><td>监控页 2s 轮询（带上次 next_offset）</td></tr>
-        <tr><td><span class="method">GET</span></td><td class="mono">/results</td><td>历史 run 列表</td><td>进入「结果产物」页</td></tr>
-        <tr><td><span class="method">GET</span></td><td class="mono">/results/{run}/best-skill</td><td>best_skill.md 内容/下载</td><td>点「查看 / 下载」</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/api/model/llm_list</td><td><b>nexent 现有接口</b>：租户已配置 LLM 列表（model_id/display_name/connect_status）</td><td>模型选择下拉</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/api/skillopt/config/schema</td><td>表单字段元数据 + 默认值（动态渲染表单）</td><td>进入「新建训练」页</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/api/skillopt/uploads/skill</td><td>上传初始技能 .md → file_id（必填）</td><td>技能上传</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/api/skillopt/uploads/dataset</td><td>上传数据集（raw 单文件 / split zip）→ file_id + 样本统计（必填）</td><td>数据集上传</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/api/skillopt/uploads/config</td><td>上传 YAML 覆盖文件（白名单字段校验）</td><td>高级配置（可选）</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/api/skillopt/train/start</td><td>启动训练（模型传 nexent model_id；含可用性预检）</td><td>点「启动训练」</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/api/skillopt/train/stop</td><td>停止当前租户的训练</td><td>点「停止训练」</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/api/skillopt/train/status</td><td>状态/阶段/epoch/step/百分比</td><td>监控页 2s 轮询</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/api/skillopt/train/logs</td><td>增量日志（job_id + offset）</td><td>监控页 2s 轮询</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/api/skillopt/jobs</td><td>当前租户历史任务列表（分页）</td><td>进入「结果产物」页</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/api/skillopt/jobs/{job_id}/best-skill</td><td>best_skill.md 内容/下载</td><td>点「查看 / 下载」</td></tr>
       </tbody></table>
-      <p class="spec-note" style="margin-top:12px">统一响应 <code>{"code":0,"message":"ok","data":…}</code>；
-        <code>code≠0</code> 时直接 <code>message.error(res.message)</code>。关键错误码：<code>40001</code> 预检/参数失败（message 为可读原因，如缺 endpoint）、
-        <code>40901</code> 已有训练在跑（单任务限制，前端把「启动」按钮置灰并提示）、<code>40401</code> 不存在。</p>
+      <p class="spec-note" style="margin-top:12px"><b>响应与错误约定（nexent 风格）：</b>成功 = HTTP 200 + <code>{"message":"ok","data":…}</code>；
+        错误 = HTTPException，body 为 <code>{"detail":"可读原因"}</code>——前端统一 <code>message.error(err.detail)</code>。
+        关键状态码：<code>400</code> 参数/上传/预检失败；<code>401</code> 未登录；<code>404</code> 不存在（含跨租户访问，不泄露存在性）；<code>409</code> 该租户已有训练在跑（「启动」按钮置灰）。
+        <b>权限：</b>所有 /api/skillopt/* 接口从 JWT 解析租户，任务/上传/产物全部按 tenant_id 隔离；菜单显隐由 role_permission_t 控制。</p>
     </div>
   </section>
 
@@ -459,17 +422,17 @@
       </div>
       <ul>
         <li>监控页挂载时开始轮询 <code>status</code> + <code>logs</code>（各 2s，页面离开时清理定时器）；<code>status.running=false</code> 后再拉一次日志收尾，停止轮询。</li>
-        <li>服务是<b>单任务</b>的：任何页面进入时先查一次 status，若 running 则「启动训练」置灰、监控页直接续上（刷新浏览器不丢——日志用 offset=0 全量拉一次再增量）。</li>
-        <li>「已中断/失败」的任务再次以相同配置启动，训练会从断点自动续训（后端行为，前端无需特殊处理，可在文案上提示）。</li>
+        <li><b>每个租户同时只跑一个训练</b>（409 拦截）：任何页面进入时先查一次 status，若 running 则「启动训练」置灰、监控页直接续上（刷新浏览器不丢——任务记录在 PostgreSQL，日志用 offset=0 全量拉一次再增量）。</li>
+        <li>「已中断/失败」的任务再次以相同配置启动，训练会从断点自动续训（SkillOpt 引擎行为，前端无需特殊处理，可在文案上提示）。</li>
       </ul>
     </div>
   </section>
 
   <section class="doc card"><div class="hd">④ 联调清单（我们俩对接用）</div>
     <div class="bd doc"><ol>
-      <li>后端起服务后给你 Swagger 地址（<code>http://…:8600/docs</code>），本地开发可在 next dev 里把 <code>/api/skillopt</code> 代理到它。</li>
-      <li>用例 A：模型配置页新增模型 → 自动连通性测试 → 出现在「模型选择」下拉；改错 URL 再测 → 失败态与可读错误展示。</li>
-      <li>用例 B：不上传技能/数据直接启动 → 前端必填校验拦截；上传后选一个未连通的模型启动 → 预检 400 报错展示（本原型勾选「模拟预检失败」可预览）。</li>
+      <li>后端起服务后给你 Swagger 地址（<code>http://…:5016/docs</code>），本地开发可在 next dev 里把 <code>/api/skillopt</code> 代理到它。</li>
+      <li>用例 A：在 nexent「模型管理」添加/健康检查一个 LLM → 出现在本页「模型选择」下拉且状态正确（复用现有接口，验证打通）。</li>
+      <li>用例 B：不上传技能/数据直接启动 → 前端必填校验拦截；上传后选一个「不可用」的模型启动 → 预检 400 报错展示（本原型勾选「模拟预检失败」可预览）。</li>
       <li>用例 C：上传技能 .md + 数据集（raw 与 zip 两种各测一次）→ 启动 → 监控页阶段/进度/日志滚动 → 停止 → 状态变「已停止」。</li>
       <li>用例 D：同配置再启动 → 日志出现断点续训标记。</li>
       <li>用例 E：上传含非法字段的 YAML → 400 逐条错误展示；合法 YAML → 启动生效。</li>
@@ -491,41 +454,38 @@
 </dialog>
 
 <script>
-/* ── 接口示例数据（联调以 Swagger 为准） ── */
+/* ── 接口示例数据（nexent 约定：成功 {message,data} + HTTP 状态码；错误走 HTTPException {detail}。
+      所有 /api/skillopt/* 端点均从 Authorization 头解析 (user_id, tenant_id)，任务/上传按租户隔离。
+      联调以 Swagger 为准 ── */
 const API = {
-  "menu":{m:"—",p:"SideNavigation.tsx / ROUTE_CONFIG",d:"这里不是接口：在菜单配置数组中新增一项，并补 zh/en 的 i18n 键。菜单显隐由数据库权限行控制（后端执行 SQL 迁移）。",
-    req:null,resp:`{ path: "/skill-opt", Icon: Wrench,\n  labelKey: "sidebar.skillOpt", order: 65 }`},
-  "form-schema":{m:"GET",p:"/api/skillopt/api/config/schema",d:"表单字段元数据 + 服务端默认值：schema.fields 决定控件类型（int→InputNumber，bool→Switch，enum→Select），values 为默认值。进入新建训练页调用一次。",req:null,
-    resp:`{"code":0,"data":{\n "values":{"train":{"num_epochs":4,"batch_size":40}, …},\n "schema":{"sections":[{"name":"train","label_zh":"训练参数"},…],\n   "fields":[{"section":"train","key":"num_epochs","type":"int",\n     "label_zh":"训练轮数","enum":null,"advanced":false},…]}}}`},
-  "models-list":{m:"GET",p:"/api/skillopt/api/models",d:"已配置模型列表。「模型配置」页表格与「新建训练 → 模型选择」下拉共用此接口；key 只回掩码。",req:null,
-    resp:`{"code":0,"data":{"models":[\n {"id":"m_01","name":"gpt-5.5","type":"azure_openai",\n  "base_url":"https://xx.openai.azure.com/","has_key":true,\n  "last_test":{"ok":true,"at":"2026-07-16T09:30:00Z"}},\n {"id":"m_02","name":"qwen3-72b","type":"openai_compatible",\n  "base_url":"http://vllm:8000/v1","has_key":false,"last_test":null}]}}`},
-  "models-save":{m:"POST",p:"/api/skillopt/api/models",d:"新增/编辑模型（带 id 为编辑）。api_key 只写不读；服务端落盘密钥文件。",
-    req:`{"name":"deepseek-v3","type":"openai_compatible",\n "base_url":"https://api.example.com/v1","api_key":"sk-…"}`,
-    resp:`{"code":0,"data":{"id":"m_03"}}\n重名(HTTP 409) → {"code":40901,"message":"model name already exists"}`},
-  "models-test":{m:"POST",p:"/api/skillopt/api/models/{id}/test",d:"连通性测试：服务端向该模型 URL 发最小探测请求（TCP + 鉴权）。训练启动预检复用同一逻辑。",req:"{}",
-    resp:`成功 → {"code":0,"data":{"ok":true,"latency_ms":230}}\n失败 → {"code":0,"data":{"ok":false,\n  "error":"connection timeout to http://vllm:8000/v1"}}`},
-  "uploads-config":{m:"POST",p:"/api/skillopt/api/uploads/config",d:"上传 YAML 覆盖文件（高级配置）。服务端逐字段校验，非法字段 400 并列出；启动训练时通过 uploads.config_yaml 引用，优先级高于表单值。",
+  "menu":{m:"—",p:"SideNavigation.tsx / ROUTE_CONFIG + role_permission_t",d:"这里不是接口：菜单项由前端同学后续添加；显隐由 nexent 权限表 role_permission_t 控制（本次后端交付含 SQL 迁移，按角色授权 LEFT_NAV_MENU:/skill-opt）。",
+    req:null,resp:`INSERT INTO nexent.role_permission_t\n  (user_role, permission_category, permission_type,\n   permission_subtype, status)\nVALUES ('ADMIN','VISIBILITY','LEFT_NAV_MENU','/skill-opt','ACTIVE');`},
+  "form-schema":{m:"GET",p:"/api/skillopt/config/schema",d:"表单字段元数据 + 服务端默认值：fields 决定控件类型（int→InputNumber，bool→Switch，enum→Select）。进入新建训练页调用一次。",req:null,
+    resp:`200 → {"message":"ok","data":{\n "values":{"train":{"num_epochs":4,"batch_size":40}, …},\n "sections":[{"name":"train","label_zh":"训练参数"},…],\n "fields":[{"section":"train","key":"num_epochs","type":"int",\n   "label_zh":"训练轮数","enum":null,"advanced":false},…]}}`},
+  "models-list":{m:"GET",p:"/api/model/llm_list",d:"nexent 模型管理的现有接口，本功能直接复用（零新增代码）：返回当前租户已配置的全部 LLM。前端用 model_id + display_name + connect_status 渲染下拉；「不可用」的模型可选但启动时会被预检拦截。",req:null,
+    resp:`200 → {"message":"Successfully retrieved model list","data":[\n {"model_id":101,"model_name":"deepseek-ai/deepseek-v3",\n  "display_name":"deepseek-v3","connect_status":"可用",\n  "base_url":"https://api.example.com/v1","max_tokens":8192},\n {"model_id":102,"model_name":"qwen/qwen3-72b",\n  "display_name":"qwen3-72b","connect_status":"不可用", …}]}`},
+  "uploads-skill":{m:"POST",p:"/api/skillopt/uploads/skill",d:"multipart 上传初始技能 .md（必填项）。按租户存入工作区，返回 file_id；启动训练时通过 uploads.skill 引用，服务端据此设 env.skill_init。",
+    req:`multipart/form-data\n  file: my_skill_v1.md (text/markdown, ≤64KB)`,
+    resp:`200 → {"message":"ok","data":{"file_id":"up_9f3a",\n  "name":"my_skill_v1.md","size":2048}}\n400 → {"detail":"only .md files are accepted"}`},
+  "uploads-dataset":{m:"POST",p:"/api/skillopt/uploads/dataset",d:"上传数据集（必填项），type 二选一：raw = 单个 JSON/JSONL（配 split_ratio/split_seed，SkillOpt 引擎确定性自动切分）；split = zip（train/val/test/items.json 三件套，服务端解压校验结构）。返回样本统计供前端确认。",
+    req:`multipart/form-data\n  type: "raw" | "split"\n  file: tasks_all.jsonl 或 tasks_splits.zip`,
+    resp:`raw → {"message":"ok","data":{"file_id":"up_c1d2","items":534}}\nsplit → {"message":"ok","data":{"file_id":"up_c1d2",\n  "counts":{"train":107,"val":53,"test":374}}}\n400 → {"detail":"zip must contain train/val/test/items.json"}`},
+  "uploads-config":{m:"POST",p:"/api/skillopt/uploads/config",d:"上传 YAML 覆盖文件（可选）。服务端逐字段校验（白名单 schema），非法字段 400 并逐条列出；启动训练时通过 uploads.config_yaml 引用，优先级高于表单 overrides。",
     req:`multipart/form-data\n  file: override.yaml`,
-    resp:`{"code":0,"data":{"file_id":"up_77aa","valid_fields":12}}\n非法字段(HTTP 400) → {"code":40001,\n  "message":"unknown field: optimizer.foo; env.exec_timeout must be int"}`},
-  "uploads-skill":{m:"POST",p:"/api/skillopt/api/uploads/skill",d:"multipart 上传 .md 技能种子。服务端存入上传区并返回 file_id；启动训练时通过 uploads.skill 引用，服务端将其落到任务目录并覆盖 env.skill_init。",
-    req:`multipart/form-data\n  file: docvqa_skill_v2.md (text/markdown, ≤64KB)`,
-    resp:`{"code":0,"data":{"file_id":"up_9f3a","name":"docvqa_skill_v2.md","size":2048}}\n格式不对(HTTP 400) → {"code":40001,"message":"only .md files are accepted"}`},
-  "uploads-dataset":{m:"POST",p:"/api/skillopt/api/uploads/dataset",d:"上传数据集，type 二选一：raw = 单个 JSON/JSONL（配 split_ratio/split_seed，引擎自动切分）；split = zip 包（train/val/test/items.json 三件套，服务端解压校验结构）。返回 file_id + 样本统计，供前端展示确认。",
-    req:`multipart/form-data\n  type: "raw" | "split"\n  file: docvqa_all.jsonl 或 docvqa_splits.zip`,
-    resp:`raw → {"code":0,"data":{"file_id":"up_c1d2","items":534}}\nsplit → {"code":0,"data":{"file_id":"up_c1d2",\n  "counts":{"train":107,"val":53,"test":374}}}\n结构不对(HTTP 400) → {"code":40001,"message":"zip must contain train/val/test/items.json"}`},
-  "start":{m:"POST",p:"/api/skillopt/api/train/start",d:"启动训练。skill 与 dataset 的 file_id 必填（服务端据此设 env.skill_init / env.data_path / env.split_dir）；models 引用「模型配置」里的模型 id；config_yaml 可选。服务端先做模型连通性预检，失败返回 400 + 可读原因；已有任务运行返回 40901。",
-    req:`{"models":{"optimizer":"m_01","target":"m_01"},\n "overrides":{"train.num_epochs":4,"optimizer.learning_rate":4,\n   "optimizer.lr_scheduler":"cosine","evaluation.use_gate":true},\n "uploads":{"skill":"up_9f3a",\n   "dataset":{"file_id":"up_c1d2","type":"raw",\n     "split_ratio":"2:1:7","split_seed":42},\n   "config_yaml":"up_77aa"}}`,
-    resp:`成功 → {"code":0,"data":{"started":true}}\n缺必填(HTTP 400) → {"code":40001,"message":"skill upload is required"}\n预检失败(HTTP 400) → {"code":40001,"message":"preflight failed: model qwen3-72b is not reachable (connection timeout)"}\n已在运行(HTTP 409) → {"code":40901,"message":"training already running"}`},
-  "stop":{m:"POST",p:"/api/skillopt/api/train/stop",d:"停止当前训练（服务端 kill 整个训练进程组）。",req:"{}",
-    resp:`{"code":0,"data":{"stopped":true}}`},
-  "status":{m:"GET",p:"/api/skillopt/api/train/status",d:"监控页 2 秒轮询。stage 为六阶段之一；percent = step/total_steps。",req:null,
-    resp:`{"code":0,"data":{"running":true,\n "stage":"Rollout","stage_index":1,\n "epoch":2,"total_epochs":4,\n "step":6,"total_steps":16,"percent":37.5}}`},
-  "logs":{m:"GET",p:"/api/skillopt/api/train/logs?offset=4096",d:"增量日志：带上次返回的 next_offset 轮询；首次 offset=0。content 追加进终端组件。",req:null,
-    resp:`{"code":0,"data":{"content":"[EPOCH 2/4]\\n[STEP 6/16]\\n[1/6 ROLLOUT] …",\n "next_offset":5321,"running":true}}`},
-  "results":{m:"GET",p:"/api/skillopt/api/results",d:"扫描 outputs/ 得到历史 run 列表。",req:null,
-    resp:`{"code":0,"data":{"runs":[{"name":"skillopt_docvqa_gpt5.5_0712-0930",\n "benchmark":"docvqa","best_score":0.8125,"steps":16,"finished":true}]}}`},
-  "best":{m:"GET",p:"/api/skillopt/api/results/{run}/best-skill",d:"best_skill.md 内容；加 ?download=1 走浏览器下载。",req:null,
-    resp:`{"code":0,"data":{"content":"# Document VQA Skill\\n1. Read the question…",\n "updated_at":"2026-07-12T09:58:00Z"}}`},
+    resp:`200 → {"message":"ok","data":{"file_id":"up_77aa","valid_fields":12}}\n400 → {"detail":"unknown field: optimizer.foo; env.exec_timeout must be int"}`},
+  "start":{m:"POST",p:"/api/skillopt/train/start",d:"启动训练。optimizer_model_id / target_model_id 来自 nexent 模型管理（服务端按租户从 model_record_t 解析 base_url/api_key/model_name，映射到 SkillOpt 的 openai_compatible 后端）；skill 与 dataset 的 file_id 必填。预检：模型 connect_status 必须为可用 + 复用 nexent check_model_connectivity 现场探测。",
+    req:`{"name":"我的技能训练-0716",\n "optimizer_model_id":101,"target_model_id":101,\n "overrides":{"train.num_epochs":4,"optimizer.learning_rate":4,\n   "optimizer.lr_scheduler":"cosine","evaluation.use_gate":true},\n "uploads":{"skill":"up_9f3a",\n   "dataset":{"file_id":"up_c1d2","type":"raw",\n     "split_ratio":"2:1:7","split_seed":42},\n   "config_yaml":"up_77aa"}}`,
+    resp:`200 → {"message":"ok","data":{"job_id":"j_20260716_01","status":"running"}}\n400 → {"detail":"skill upload is required"}\n400 → {"detail":"model qwen3-72b is not available (healthcheck failed)"}\n404 → {"detail":"model 102 not found for current tenant"}\n409 → {"detail":"a training job is already running for this tenant"}`},
+  "stop":{m:"POST",p:"/api/skillopt/train/stop",d:"停止当前租户运行中的训练（服务端 kill 整个训练进程组，任务状态置 stopped，产物保留可续训）。",req:"{}",
+    resp:`200 → {"message":"ok","data":{"job_id":"j_20260716_01","status":"stopped"}}\n404 → {"detail":"no running job for current tenant"}`},
+  "status":{m:"GET",p:"/api/skillopt/train/status",d:"当前租户训练状态，监控页 2 秒轮询。stage 为六阶段之一；percent = step/total_steps。任务记录持久化在 nexent PostgreSQL（skillopt_job_t），服务重启不丢。",req:null,
+    resp:`200 → {"message":"ok","data":{"job_id":"j_20260716_01",\n "status":"running","stage":"Rollout","stage_index":1,\n "epoch":2,"total_epochs":4,\n "step":6,"total_steps":16,"percent":37.5}}\n（无任务时 data 为 null）`},
+  "logs":{m:"GET",p:"/api/skillopt/train/logs?job_id=j_…&offset=4096",d:"增量日志：带上次返回的 next_offset 轮询；首次 offset=0。日志文件在 skillopt 服务数据卷内按 job 存储。",req:null,
+    resp:`200 → {"message":"ok","data":{\n "content":"[EPOCH 2/4]\\n[STEP 6/16]\\n[1/6 ROLLOUT] …",\n "next_offset":5321,"status":"running"}}`},
+  "results":{m:"GET",p:"/api/skillopt/jobs",d:"当前租户的历史训练任务列表（分页），来自 skillopt_job_t。",req:null,
+    resp:`200 → {"message":"ok","data":{"total":2,"jobs":[\n {"job_id":"j_20260716_01","name":"我的技能训练-0716",\n  "status":"succeeded","best_score":0.8125,"steps":16,\n  "optimizer_model":"deepseek-v3","created_by":"user-uuid",\n  "created_at":"2026-07-16T09:30:00Z"}]}}`},
+  "best":{m:"GET",p:"/api/skillopt/jobs/{job_id}/best-skill",d:"best_skill.md 内容；加 ?download=1 走浏览器下载。跨租户访问返回 404（按 tenant_id 过滤）。",req:null,
+    resp:`200 → {"message":"ok","data":{"content":"# My Skill\\n1. …",\n "updated_at":"2026-07-16T09:58:00Z"}}\n404 → {"detail":"job not found"}（含跨租户访问）`},
 };
 
 /* ── 标注开关 / 弹层 ── */
@@ -652,34 +612,5 @@ function datasetUploaded(){
   const mode=document.querySelector("#dataSeg button.on").dataset.v;
   return (mode==="raw"?dataUpload:zipUpload).classList.contains("done");
 }
-gotoModels.onclick=e=>{e.preventDefault();go("models")};
 
-/* ── 模型配置页：连通性测试 / 新增模型 ── */
-function bindTest(btn){
-  btn.onclick=()=>{
-    const state=btn.closest("tr").querySelector(".test-state");
-    state.className="pill run test-state";state.textContent="测试中…";
-    btn.disabled=true;
-    setTimeout(()=>{
-      btn.disabled=false;
-      if(btn.dataset.fail==="1"){state.className="pill err test-state";state.textContent="失败：连接超时"}
-      else{state.className="pill ok test-state";state.textContent="连通"}
-    },900);
-  };
-}
-document.querySelectorAll(".test-btn").forEach(bindTest);
-addModelBtn.onclick=()=>{
-  const name=nmName.value.trim(),url=nmUrl.value.trim();
-  if(!name||!url){alert("模型名称与模型 URL 为必填");return}
-  const tr=document.createElement("tr");
-  tr.innerHTML=`<td class="mono">${name}</td><td>${nmType.value}</td>
-    <td class="mono">${url}</td><td class="mono">${nmKey.value?"******":"—"}</td>
-    <td><span class="pill idle test-state">未测试</span></td>
-    <td style="white-space:nowrap"><button class="btn test-btn" data-fail="0">测 试</button></td>`;
-  modelsBody.appendChild(tr);
-  const btn=tr.querySelector(".test-btn");bindTest(btn);btn.click();
-  [optModelSel,tgtModelSel].forEach(sel=>{
-    const o=document.createElement("option");o.textContent=`${name} · ${nmType.value}`;sel.appendChild(o)});
-  nmName.value=nmUrl.value=nmKey.value="";
-};
 </script>
