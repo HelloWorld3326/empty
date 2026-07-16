@@ -1,0 +1,560 @@
+<title>SkillOpt 前端交互说明（nexent 集成）</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#ffffff; --panel-2:#fafbfc; --text:#1f2329; --text-2:#646a73;
+    --line:#e5e6eb; --primary:#1677ff; --primary-weak:#e8f1ff; --ok:#52c41a; --ok-weak:#f0fbe8;
+    --warn:#faad14; --warn-weak:#fff8e6; --err:#ff4d4f; --err-weak:#fff1f0;
+    --spec:#722ed1; --spec-weak:#f4edfd; --term-bg:#16181d; --term-text:#d7dae0;
+    --radius:6px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){:root{
+    --bg:#101114; --panel:#1b1d22; --panel-2:#17181c; --text:#e8eaed; --text-2:#9aa0a6;
+    --line:#31343b; --primary:#3d8bff; --primary-weak:#1a2b47; --ok:#6fcf3f; --ok-weak:#1d2b16;
+    --warn:#f0b93c; --warn-weak:#332a12; --err:#ff6b6d; --err-weak:#3a1c1d;
+    --spec:#b37feb; --spec-weak:#2b2138; --term-bg:#0d0e11; --term-text:#c9ccd3;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#101114; --panel:#1b1d22; --panel-2:#17181c; --text:#e8eaed; --text-2:#9aa0a6;
+    --line:#31343b; --primary:#3d8bff; --primary-weak:#1a2b47; --ok:#6fcf3f; --ok-weak:#1d2b16;
+    --warn:#f0b93c; --warn-weak:#332a12; --err:#ff6b6d; --err-weak:#3a1c1d;
+    --spec:#b37feb; --spec-weak:#2b2138; --term-bg:#0d0e11; --term-text:#c9ccd3;
+  }
+  :root[data-theme="light"]{
+    --bg:#f5f6f8; --panel:#ffffff; --panel-2:#fafbfc; --text:#1f2329; --text-2:#646a73;
+    --line:#e5e6eb; --primary:#1677ff; --primary-weak:#e8f1ff; --ok:#52c41a; --ok-weak:#f0fbe8;
+    --warn:#faad14; --warn-weak:#fff8e6; --err:#ff4d4f; --err-weak:#fff1f0;
+    --spec:#722ed1; --spec-weak:#f4edfd; --term-bg:#16181d; --term-text:#d7dae0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.65 -apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;display:flex;flex-direction:column;gap:28px}
+  h1{font-size:22px;margin:0;text-wrap:balance}
+  h2{font-size:17px;margin:0 0 4px}
+  p{margin:6px 0;max-width:72ch}
+  .muted{color:var(--text-2)}
+  code,.mono{font-family:var(--mono);font-size:12.5px}
+  a{color:var(--primary)}
+
+  /* 规格标注层（紫色 = 给前端的说明，非产品 UI） */
+  .spec-note{border-left:3px solid var(--spec);background:var(--spec-weak);
+    padding:10px 14px;border-radius:0 var(--radius) var(--radius) 0;max-width:none}
+  .api-chip{display:none;align-items:center;gap:4px;background:var(--spec);color:#fff;
+    border:none;border-radius:10px;padding:1px 8px;font-family:var(--mono);font-size:11px;
+    cursor:pointer;vertical-align:middle;margin-left:6px;line-height:1.7;white-space:nowrap}
+  .api-chip:hover{filter:brightness(1.15)}
+  body.notes-on .api-chip{display:inline-flex}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .toggle{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;
+    border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:6px 12px}
+  .toggle input{accent-color:var(--spec)}
+
+  /* ── 应用原型框 ── */
+  .frame{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel);
+    box-shadow:0 1px 4px rgba(20,30,50,.06)}
+  .frame-bar{display:flex;align-items:center;gap:8px;background:var(--panel-2);
+    border-bottom:1px solid var(--line);padding:8px 14px;color:var(--text-2);font-size:12px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--line)}
+  .app{display:flex;min-height:640px}
+  .sider{width:196px;flex:none;border-right:1px solid var(--line);background:var(--panel-2);
+    padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+  .sider .brand{font-weight:700;padding:6px 12px 14px;font-size:15px}
+  .nav-item{padding:8px 12px;border-radius:var(--radius);color:var(--text-2);cursor:default;
+    display:flex;gap:8px;align-items:center}
+  .nav-item.active{background:var(--primary-weak);color:var(--primary);font-weight:600}
+  .nav-item svg{flex:none}
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 16px;background:var(--panel)}
+  .tab{padding:12px 14px;cursor:pointer;color:var(--text-2);border-bottom:2px solid transparent;
+    margin-bottom:-1px;user-select:none}
+  .tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+  .tab:focus-visible,.api-chip:focus-visible,button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  .page{display:none;padding:18px 20px;gap:16px;flex-direction:column}
+  .page.active{display:flex}
+
+  /* antd 风格控件 */
+  .card{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+  .card>.hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .card>.bd{padding:14px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 20px}
+  .field label{display:block;font-size:12.5px;color:var(--text-2);margin-bottom:4px}
+  .field .help{font-size:11.5px;color:var(--text-2);margin-top:3px}
+  input[type=text],input[type=number],input[type=password],select{
+    width:100%;padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius);
+    background:var(--panel);color:var(--text);font:inherit}
+  input:focus,select:focus{border-color:var(--primary);outline:none}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:var(--radius);
+    border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer;font:inherit;
+    white-space:nowrap}
+  .btn:hover{border-color:var(--primary);color:var(--primary)}
+  .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+  .btn.primary:hover{filter:brightness(1.08);color:#fff}
+  .btn.danger{color:var(--err);border-color:var(--err)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+  .switch{position:relative;width:36px;height:20px;flex:none;appearance:none;background:var(--line);
+    border-radius:10px;cursor:pointer;transition:background .15s;border:none}
+  .switch:checked{background:var(--primary)}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+    background:#fff;transition:left .15s}
+  .switch:checked::after{left:18px}
+  .pill{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:1px 10px;font-size:12px}
+  .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .pill.run{background:var(--primary-weak);color:var(--primary)}
+  .pill.ok{background:var(--ok-weak);color:var(--ok)}
+  .pill.err{background:var(--err-weak);color:var(--err)}
+  .pill.stop{background:var(--warn-weak);color:var(--warn)}
+  .pill.idle{background:var(--bg);color:var(--text-2)}
+  .alert{border-radius:var(--radius);padding:9px 12px;font-size:13px;display:none}
+  .alert.show{display:block}
+  .alert.error{background:var(--err-weak);border:1px solid var(--err);color:var(--text)}
+  .alert.success{background:var(--ok-weak);border:1px solid var(--ok);color:var(--text)}
+
+  /* 监控页 */
+  .stages{display:flex;gap:0;align-items:center;flex-wrap:wrap;row-gap:10px}
+  .stage{display:flex;align-items:center;gap:8px}
+  .stage .n{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);color:var(--text-2);
+    display:flex;align-items:center;justify-content:center;font-size:12.5px;flex:none;background:var(--panel)}
+  .stage.doing .n{border-color:var(--primary);background:var(--primary);color:#fff}
+  .stage.done .n{border-color:var(--primary);color:var(--primary)}
+  .stage .t{font-size:12.5px;color:var(--text-2)}
+  .stage.doing .t{color:var(--primary);font-weight:600}
+  .stage .link{width:34px;height:1.5px;background:var(--line);margin:0 8px}
+  .stage.done+.stage .link,.stage.done .link{background:var(--primary)}
+  .bar{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+  .bar>i{display:block;height:100%;width:0;background:var(--primary);border-radius:4px;transition:width .5s}
+  .kv{display:flex;gap:26px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+  .kv b{font-size:18px}
+  .kv span{display:block;font-size:12px;color:var(--text-2)}
+  .term{background:var(--term-bg);color:var(--term-text);border-radius:var(--radius);
+    font-family:var(--mono);font-size:12px;line-height:1.7;padding:12px 14px;height:230px;
+    overflow-y:auto;overflow-x:auto;white-space:pre}
+  .term .lg-stage{color:#6ea8ff}.term .lg-epoch{color:#f2b53c;font-weight:700}
+  .term .lg-step{color:#b78af7;font-weight:700}.term .lg-err{color:#ff7b7d;font-weight:700}
+  .term .lg-ok{color:#7ed957}
+
+  /* 表格 */
+  .tbl-wrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--text-2);font-weight:500;background:var(--panel-2);white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* 折叠 */
+  details.sec{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+  details.sec>summary{cursor:pointer;padding:10px 14px;font-weight:600;list-style:none;
+    display:flex;align-items:center;gap:8px}
+  details.sec>summary::before{content:"▸";color:var(--text-2);transition:transform .15s}
+  details.sec[open]>summary::before{transform:rotate(90deg)}
+  details.sec>.bd{padding:4px 14px 16px}
+
+  /* 弹层 */
+  dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);
+    max-width:600px;width:92%;padding:0}
+  dialog::backdrop{background:rgba(15,18,25,.45)}
+  dialog .hd{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;
+    justify-content:space-between;align-items:center;gap:10px}
+  dialog .hd .m{font-family:var(--mono);font-size:13px;font-weight:700}
+  dialog .bd{padding:14px 16px;display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow:auto}
+  dialog pre{margin:0;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);
+    padding:10px 12px;font-size:12px;overflow-x:auto}
+  .method{display:inline-block;border-radius:4px;padding:0 7px;font-family:var(--mono);font-size:11.5px;
+    font-weight:700;color:#fff;background:var(--ok)}
+  .method.POST{background:var(--warn)}
+  .x{border:none;background:none;color:var(--text-2);font-size:18px;cursor:pointer;line-height:1}
+
+  /* 说明区 */
+  .doc{display:flex;flex-direction:column;gap:10px}
+  .doc ol,.doc ul{margin:4px 0;padding-left:22px}
+  .doc li{margin:5px 0}
+  .file{font-family:var(--mono);font-size:12px;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:4px;padding:0 5px;white-space:nowrap}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px}
+  .flow .st{border:1px solid var(--line);background:var(--panel-2);border-radius:20px;padding:3px 12px}
+  .flow .st.hot{border-color:var(--primary);color:var(--primary)}
+  .flow em{color:var(--text-2);font-style:normal}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+  @media (max-width:760px){.sider{display:none}}
+</style>
+
+<div class="wrap">
+  <header class="doc">
+    <h1>SkillOpt「技能优化」前端交互说明</h1>
+    <p class="muted">给前端同学：下面是一个<b>可点击的交互原型</b>。它模拟了你要在 nexent 里实现的页面（antd 6 风格）。
+      打开右侧「接口标注」后，每个交互元素旁会出现紫色小标签，<b>点击标签</b>可查看该操作要调用的接口和请求/响应示例。
+      原型里的「启动训练」可以真的点 —— 会走一遍完整的状态流转（预检 → 运行 → 日志滚动 → 完成）。</p>
+    <div class="legend">
+      <label class="toggle"><input type="checkbox" id="notesToggle" checked> 接口标注（紫色 = 开发说明，非产品 UI）</label>
+      <label class="toggle"><input type="checkbox" id="failToggle"> 模拟「预检失败」（未配置模型密钥的报错路径）</label>
+    </div>
+  </header>
+
+  <!-- ═══════════ 应用原型 ═══════════ -->
+  <div class="frame">
+    <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span style="margin-left:8px">nexent — /zh/skill-opt（新增页面，经 server.js 网关代理到 SkillOpt 服务）</span></div>
+    <div class="app">
+      <aside class="sider">
+        <div class="brand">nexent</div>
+        <div class="nav-item">◇ 首页</div>
+        <div class="nav-item">◇ 智能体</div>
+        <div class="nav-item">◇ 知识库</div>
+        <div class="nav-item">◇ MCP 空间</div>
+        <div class="nav-item active">◆ 技能优化
+          <span class="api-chip" role="button" tabindex="0" data-api="menu">改动点</span></div>
+        <div class="nav-item">◇ 系统设置</div>
+      </aside>
+      <div class="main">
+        <div class="tabs" role="tablist">
+          <div class="tab active" data-page="new" role="tab" tabindex="0">新建训练</div>
+          <div class="tab" data-page="monitor" role="tab" tabindex="0">训练监控</div>
+          <div class="tab" data-page="results" role="tab" tabindex="0">结果产物</div>
+          <div class="tab" data-page="secrets" role="tab" tabindex="0">密钥设置</div>
+        </div>
+
+        <!-- ── 页 1：新建训练 ── -->
+        <section class="page active" id="page-new">
+          <div class="card">
+            <div class="hd">选择 Benchmark 预设
+              <span class="api-chip" role="button" tabindex="0" data-api="configs-list">GET /configs</span></div>
+            <div class="bd grid2">
+              <div class="field"><label>预设（configs/ 下的 YAML，服务端返回列表）</label>
+                <select id="presetSel">
+                  <option value="docvqa">configs/docvqa/default.yaml — 文档视觉问答</option>
+                  <option value="searchqa">configs/searchqa/default.yaml — 检索问答</option>
+                  <option value="alfworld">configs/alfworld/default.yaml — 具身任务</option>
+                </select>
+                <div class="help">切换预设后重新拉取配置与字段元数据，回填整张表单
+                  <span class="api-chip" role="button" tabindex="0" data-api="configs-detail">GET /configs/{name}</span></div>
+              </div>
+              <div class="field"><label>任务备注（仅前端展示用，可选）</label>
+                <input type="text" placeholder="例如：docvqa 首轮调参"></div>
+            </div>
+          </div>
+
+          <details class="sec" open>
+            <summary>训练参数<span class="muted" style="font-weight:400;font-size:12px">（字段由接口返回的元数据动态渲染：数字→InputNumber，布尔→Switch，枚举→Select）</span></summary>
+            <div class="bd grid2">
+              <div class="field"><label>训练轮数 num_epochs</label><input type="number" value="4" id="fEpochs"></div>
+              <div class="field"><label>批大小 batch_size（每步任务数）</label><input type="number" value="40"></div>
+              <div class="field"><label>学习率 learning_rate（每步最大编辑数）</label><input type="number" value="4"></div>
+              <div class="field"><label>调度器 lr_scheduler</label>
+                <select><option>cosine</option><option>linear</option><option>constant</option><option>autonomous</option></select></div>
+              <div class="field"><label>验证门控 use_gate</label><input type="checkbox" class="switch" checked>
+                <div class="help">仅当编辑严格改进验证分数时才接受</div></div>
+              <div class="field"><label>元技能 use_meta_skill</label><input type="checkbox" class="switch" checked></div>
+            </div>
+          </details>
+
+          <details class="sec">
+            <summary>模型与后端<span class="muted" style="font-weight:400;font-size:12px">（secret 字段渲染为密码框；回显 ****** 表示已配置）</span></summary>
+            <div class="bd grid2">
+              <div class="field"><label>优化器模型</label><input type="text" value="gpt-5.5"></div>
+              <div class="field"><label>目标模型</label><input type="text" value="gpt-5.5"></div>
+              <div class="field"><label>Azure OpenAI Endpoint</label><input type="text" placeholder="https://xx.openai.azure.com/"></div>
+              <div class="field"><label>Azure OpenAI API Key</label><input type="password" value="******"></div>
+            </div>
+          </details>
+
+          <details class="sec">
+            <summary>高级配置（YAML）<span class="muted" style="font-weight:400;font-size:12px">（元数据未覆盖的字段兜底：benchmark 特有键在这里改，Monaco/CodeMirror 均可）</span></summary>
+            <div class="bd"><div class="term" style="height:110px">env:
+  split_mode: split_dir
+  split_dir: data/docvqa/splits
+  max_turns: 1
+  workers: 16</div></div>
+          </details>
+
+          <div class="alert error" id="preflightErr"><b>预检失败：</b>Model backend is not ready —— 缺少 Azure/OpenAI 兼容 endpoint（optimizer, target）。请在「密钥设置」配置 AZURE_OPENAI_ENDPOINT，或改用其它后端。<a href="#" onclick="return false">去密钥设置</a></div>
+
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn primary" id="startBtn">启 动 训 练</button>
+            <span class="api-chip" role="button" tabindex="0" data-api="start">POST /train/start</span>
+            <span class="muted" style="font-size:12.5px">点击后：接口内部先预检（缺密钥/服务不可达返回 400 + 原因，用 message.error 弹出）；成功则自动切到「训练监控」页</span>
+          </div>
+        </section>
+
+        <!-- ── 页 2：训练监控 ── -->
+        <section class="page" id="page-monitor">
+          <div class="card"><div class="hd">
+              <span style="display:flex;align-items:center;gap:10px">当前训练
+                <span class="pill idle" id="statPill">空闲</span>
+                <span class="api-chip" role="button" tabindex="0" data-api="status">GET /train/status ·2s轮询</span></span>
+              <span style="display:flex;align-items:center;gap:4px">
+                <button class="btn danger" id="stopBtn" disabled>停止训练</button>
+                <span class="api-chip" role="button" tabindex="0" data-api="stop">POST /train/stop</span></span>
+            </div>
+            <div class="bd" style="display:flex;flex-direction:column;gap:16px">
+              <div class="stages" id="stages"></div>
+              <div class="bar"><i id="barFill"></i></div>
+              <div class="kv">
+                <div><span>Epoch</span><b id="kvEpoch">–</b></div>
+                <div><span>Step</span><b id="kvStep">–</b></div>
+                <div><span>进度</span><b id="kvPct">0%</b></div>
+                <div><span>当前阶段</span><b id="kvStage">–</b></div>
+              </div>
+            </div>
+          </div>
+          <div class="card"><div class="hd">训练日志
+              <span class="api-chip" role="button" tabindex="0" data-api="logs">GET /train/logs?offset=N ·2s轮询增量</span></div>
+            <div class="bd"><div class="term" id="term">（暂无日志 —— 在「新建训练」页启动一个任务）</div>
+              <p class="muted" style="font-size:12px;margin:8px 0 0">渲染要求：等宽字体；按行着色 —— <code>[EPOCH]</code> 琥珀、<code>[STEP]</code> 紫、<code>[N/6 …]</code> 蓝、含 ERROR/fail 红；自动滚到底部（用户上翻时暂停跟随）。</p></div>
+          </div>
+          <div class="alert success" id="doneAlert">✓ 训练完成，best_skill.md 已生成。<a href="#" id="gotoResults">查看结果产物 →</a></div>
+        </section>
+
+        <!-- ── 页 3：结果产物 ── -->
+        <section class="page" id="page-results">
+          <div class="card"><div class="hd">历史训练
+              <span class="api-chip" role="button" tabindex="0" data-api="results">GET /results</span></div>
+            <div class="bd tbl-wrap"><table>
+              <thead><tr><th>Run</th><th>Benchmark</th><th class="num">最佳分数</th><th class="num">步数</th><th>状态</th><th>操作</th></tr></thead>
+              <tbody id="runsBody">
+                <tr><td class="mono">skillopt_docvqa_gpt5.5_0712-0930</td><td>docvqa</td>
+                  <td class="num">0.8125</td><td class="num">16</td><td><span class="pill ok">已完成</span></td>
+                  <td><button class="btn" data-view="1">查看</button></td></tr>
+                <tr><td class="mono">skillopt_searchqa_gpt5.5_0708-1412</td><td>searchqa</td>
+                  <td class="num">0.6710</td><td class="num">16</td><td><span class="pill stop">已中断</span></td>
+                  <td><button class="btn" data-view="1">查看</button></td></tr>
+              </tbody></table></div>
+          </div>
+          <div class="card"><div class="hd">best_skill.md 预览
+              <span><span class="api-chip" role="button" tabindex="0" data-api="best">GET /results/{run}/best-skill</span>
+              <button class="btn">下载 .md</button></span></div>
+            <div class="bd" id="skillPreview">
+              <h2 style="margin-top:0">Document VQA Skill</h2>
+              <p class="muted">1. Read the question before scanning the document; identify the answer type (date / amount / name).</p>
+              <p class="muted">2. For tables, locate the row by the leftmost header cell, then move horizontally…</p>
+              <p class="muted" style="font-size:12px">（markdown 渲染即可，产物通常 300–2000 tokens）</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── 页 4：密钥设置 ── -->
+        <section class="page" id="page-secrets">
+          <div class="card"><div class="hd">模型服务密钥
+              <span style="display:flex;align-items:center;gap:4px">
+                <span class="api-chip" role="button" tabindex="0" data-api="secrets-get">GET /settings/secrets</span>
+                <button class="btn primary">保 存</button>
+                <span class="api-chip" role="button" tabindex="0" data-api="secrets-put">PUT /settings/secrets</span></span></div>
+            <div class="bd grid2">
+              <div class="field"><label>AZURE_OPENAI_ENDPOINT</label><input type="text" placeholder="https://xx.openai.azure.com/"></div>
+              <div class="field"><label>AZURE_OPENAI_API_KEY</label><input type="password" value="******">
+                <div class="help">回显 ****** = 已配置；不修改就原样提交，服务端会跳过</div></div>
+              <div class="field"><label>QWEN_CHAT_BASE_URL</label><input type="text" placeholder="http://vllm:8000/v1"></div>
+              <div class="field"><label>MINIMAX_API_KEY</label><input type="password" placeholder="未配置"></div>
+            </div>
+          </div>
+          <p class="spec-note" style="font-size:13px">密钥永不回传明文：GET 只返回 key 名 + 掩码。表单结构由接口的
+            <code>well_known</code> 列表驱动（key、中文说明、是否 secret），允许「新增自定义键」。</p>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 开发说明 ═══════════ -->
+  <section class="doc card"><div class="hd">① 你要改哪些文件（nexent 侧，共 5 处前端改动）</div>
+    <div class="bd doc">
+      <ol>
+        <li><b>新页面</b>：<span class="file">frontend/app/[locale]/skill-opt/page.tsx</span> —— 即上方原型的四个 Tab。参照仓库里 dify/datamate 外部服务集成页的写法（antd 6 + Tailwind，共用主题与布局）。</li>
+        <li><b>侧边栏菜单</b>：<span class="file">frontend/components/navigation/SideNavigation.tsx</span> 的 <code>ROUTE_CONFIG</code> 数组加一项 <code>{ path:"/skill-opt", Icon: Wrench, labelKey:"sidebar.skillOpt", order:… }</code>。注意菜单会按数据库权限过滤 —— 权限 SQL 由后端（我）执行，你本地联调时可先用管理员角色。</li>
+        <li><b>i18n</b>：<span class="file">frontend/public/locales/zh/common.json</span> 与 <span class="file">…/en/common.json</span> 加 <code>"sidebar.skillOpt": "技能优化" / "Skill Optimizer"</code> 及页面内文案键。</li>
+        <li><b>服务层</b>：新建 <span class="file">frontend/services/skillOptService.ts</span>，端点注册进 <span class="file">frontend/services/api.ts</span>。全部走 <code>/api/skillopt/*</code>，<b>不需要处理鉴权头</b>（server.js 网关自动注入 JWT）。</li>
+        <li><b>网关代理</b>：<span class="file">frontend/server.js</span> 加一条前缀规则：<code>/api/skillopt/*</code> → 环境变量 <code>SKILLOPT_BACKEND</code>（默认 <code>http://nexent-skillopt:8600</code>），转发时去掉 <code>/skillopt</code> 前缀。（两行级别，谁顺手谁做）</li>
+      </ol>
+      <p class="muted">SkillOpt 服务本身、SQL 迁移、docker-compose 由后端负责，你不用管。</p>
+    </div>
+  </section>
+
+  <section class="doc card"><div class="hd">② 接口一览（点上方紫色标签看示例；联调时以 Swagger <code>/docs</code> 为准）</div>
+    <div class="bd tbl-wrap"><table>
+      <thead><tr><th></th><th>路径（前端实际请求 /api/skillopt + 路径）</th><th>用途</th><th>调用时机</th></tr></thead>
+      <tbody>
+        <tr><td><span class="method">GET</span></td><td class="mono">/api/configs</td><td>benchmark 预设列表</td><td>进入「新建训练」页</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/api/configs/{name}</td><td>解析后的配置 + 字段元数据（渲染表单）</td><td>切换预设</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/train/start</td><td>启动训练（内含预检）</td><td>点「启动训练」</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="mono">/train/stop</td><td>停止训练</td><td>点「停止训练」</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/train/status</td><td>状态/阶段/epoch/step/百分比</td><td>监控页 2s 轮询</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/train/logs?offset=N</td><td>增量日志</td><td>监控页 2s 轮询（带上次 next_offset）</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/results</td><td>历史 run 列表</td><td>进入「结果产物」页</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/results/{run}/best-skill</td><td>best_skill.md 内容/下载</td><td>点「查看 / 下载」</td></tr>
+        <tr><td><span class="method">GET</span></td><td class="mono">/settings/secrets · PUT 同路径</td><td>密钥读（掩码）/写</td><td>「密钥设置」页</td></tr>
+      </tbody></table>
+      <p class="spec-note" style="margin-top:12px">统一响应 <code>{"code":0,"message":"ok","data":…}</code>；
+        <code>code≠0</code> 时直接 <code>message.error(res.message)</code>。关键错误码：<code>40001</code> 预检/参数失败（message 为可读原因，如缺 endpoint）、
+        <code>40901</code> 已有训练在跑（单任务限制，前端把「启动」按钮置灰并提示）、<code>40401</code> 不存在。</p>
+    </div>
+  </section>
+
+  <section class="doc card"><div class="hd">③ 状态机与轮询规则（前端唯一需要维护的状态）</div>
+    <div class="bd doc">
+      <div class="flow">
+        <span class="st">idle 空闲</span><em>→ 点启动（预检失败则留在表单页报错）→</em>
+        <span class="st hot">running 运行中</span><em>→ 自然结束 →</em>
+        <span class="st">finished 完成</span><em>／点停止 →</em>
+        <span class="st">stopped 已停止</span><em>／异常退出 →</em>
+        <span class="st">failed 失败</span>
+      </div>
+      <ul>
+        <li>监控页挂载时开始轮询 <code>status</code> + <code>logs</code>（各 2s，页面离开时清理定时器）；<code>status.running=false</code> 后再拉一次日志收尾，停止轮询。</li>
+        <li>服务是<b>单任务</b>的：任何页面进入时先查一次 status，若 running 则「启动训练」置灰、监控页直接续上（刷新浏览器不丢——日志用 offset=0 全量拉一次再增量）。</li>
+        <li>「已中断/失败」的任务再次以相同配置启动，训练会从断点自动续训（后端行为，前端无需特殊处理，可在文案上提示）。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="doc card"><div class="hd">④ 联调清单（我们俩对接用）</div>
+    <div class="bd doc"><ol>
+      <li>后端起服务后给你 Swagger 地址（<code>http://…:8600/docs</code>），本地开发可在 next dev 里把 <code>/api/skillopt</code> 代理到它。</li>
+      <li>用例 A：列预设 → 切换预设表单回填。</li>
+      <li>用例 B：不配密钥直接启动 → 预检 400，确认报错文案展示（本原型勾选「模拟预检失败」可预览）。</li>
+      <li>用例 C：启动 → 监控页阶段/进度/日志滚动 → 停止 → 状态变「已停止」。</li>
+      <li>用例 D：同配置再启动 → 日志出现断点续训标记。</li>
+      <li>用例 E：完成后结果页出现新 run，best_skill.md 可预览、可下载。</li>
+      <li>用例 F：运行中再点启动 → 40901 提示；刷新浏览器 → 监控页状态恢复。</li>
+    </ol></div>
+  </section>
+</div>
+
+<!-- 接口详情弹层 -->
+<dialog id="apiDlg">
+  <div class="hd"><span><span class="method" id="dlgMethod">GET</span> <span class="m" id="dlgPath"></span></span>
+    <button class="x" id="dlgClose" aria-label="关闭">×</button></div>
+  <div class="bd">
+    <p class="muted" id="dlgDesc" style="margin:0"></p>
+    <div id="dlgReqWrap"><b style="font-size:12.5px">请求</b><pre id="dlgReq"></pre></div>
+    <div><b style="font-size:12.5px">响应示例</b><pre id="dlgResp"></pre></div>
+  </div>
+</dialog>
+
+<script>
+/* ── 接口示例数据（联调以 Swagger 为准） ── */
+const API = {
+  "menu":{m:"—",p:"SideNavigation.tsx / ROUTE_CONFIG",d:"这里不是接口：在菜单配置数组中新增一项，并补 zh/en 的 i18n 键。菜单显隐由数据库权限行控制（后端执行 SQL 迁移）。",
+    req:null,resp:`{ path: "/skill-opt", Icon: Wrench,\n  labelKey: "sidebar.skillOpt", order: 65 }`},
+  "configs-list":{m:"GET",p:"/api/skillopt/api/configs",d:"benchmark 预设列表。进入新建训练页时调用一次。",req:null,
+    resp:`{"code":0,"message":"ok","data":{"configs":[\n  "configs/docvqa/default.yaml",\n  "configs/searchqa/default.yaml",\n  "configs/alfworld/default.yaml"]}}`},
+  "configs-detail":{m:"GET",p:"/api/skillopt/api/configs/configs%2Fdocvqa%2Fdefault.yaml",d:"解析 _base_ 继承后的完整配置 + 字段元数据。values 渲染表单，extra 进高级 YAML，schema.fields 决定控件类型。",req:null,
+    resp:`{"code":0,"data":{\n "values":{"train":{"num_epochs":4,"batch_size":40}, …},\n "extra":{"env":{"max_turns":1,"workers":16}},\n "schema":{"sections":[{"name":"train","label_zh":"训练参数"},…],\n   "fields":[{"section":"train","key":"num_epochs","type":"int",\n     "label_zh":"训练轮数","enum":null,"secret":false,"advanced":false},…]}}}`},
+  "start":{m:"POST",p:"/api/skillopt/api/train/start",d:"启动训练。服务端先预检（密钥/端点连通性），失败返回 400 + 可读原因；已有任务运行返回 40901。",
+    req:`{"config":"configs/docvqa/default.yaml",\n "overrides":{"train.num_epochs":4,"optimizer.learning_rate":4,\n   "optimizer.lr_scheduler":"cosine","evaluation.use_gate":true}}`,
+    resp:`成功 → {"code":0,"data":{"started":true}}\n预检失败(HTTP 400) → {"code":40001,"message":"preflight failed: Model backend is not ready: missing Azure/OpenAI-compatible endpoint for optimizer, target. …"}\n已在运行(HTTP 409) → {"code":40901,"message":"training already running"}`},
+  "stop":{m:"POST",p:"/api/skillopt/api/train/stop",d:"停止当前训练（服务端 kill 整个训练进程组）。",req:"{}",
+    resp:`{"code":0,"data":{"stopped":true}}`},
+  "status":{m:"GET",p:"/api/skillopt/api/train/status",d:"监控页 2 秒轮询。stage 为六阶段之一；percent = step/total_steps。",req:null,
+    resp:`{"code":0,"data":{"running":true,\n "stage":"Rollout","stage_index":1,\n "epoch":2,"total_epochs":4,\n "step":6,"total_steps":16,"percent":37.5}}`},
+  "logs":{m:"GET",p:"/api/skillopt/api/train/logs?offset=4096",d:"增量日志：带上次返回的 next_offset 轮询；首次 offset=0。content 追加进终端组件。",req:null,
+    resp:`{"code":0,"data":{"content":"[EPOCH 2/4]\\n[STEP 6/16]\\n[1/6 ROLLOUT] …",\n "next_offset":5321,"running":true}}`},
+  "results":{m:"GET",p:"/api/skillopt/api/results",d:"扫描 outputs/ 得到历史 run 列表。",req:null,
+    resp:`{"code":0,"data":{"runs":[{"name":"skillopt_docvqa_gpt5.5_0712-0930",\n "benchmark":"docvqa","best_score":0.8125,"steps":16,"finished":true}]}}`},
+  "best":{m:"GET",p:"/api/skillopt/api/results/{run}/best-skill",d:"best_skill.md 内容；加 ?download=1 走浏览器下载。",req:null,
+    resp:`{"code":0,"data":{"content":"# Document VQA Skill\\n1. Read the question…",\n "updated_at":"2026-07-12T09:58:00Z"}}`},
+  "secrets-get":{m:"GET",p:"/api/skillopt/api/settings/secrets",d:"密钥读取：只回 key 名 + 掩码，永不回明文。well_known 驱动表单结构。",req:null,
+    resp:`{"code":0,"data":{\n "entries":[{"key":"AZURE_OPENAI_API_KEY","value":"******"},\n            {"key":"AZURE_OPENAI_ENDPOINT","value":"https://xx.openai.azure.com/"}],\n "well_known":[{"key":"AZURE_OPENAI_ENDPOINT","label_zh":"Azure OpenAI Endpoint","secret":false},…]}}`},
+  "secrets-put":{m:"PUT",p:"/api/skillopt/api/settings/secrets",d:"密钥写入：value 传 ****** 表示未修改（服务端跳过）；传 null 删除该键。",
+    req:`{"entries":{"AZURE_OPENAI_API_KEY":"sk-…",\n "AZURE_OPENAI_ENDPOINT":"https://xx.openai.azure.com/",\n "MINIMAX_API_KEY":null}}`,
+    resp:`{"code":0,"data":{"count":2}}`},
+};
+
+/* ── 标注开关 / 弹层 ── */
+const body=document.body;
+body.classList.add("notes-on");
+notesToggle.onchange=()=>body.classList.toggle("notes-on",notesToggle.checked);
+const dlg=document.getElementById("apiDlg");
+document.addEventListener("click",e=>{
+  const chip=e.target.closest(".api-chip");
+  if(!chip)return;
+  e.preventDefault();e.stopPropagation();
+  const a=API[chip.dataset.api];if(!a)return;
+  dlgMethod.textContent=a.m;dlgMethod.className="method "+(a.m==="POST"||a.m==="PUT"?"POST":"");
+  dlgPath.textContent=a.p;dlgDesc.textContent=a.d;
+  dlgReqWrap.style.display=a.req?"":"none";dlgReq.textContent=a.req||"";
+  dlgResp.textContent=a.resp;dlg.showModal();
+},true);
+dlgClose.onclick=()=>dlg.close();
+dlg.onclick=e=>{if(e.target===dlg)dlg.close()};
+document.addEventListener("keydown",e=>{
+  if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("api-chip")){
+    e.preventDefault();e.target.click();
+  }
+});
+
+/* ── Tab 切换 ── */
+const tabs=[...document.querySelectorAll(".tab")];
+function go(page){
+  tabs.forEach(t=>t.classList.toggle("active",t.dataset.page===page));
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
+}
+tabs.forEach(t=>{t.onclick=()=>go(t.dataset.page);
+  t.onkeydown=e=>{if(e.key==="Enter"||e.key===" ")go(t.dataset.page)}});
+
+/* ── 六阶段 ── */
+const STAGE_NAMES=["Rollout","Reflect","Aggregate","Select","Update","Gate"];
+const stagesEl=document.getElementById("stages");
+STAGE_NAMES.forEach((n,i)=>{
+  const s=document.createElement("div");s.className="stage";
+  s.innerHTML=`<span class="n">${i+1}</span><span class="t">${n}</span>`+(i<5?`<span class="link"></span>`:"");
+  stagesEl.appendChild(s);
+});
+const stageEls=[...stagesEl.children];
+
+/* ── 训练模拟 ── */
+let timer=null,step=0;const TOTAL=8,EPOCHS=2;
+const term=document.getElementById("term"),pill=document.getElementById("statPill");
+function setPill(cls,txt){pill.className="pill "+cls;pill.textContent=txt}
+function log(html){
+  if(term.dataset.clean!=="1"){term.textContent="";term.dataset.clean="1"}
+  term.insertAdjacentHTML("beforeend",html+"\n");term.scrollTop=term.scrollHeight;
+}
+function setStage(idx){ /* idx: 1-6, 0=none */
+  stageEls.forEach((el,i)=>{el.classList.toggle("done",i<idx-1);el.classList.toggle("doing",i===idx-1)});
+  kvStage.textContent=idx?STAGE_NAMES[idx-1]:"–";
+}
+document.getElementById("startBtn").onclick=()=>{
+  preflightErr.classList.remove("show");
+  if(failToggle.checked){preflightErr.classList.add("show");return}
+  if(timer)return;
+  go("monitor");doneAlert.classList.remove("show");
+  term.dataset.clean="0";term.textContent="";step=0;
+  setPill("run","运行中");stopBtn.disabled=false;
+  log(`$ python scripts/train.py --config configs/docvqa/default.yaml --cfg-options train.num_epochs=${EPOCHS} …`);
+  let sub=0;
+  timer=setInterval(()=>{
+    if(sub===0){
+      step++;
+      const ep=Math.ceil(step/(TOTAL/EPOCHS));
+      log(`<span class="lg-epoch">[EPOCH ${ep}/${EPOCHS}]</span>`);
+      log(`<span class="lg-step">[STEP ${step}/${TOTAL}]</span>`);
+      kvEpoch.textContent=ep+" / "+EPOCHS;kvStep.textContent=step+" / "+TOTAL;
+    }
+    sub++;
+    log(`<span class="lg-stage">[${sub}/6 ${STAGE_NAMES[sub-1].toUpperCase()}]</span> batch ok (hard=${(Math.random()>.4)?1:0})`);
+    setStage(sub);
+    kvPct.textContent=Math.round(((step-1)+sub/6)/TOTAL*100)+"%";
+    barFill.style.width=kvPct.textContent;
+    if(sub===6){
+      sub=0;
+      if(step>=TOTAL){
+        clearInterval(timer);timer=null;
+        log(`<span class="lg-ok">[DONE] best_skill.md saved · best_score=0.8125</span>`);
+        setPill("ok","已完成");stopBtn.disabled=true;setStage(0);
+        stageEls.forEach(el=>el.classList.add("done"));
+        kvPct.textContent="100%";barFill.style.width="100%";
+        doneAlert.classList.add("show");
+        const tr=document.createElement("tr");
+        tr.innerHTML=`<td class="mono">skillopt_docvqa_gpt5.5_demo</td><td>docvqa</td>
+          <td class="num">0.8125</td><td class="num">${TOTAL}</td>
+          <td><span class="pill ok">已完成</span></td><td><button class="btn">查看</button></td>`;
+        runsBody.prepend(tr);
+      }
+    }
+  },450);
+};
+stopBtn.onclick=()=>{
+  if(!timer)return;clearInterval(timer);timer=null;
+  log(`<span class="lg-err">[SIGTERM] training stopped by user</span>`);
+  setPill("stop","已停止");stopBtn.disabled=true;setStage(0);
+};
+gotoResults.onclick=e=>{e.preventDefault();go("results")};
+</script>
