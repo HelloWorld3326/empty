@@ -368,6 +368,19 @@ select.mini{max-width:200px}
 .slog .row .ts{font-family:var(--mono); font-size:11px; color:var(--muted); flex:none}
 
 /* JSON 抽屉 ------------------------------------------------------ */
+/* 页面可能被嵌在沙箱 iframe 里，那里原生 confirm/alert 会被直接忽略 —— 一律自己实现 */
+.toast{
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:40;
+  max-width:min(520px, calc(100vw - 32px));
+  background:var(--panel); color:var(--text); font-size:13px; line-height:1.5;
+  border:1px solid var(--line); border-left:3px solid var(--bad);
+  border-radius:var(--r); padding:10px 16px; box-shadow:0 8px 28px rgba(0,0,0,.16);
+}
+.ghost.danger.armed{
+  border-color:var(--bad); color:var(--bad);
+  background:color-mix(in srgb, var(--bad) 10%, transparent);
+}
+
 .drawer{
   position:fixed; inset:0; z-index:20; background:color-mix(in srgb, var(--bg) 78%, transparent);
   display:grid; place-items:center; padding:24px;
@@ -458,6 +471,17 @@ const defaultFor = p => {
   if (p.type === "enum") return (p.options && p.options[0]) || "";
   return "";
 };
+/* 沙箱 iframe 里 alert()/confirm() 会被浏览器静默忽略，所以提示和确认都自己来 */
+let toastTimer = null;
+function notify(msg, tone){
+  let el = document.getElementById("toast");
+  if (!el){ el = document.createElement("div"); el.id = "toast"; el.className = "toast"; document.body.appendChild(el); }
+  el.style.borderLeftColor = `var(--${tone || "bad"})`;
+  el.textContent = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { const t = document.getElementById("toast"); if (t) t.remove(); }, 3600);
+}
+
 const nowStamp = () => new Date().toISOString().slice(0,16).replace("T"," ");
 const todayPlus = d => new Date(Date.now() + (d||0)*864e5).toISOString().slice(0,10);
 
@@ -652,6 +676,7 @@ let highlight = null;
 let activeAction = null;
 let formState = {};
 let drawerOpen = false;
+let armedDelete = null;                  // 两步删除确认：{kind, id}
 
 /* --- 查询工具 --------------------------------------------------- */
 const OT = id => schema.objectTypes.find(t => t.id === id);
@@ -1922,6 +1947,13 @@ function usageOf(kind, id){
   return {};
 }
 
+/** 两步删除：第一下把按钮变成确认态，第二下才真删 */
+function dangerBtn(kind, id, what){
+  const armed = armedDelete && armedDelete.kind === kind && armedDelete.id === id;
+  return `<button class="ghost danger${armed ? " armed" : ""}" data-del-type="${esc(kind)}" data-id="${esc(id)}">${
+    armed ? `⚠ 再点一次，确认删除 ${esc(id)}` : `删除${what} ${esc(id)}`}</button>`;
+}
+
 function renderModelRight(){
   const right = document.getElementById("col-right");
   const head = `<div class="pane-head"><span class="eyebrow">变更影响 / Impact</span></div>`;
@@ -1950,7 +1982,7 @@ function renderModelRight(){
         <div class="impact-sec"><span class="eyebrow">危险操作</span>
           ${(u.objects || u.links.length || u.actions.length)
             ? `<p class="warn">删除会连带移除 ${u.objects} 个实例、${u.linkRows} 条链接、${u.links.length} 个链接类型和 ${u.actions.length} 个操作类型。</p>` : ""}
-          <button class="ghost danger" data-del-type="ot" data-id="${esc(t.id)}">删除对象类型 ${esc(t.id)}</button>
+          ${dangerBtn("ot", t.id, "对象类型")}
         </div>
       </div>`;
     }
@@ -1971,7 +2003,7 @@ function renderModelRight(){
         <div class="impact-sec"><span class="eyebrow">危险操作</span>
           ${u.linkRows || u.actions.length
             ? `<p class="warn">删除会移除 ${u.linkRows} 条实际链接，并清掉 ${u.actions.length} 个操作里引用它的规则与编辑。</p>` : ""}
-          <button class="ghost danger" data-del-type="lt" data-id="${esc(l.id)}">删除链接类型 ${esc(l.id)}</button>
+          ${dangerBtn("lt", l.id, "链接类型")}
         </div>
       </div>`;
     }
@@ -1991,7 +2023,7 @@ function renderModelRight(){
           <button class="add" data-try="${esc(a.id)}">去运行这个操作 →</button>
         </div>
         <div class="impact-sec"><span class="eyebrow">危险操作</span>
-          <button class="ghost danger" data-del-type="at" data-id="${esc(a.id)}">删除操作类型 ${esc(a.id)}</button>
+          ${dangerBtn("at", a.id, "操作类型")}
         </div>
       </div>`;
     }
@@ -2029,7 +2061,7 @@ function renameObjectType(oldId, raw){
   const t = OT(oldId); if (!t) return false;
   const newId = sanitizeId(raw);
   if (!newId || newId === oldId) return false;
-  if (OT(newId)){ alert(`已经有一个叫 ${newId} 的对象类型了。`); return false; }
+  if (OT(newId)){ notify(`已经有一个叫 ${newId} 的对象类型了，换个名字。`); return false; }
 
   let refs = 0;
   t.id = newId;
@@ -2074,7 +2106,7 @@ function renameLinkType(oldId, raw){
   const l = LTof(oldId); if (!l) return false;
   const newId = sanitizeId(raw);
   if (!newId || newId === oldId) return false;
-  if (LTof(newId)){ alert(`已经有一个叫 ${newId} 的链接类型了。`); return false; }
+  if (LTof(newId)){ notify(`已经有一个叫 ${newId} 的链接类型了，换个名字。`); return false; }
 
   let refs = 0;
   l.id = newId;
@@ -2098,7 +2130,7 @@ function renameActionType(oldId, raw){
   const a = ATof(oldId); if (!a) return false;
   const newId = sanitizeId(raw);
   if (!newId || newId === oldId) return false;
-  if (ATof(newId)){ alert(`已经有一个叫 ${newId} 的操作类型了。`); return false; }
+  if (ATof(newId)){ notify(`已经有一个叫 ${newId} 的操作类型了，换个名字。`); return false; }
   a.id = newId;
   if (activeAction === oldId) activeAction = newId;
   if (editing && editing.kind === "at" && editing.id === oldId) editing.id = newId;
@@ -2117,7 +2149,7 @@ function newObjectType(){
   openEditor("ot", id);
 }
 function newLinkType(){
-  if (schema.objectTypes.length < 1) return alert("先建至少一个对象类型。");
+  if (schema.objectTypes.length < 1) return notify("先建至少一个对象类型 —— 链接总得有两端。");
   const id = uniqueId("newLink", schema.linkTypes.map(l => l.id));
   const a = schema.objectTypes[0].id;
   const b = (schema.objectTypes[1] || schema.objectTypes[0]).id;
@@ -2407,8 +2439,8 @@ function applySpec(){
   const ta = document.getElementById("spec-text");
   let parsed;
   try { parsed = JSON.parse(ta.value); }
-  catch (e){ alert("JSON 解析失败：" + e.message); return; }
-  if (!parsed.schema || !parsed.schema.objectTypes){ alert("缺少 schema.objectTypes。"); return; }
+  catch (e){ notify("JSON 解析失败：" + e.message); return; }
+  if (!parsed.schema || !parsed.schema.objectTypes){ notify("这份 JSON 里缺少 schema.objectTypes。"); return; }
   schema = parsed.schema;
   world = parsed.world || {objects:{}, links:[]};
   logEntries = []; editCount = 0;
@@ -2453,6 +2485,8 @@ function setMode(m){
 document.addEventListener("click", ev => {
   const t = ev.target;
   const hit = s => t.closest(s);
+  // 点了别处就撤下"上膛"的删除按钮
+  if (armedDelete && !hit("[data-del-type]")){ armedDelete = null; if (mode === "model") renderModelRight(); }
 
   if (hit("#drawer-close")) return closeDrawer();
   if (hit("#spec-apply"))   return applySpec();
@@ -2487,7 +2521,12 @@ document.addEventListener("click", ev => {
   const dt = hit("[data-del-type]");
   if (dt){
     const id = dt.dataset.id, kind = dt.dataset.delType;
-    if (!confirm(`确定删除 ${id}？这会连同相关的实例数据一起移除。`)) return;
+    if (!(armedDelete && armedDelete.kind === kind && armedDelete.id === id)){
+      armedDelete = {kind, id};        // 第一次点击只是上膛，按钮会变成"再点一次确认"
+      renderModelRight();
+      return;
+    }
+    armedDelete = null;
     return kind === "ot" ? delObjectType(id) : kind === "lt" ? delLinkType(id) : delActionType(id);
   }
   const sc = hit("[data-scaffold]");
