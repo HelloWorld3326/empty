@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ontology Lab · 真库版</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='2' width='12' height='12' rx='2' fill='none' stroke='%233C74B8' stroke-width='2'/></svg>">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<div class="app">
+  <header class="masthead">
+    <div class="brand"><h1>Ontology Lab</h1></div>
+    <div class="modes">
+      <button class="mode" data-mode="model"><b>01</b>本体建模</button>
+      <button class="mode" data-mode="operate"><b>02</b>实例运行</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="who">
+      <select id="actor" title="切换用户 —— 不同角色能跑的操作不一样"></select>
+      <span class="role" id="role"></span>
+    </div>
+    <div class="tools">
+      <button class="ghost" id="relayout">重排图谱</button>
+      <button class="ghost" id="refresh">重新载入</button>
+    </div>
+  </header>
+
+  <div class="concepts" id="concepts"></div>
+
+  <main class="console">
+    <div class="col" id="col-left"></div>
+    <div class="col" id="col-mid">
+      <div class="graph-wrap">
+        <canvas id="graph"></canvas>
+        <div class="graph-tip" id="graph-tip"></div>
+        <div class="graph-legend" id="legend"></div>
+      </div>
+      <div id="mid-body"></div>
+    </div>
+    <div class="col" id="col-right"></div>
+  </main>
+</div>
+
+<details class="sqlbar" id="sqlbar">
+  <summary>SQL 追踪 · 上一次请求<span class="n" id="sql-count">0</span></summary>
+  <div class="body" id="sql-body"></div>
+</details>
+
+<script src="./app.js"></script>
+</body>
+</html>

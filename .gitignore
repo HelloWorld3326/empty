@@ -1,0 +1,11 @@
+# 运行时生成的数据库
+fullstack/db/ontology.db
+fullstack/db/ontology.db-wal
+fullstack/db/ontology.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
