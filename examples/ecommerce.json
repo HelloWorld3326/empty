@@ -1,0 +1,262 @@
+{
+  "schema": {
+    "objectTypes": [
+      {
+        "id": "Buyer", "cn": "买家", "idPrefix": "B", "seq": 3, "color": 0, "titleProp": "name",
+        "props": [
+          {"id": "name",  "cn": "姓名", "type": "string"},
+          {"id": "phone", "cn": "手机", "type": "string"},
+          {"id": "level", "cn": "会员等级", "type": "enum", "options": ["普通", "银卡", "金卡"]},
+          {"id": "city",  "cn": "城市", "type": "string"}
+        ]
+      },
+      {
+        "id": "Product", "cn": "商品", "idPrefix": "P", "seq": 4, "color": 2, "titleProp": "name",
+        "props": [
+          {"id": "name",  "cn": "商品名", "type": "string"},
+          {"id": "sku",   "cn": "SKU", "type": "string"},
+          {"id": "price", "cn": "价格", "type": "currency"},
+          {"id": "stock", "cn": "库存", "type": "integer"}
+        ]
+      },
+      {
+        "id": "Order", "cn": "订单", "idPrefix": "O", "seq": 1001, "color": 1, "titleProp": "orderNo",
+        "props": [
+          {"id": "orderNo",  "cn": "订单号", "type": "string"},
+          {"id": "status",   "cn": "状态", "type": "enum",
+           "options": ["待支付", "已支付", "已发货", "已完成", "已取消"]},
+          {"id": "placedAt", "cn": "下单时间", "type": "timestamp"},
+          {"id": "shipTo",   "cn": "收货城市", "type": "string"},
+          {"id": "carrier",  "cn": "承运商", "type": "string"}
+        ]
+      },
+      {
+        "id": "OrderLine", "cn": "订单行", "idPrefix": "L", "seq": 1, "color": 5, "titleProp": "lineNo",
+        "props": [
+          {"id": "lineNo",    "cn": "行号", "type": "string"},
+          {"id": "qty",       "cn": "数量", "type": "integer"},
+          {"id": "unitPrice", "cn": "成交单价", "type": "currency"},
+          {"id": "subtotal",  "cn": "小计", "type": "currency"}
+        ]
+      }
+    ],
+
+    "linkTypes": [
+      {"id": "placed",    "from": "Buyer",     "to": "Order",     "card": "1 : N",
+       "fwd": "下的订单", "inv": "下单买家"},
+      {"id": "hasLine",   "from": "Order",     "to": "OrderLine", "card": "1 : N",
+       "fwd": "订单行",   "inv": "所属订单"},
+      {"id": "ofProduct", "from": "OrderLine", "to": "Product",   "card": "N : 1",
+       "fwd": "对应商品", "inv": "相关订单行"}
+    ],
+
+    "actionTypes": [
+      {
+        "id": "createBuyer", "cn": "新建买家", "uid": "a1",
+        "desc": "把一个买家录进本体。对象只能由 Action 创建 —— 这是唯一的写入口。",
+        "params": [
+          {"uid": "p1", "id": "name",  "cn": "姓名", "kind": "text", "def": ""},
+          {"uid": "p2", "id": "phone", "cn": "手机", "kind": "text", "def": ""},
+          {"uid": "p3", "id": "city",  "cn": "城市", "kind": "text", "def": ""}
+        ],
+        "rules": [],
+        "edits": [
+          {"uid": "e1", "op": "create", "objectType": "Buyer", "props": {
+            "name":  {"src": "param", "param": "name"},
+            "phone": {"src": "param", "param": "phone"},
+            "city":  {"src": "param", "param": "city"},
+            "level": {"src": "const", "value": "普通"}
+          }}
+        ]
+      },
+      {
+        "id": "createProduct", "cn": "上架商品", "uid": "a2",
+        "desc": "新建一个商品对象，初始库存由参数给定。",
+        "params": [
+          {"uid": "p1", "id": "name",  "cn": "商品名", "kind": "text", "def": ""},
+          {"uid": "p2", "id": "sku",   "cn": "SKU", "kind": "text", "def": ""},
+          {"uid": "p3", "id": "price", "cn": "价格", "kind": "number", "def": 0},
+          {"uid": "p4", "id": "stock", "cn": "初始库存", "kind": "number", "def": 0}
+        ],
+        "rules": [
+          {"uid": "r1", "type": "compare", "left": {"src": "param", "param": "price"},
+           "op": ">=", "right": {"src": "const", "value": 0}}
+        ],
+        "edits": [
+          {"uid": "e1", "op": "create", "objectType": "Product", "props": {
+            "name":  {"src": "param", "param": "name"},
+            "sku":   {"src": "param", "param": "sku"},
+            "price": {"src": "param", "param": "price"},
+            "stock": {"src": "param", "param": "stock"}
+          }}
+        ]
+      },
+      {
+        "id": "createOrder", "cn": "下单", "uid": "a3",
+        "desc": "开一张空订单并挂到买家名下。此时还没有商品 —— 商品是下一步一行一行加进去的。",
+        "params": [
+          {"uid": "p1", "id": "buyer",  "cn": "买家", "kind": "object", "objectType": "Buyer"},
+          {"uid": "p2", "id": "shipTo", "cn": "收货城市", "kind": "text", "def": ""}
+        ],
+        "rules": [],
+        "edits": [
+          {"uid": "e1", "op": "create", "objectType": "Order", "props": {
+            "orderNo":  {"src": "newId"},
+            "status":   {"src": "const", "value": "待支付"},
+            "placedAt": {"src": "now"},
+            "shipTo":   {"src": "param", "param": "shipTo"}
+          }},
+          {"uid": "e2", "op": "link", "link": "placed",
+           "a": {"kind": "param", "param": "buyer"}, "b": {"kind": "new", "uid": "e1"}}
+        ]
+      },
+      {
+        "id": "addLine", "cn": "加购商品", "uid": "a4",
+        "desc": "这是整套本体的核心：新建一个订单行，同时挂到订单和商品上，并扣减库存。数量和成交单价属于这一行，既不属于订单也不属于商品。",
+        "params": [
+          {"uid": "p1", "id": "order",   "cn": "订单", "kind": "object", "objectType": "Order"},
+          {"uid": "p2", "id": "product", "cn": "商品", "kind": "object", "objectType": "Product"},
+          {"uid": "p3", "id": "qty",     "cn": "数量", "kind": "number", "def": 1}
+        ],
+        "rules": [
+          {"uid": "r1", "type": "compare",
+           "left": {"src": "prop", "of": {"kind": "param", "param": "order"}, "prop": "status"},
+           "op": "==", "right": {"src": "const", "value": "待支付"}},
+          {"uid": "r2", "type": "compare", "left": {"src": "param", "param": "qty"},
+           "op": ">=", "right": {"src": "const", "value": 1}},
+          {"uid": "r3", "type": "compare",
+           "left": {"src": "prop", "of": {"kind": "param", "param": "product"}, "prop": "stock"},
+           "op": ">=", "right": {"src": "param", "param": "qty"}}
+        ],
+        "edits": [
+          {"uid": "e1", "op": "create", "objectType": "OrderLine", "props": {
+            "lineNo":    {"src": "newId"},
+            "qty":       {"src": "param", "param": "qty"},
+            "unitPrice": {"src": "prop", "of": {"kind": "param", "param": "product"}, "prop": "price"},
+            "subtotal":  {"src": "calc",
+                          "a": {"src": "prop", "of": {"kind": "param", "param": "product"}, "prop": "price"},
+                          "op": "*",
+                          "b": {"src": "param", "param": "qty"}}
+          }},
+          {"uid": "e2", "op": "link", "link": "hasLine",
+           "a": {"kind": "param", "param": "order"}, "b": {"kind": "new", "uid": "e1"}},
+          {"uid": "e3", "op": "link", "link": "ofProduct",
+           "a": {"kind": "new", "uid": "e1"}, "b": {"kind": "param", "param": "product"}},
+          {"uid": "e4", "op": "modify", "target": {"kind": "param", "param": "product"},
+           "prop": "stock", "mode": "dec", "value": {"src": "param", "param": "qty"}}
+        ]
+      },
+      {
+        "id": "removeLine", "cn": "删除订单行", "uid": "a5",
+        "desc": "参数只给了订单行，规则却要看它所属订单的状态，编辑还要把库存还给它对应的商品 —— 两次链接遍历，方向相反。",
+        "params": [
+          {"uid": "p1", "id": "line", "cn": "订单行", "kind": "object", "objectType": "OrderLine"}
+        ],
+        "rules": [
+          {"uid": "r1", "type": "compare",
+           "left": {"src": "prop",
+                    "of": {"kind": "hop", "from": {"kind": "param", "param": "line"},
+                           "link": "hasLine", "dir": "inv"},
+                    "prop": "status"},
+           "op": "==", "right": {"src": "const", "value": "待支付"}}
+        ],
+        "edits": [
+          {"uid": "e1", "op": "modify",
+           "target": {"kind": "hop", "from": {"kind": "param", "param": "line"},
+                      "link": "ofProduct", "dir": "fwd"},
+           "prop": "stock", "mode": "inc",
+           "value": {"src": "prop", "of": {"kind": "param", "param": "line"}, "prop": "qty"}},
+          {"uid": "e2", "op": "delete", "target": {"kind": "param", "param": "line"}}
+        ]
+      },
+      {
+        "id": "payOrder", "cn": "支付", "uid": "a6",
+        "desc": "空订单不能支付 —— 用「链接数量」规则守住：订单行至少得有一条。",
+        "params": [
+          {"uid": "p1", "id": "order", "cn": "订单", "kind": "object", "objectType": "Order"}
+        ],
+        "rules": [
+          {"uid": "r1", "type": "compare",
+           "left": {"src": "prop", "of": {"kind": "param", "param": "order"}, "prop": "status"},
+           "op": "==", "right": {"src": "const", "value": "待支付"}},
+          {"uid": "r2", "type": "linkCount", "target": {"kind": "param", "param": "order"},
+           "link": "hasLine", "dir": "fwd", "op": ">=", "n": 1}
+        ],
+        "edits": [
+          {"uid": "e1", "op": "modify", "target": {"kind": "param", "param": "order"},
+           "prop": "status", "mode": "set", "value": {"src": "const", "value": "已支付"}}
+        ]
+      },
+      {
+        "id": "shipOrder", "cn": "发货", "uid": "a7",
+        "desc": "把枚举参数直接写进对象属性。承运商放在订单上是个简化 —— 见教程里的说明。",
+        "params": [
+          {"uid": "p1", "id": "order",   "cn": "订单", "kind": "object", "objectType": "Order"},
+          {"uid": "p2", "id": "carrier", "cn": "承运商", "kind": "enum",
+           "options": ["顺丰", "中通", "京东物流"], "def": "顺丰"}
+        ],
+        "rules": [
+          {"uid": "r1", "type": "compare",
+           "left": {"src": "prop", "of": {"kind": "param", "param": "order"}, "prop": "status"},
+           "op": "==", "right": {"src": "const", "value": "已支付"}}
+        ],
+        "edits": [
+          {"uid": "e1", "op": "modify", "target": {"kind": "param", "param": "order"},
+           "prop": "carrier", "mode": "set", "value": {"src": "param", "param": "carrier"}},
+          {"uid": "e2", "op": "modify", "target": {"kind": "param", "param": "order"},
+           "prop": "status", "mode": "set", "value": {"src": "const", "value": "已发货"}}
+        ]
+      },
+      {
+        "id": "completeOrder", "cn": "确认收货", "uid": "a8",
+        "desc": "状态机的最后一步。",
+        "params": [
+          {"uid": "p1", "id": "order", "cn": "订单", "kind": "object", "objectType": "Order"}
+        ],
+        "rules": [
+          {"uid": "r1", "type": "compare",
+           "left": {"src": "prop", "of": {"kind": "param", "param": "order"}, "prop": "status"},
+           "op": "==", "right": {"src": "const", "value": "已发货"}}
+        ],
+        "edits": [
+          {"uid": "e1", "op": "modify", "target": {"kind": "param", "param": "order"},
+           "prop": "status", "mode": "set", "value": {"src": "const", "value": "已完成"}}
+        ]
+      },
+      {
+        "id": "cancelOrder", "cn": "取消订单", "uid": "a9",
+        "desc": "只改状态，不退库存 —— 退库存要一行一行走「删除订单行」。原因见教程最后一节。",
+        "params": [
+          {"uid": "p1", "id": "order",  "cn": "订单", "kind": "object", "objectType": "Order"},
+          {"uid": "p2", "id": "reason", "cn": "原因", "kind": "enum",
+           "options": ["买家取消", "缺货", "地址有误"], "def": "买家取消"}
+        ],
+        "rules": [
+          {"uid": "r1", "type": "compare",
+           "left": {"src": "prop", "of": {"kind": "param", "param": "order"}, "prop": "status"},
+           "op": "in", "right": {"src": "consts", "values": ["待支付", "已支付"]}}
+        ],
+        "edits": [
+          {"uid": "e1", "op": "modify", "target": {"kind": "param", "param": "order"},
+           "prop": "status", "mode": "set", "value": {"src": "const", "value": "已取消"}}
+        ]
+      }
+    ]
+  },
+
+  "world": {
+    "objects": {
+      "Buyer:B-1": {"type": "Buyer", "id": "B-1",
+        "props": {"name": "周韫", "phone": "138****2210", "level": "金卡", "city": "上海"}},
+      "Buyer:B-2": {"type": "Buyer", "id": "B-2",
+        "props": {"name": "林澈", "phone": "139****0455", "level": "普通", "city": "成都"}},
+      "Product:P-1": {"type": "Product", "id": "P-1",
+        "props": {"name": "降噪耳机 Q30", "sku": "AUD-Q30", "price": 899, "stock": 40}},
+      "Product:P-2": {"type": "Product", "id": "P-2",
+        "props": {"name": "机械键盘 K7", "sku": "KBD-K7", "price": 459, "stock": 25}},
+      "Product:P-3": {"type": "Product", "id": "P-3",
+        "props": {"name": "USB-C 扩展坞", "sku": "HUB-C8", "price": 199, "stock": 120}}
+    },
+    "links": []
+  }
+}

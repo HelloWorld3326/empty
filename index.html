@@ -1454,6 +1454,37 @@ function evaluate(action, p){
   return {complete, results, valid, edits};
 }
 
+/** 校验、预览、提交按钮这三块随参数实时变；参数输入框本身不需要跟着重建 */
+function runnerState(action, p, ev){
+  ev = ev || evaluate(action, p);
+  return {
+    checks: ev.results.map(r => `
+      <div class="check ${r.state}">
+        <span class="mk">${r.state==="pass" ? "✓" : r.state==="fail" ? "✕" : "·"}</span>
+        <span>${esc(r.cn)}${r.why ? ` <span style="opacity:.8">— ${esc(r.why)}</span>` : ""}</span>
+      </div>`).join("") || `<p class="note">没有校验规则 —— 这个操作永远可以提交。</p>`,
+    previews: ev.valid && ev.edits.length
+      ? ev.edits.map(describeEdit).map(e =>
+          `<div class="edit"><span class="op">${e.op}</span><span class="txt">${e.html}</span></div>`).join("")
+      : `<p class="note">${ev.complete ? "校验未通过，暂无编辑可提交。" : "填完参数后这里会列出将要写入的编辑。"}</p>`,
+    count: ev.valid ? ev.edits.length : 0,
+    applyHtml: `<button class="apply" id="apply" ${ev.valid ? "" : "disabled"}>应用操作 · 写回本体</button>
+      <p class="apply-note">${ev.valid ? "全部编辑将作为一个事务原子提交" : "校验未通过时无法提交"}</p>`,
+  };
+}
+
+/** 只刷新随参数变化的三块，不碰用户正在输入的控件 */
+function refreshRunnerState(){
+  const action = ATof(activeAction); if (!action) return;
+  const p = {...formState}; delete p.__action;
+  const st = runnerState(action, p);
+  const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+  set("runner-checks", st.checks);
+  set("runner-edits", st.previews);
+  const c = document.getElementById("runner-count"); if (c) c.textContent = st.count;
+  set("runner-apply", st.applyHtml);
+}
+
 function renderRunner(){
   const right = document.getElementById("col-right");
   if (!schema.actionTypes.length){
@@ -1499,16 +1530,7 @@ function renderRunner(){
     return `<div class="field"><label>${esc(pr.cn)} <code>${esc(pr.id)} : ${esc(hint)}</code></label>${input}</div>`;
   }).join("") || `<p class="note">这个操作没有参数。</p>`;
 
-  const checks = ev.results.map(r => `
-    <div class="check ${r.state}">
-      <span class="mk">${r.state==="pass" ? "✓" : r.state==="fail" ? "✕" : "·"}</span>
-      <span>${esc(r.cn)}${r.why ? ` <span style="opacity:.8">— ${esc(r.why)}</span>` : ""}</span>
-    </div>`).join("") || `<p class="note">没有校验规则 —— 这个操作永远可以提交。</p>`;
-
-  const previews = ev.valid && ev.edits.length
-    ? ev.edits.map(describeEdit).map(e =>
-        `<div class="edit"><span class="op">${e.op}</span><span class="txt">${e.html}</span></div>`).join("")
-    : `<p class="note">${ev.complete ? "校验未通过，暂无编辑可提交。" : "填完参数后这里会列出将要写入的编辑。"}</p>`;
+  const st = runnerState(action, p, ev);
 
   right.innerHTML = `
     <div class="pane-head"><span class="eyebrow">操作执行器 / Action</span></div>
@@ -1520,12 +1542,12 @@ function renderRunner(){
         <p>${esc(action.desc || "")}</p>
       </div>
       <div class="runner-sec"><span class="eyebrow">① 参数 Parameters</span>${fields}</div>
-      <div class="runner-sec"><span class="eyebrow">② 校验 Validation</span>${checks}</div>
-      <div class="runner-sec"><span class="eyebrow">③ 编辑预览 Edits <span style="color:var(--write)">${ev.valid ? ev.edits.length : 0}</span></span>${previews}</div>
+      <div class="runner-sec"><span class="eyebrow">② 校验 Validation</span><div id="runner-checks">${st.checks}</div></div>
       <div class="runner-sec">
-        <button class="apply" id="apply" ${ev.valid ? "" : "disabled"}>应用操作 · 写回本体</button>
-        <p class="apply-note">${ev.valid ? "全部编辑将作为一个事务原子提交" : "校验未通过时无法提交"}</p>
+        <span class="eyebrow">③ 编辑预览 Edits <span id="runner-count" style="color:var(--write)">${st.count}</span></span>
+        <div id="runner-edits">${st.previews}</div>
       </div>
+      <div class="runner-sec" id="runner-apply">${st.applyHtml}</div>
     </div>
     <div class="sub-head"><span class="eyebrow">写入日志 / Audit</span><span class="hair"></span></div>
     <div class="log">${renderLogHtml()}</div>`;
@@ -2500,11 +2522,8 @@ document.addEventListener("click", ev => {
 document.addEventListener("input", ev => {
   const f = ev.target.closest("[data-p]");
   if (f){
-    const key = f.dataset.p;
-    formState[key] = f.type === "number" ? Number(f.value) : f.value;
-    renderRunner();
-    const el = document.querySelector(`[data-p="${key}"]`);
-    if (el) el.focus();
+    formState[f.dataset.p] = f.type === "number" ? Number(f.value) : f.value;
+    refreshRunnerState();   // 输入框不重建，光标自然留在原处
     return;
   }
   // 建模表单的文本输入：只写值不重绘，避免打字时丢焦点
