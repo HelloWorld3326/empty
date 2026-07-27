@@ -1004,7 +1004,9 @@ const nodes = () => layouts[mode];
 function graphData(){
   if (mode === "model"){
     return {
-      nodes: schema.objectTypes.map(t => ({key:t.id, label:t.id, color:typeColor(t.id),
+      // 类型图谱上同时挂 API 名和中文名，只改了其中一个也不会看着眼生
+      nodes: schema.objectTypes.map(t => ({key:t.id, label: t.cn && t.cn !== t.id ? `${t.id} ${t.cn}` : t.id,
+                                           color:typeColor(t.id),
                                            active: editing && editing.kind==="ot" && editing.id===t.id})),
       edges: schema.linkTypes.map(l => ({a:l.from, b:l.to, label:l.id, id:l.id,
                                          active: editing && editing.kind==="lt" && editing.id===l.id})),
@@ -1620,8 +1622,8 @@ function renderObjectTypeEditor(t){
       <div class="ed-sec">
         <span class="eyebrow">基本信息</span>
         <div class="f-grid">
-          <div class="field"><label>API 名 <code>不可修改</code></label>
-            <input type="text" value="${esc(t.id)}" readonly></div>
+          <div class="field"><label>API 名 <code>机器用的标识</code></label>
+            <input type="text" data-rename="ot" data-id="${esc(t.id)}" value="${esc(t.id)}"></div>
           <div class="field"><label>中文名</label>
             <input type="text" data-path="ot.${esc(t.id)}.cn" value="${esc(t.cn)}"></div>
           <div class="field"><label>主键前缀 <code>${esc(t.idPrefix)}-${t.seq}</code></label>
@@ -1634,6 +1636,13 @@ function renderObjectTypeEditor(t){
           <div class="field"><label>配色</label>
             ${sel(`ot.${t.id}.color`, t.color, Array.from({length:8},(_,i)=>({v:i,l:"色板 "+i})))}</div>
         </div>
+        <p class="note" style="margin-top:10px">
+          <b style="color:var(--text-2)">API 名</b>是机器用的标识，也是这个类型在本体里的身份：
+          链接类型的两端、操作的参数与编辑、实例的主键前缀（<code>${esc(t.id)}:${esc(t.idPrefix)}-1</code>）引用的都是它。
+          <b style="color:var(--text-2)">中文名</b>只管界面显示，随便改都不会碰坏任何东西 ——
+          真实系统里两者分开，正是因为显示名会经常变，而代码和查询不能跟着一起碎掉。
+          改 API 名是破坏性变更，这里会替你把上面那些引用一次性重写，并记在右侧的变更记录里。
+        </p>
       </div>
 
       <div class="ed-sec">
@@ -1666,7 +1675,8 @@ function renderLinkTypeEditor(l){
       <div class="ed-sec">
         <span class="eyebrow">两端与基数</span>
         <div class="f-grid">
-          <div class="field"><label>API 名 <code>不可修改</code></label><input type="text" value="${esc(l.id)}" readonly></div>
+          <div class="field"><label>API 名 <code>机器用的标识</code></label>
+            <input type="text" data-rename="lt" data-id="${esc(l.id)}" value="${esc(l.id)}"></div>
           <div class="field"><label>起点类型 from</label>
             <select data-path="lt.${esc(l.id)}.from">${opts.map(o =>
               `<option value="${esc(o.v)}" ${o.v===l.from?"selected":""}>${esc(o.l)}</option>`).join("")}</select></div>
@@ -1826,7 +1836,8 @@ function renderActionTypeEditor(a){
         <span class="eyebrow">基本信息</span>
         <div class="f-grid">
           <div class="field"><label>中文名</label><input type="text" data-path="at.${esc(a.id)}.cn" value="${esc(a.cn)}"></div>
-          <div class="field"><label>API 名 <code>不可修改</code></label><input type="text" value="${esc(a.id)}" readonly></div>
+          <div class="field"><label>API 名 <code>机器用的标识</code></label>
+            <input type="text" data-rename="at" data-id="${esc(a.id)}" value="${esc(a.id)}"></div>
         </div>
         <div class="field" style="margin-top:10px"><label>一句话说明</label>
           <input type="text" data-path="at.${esc(a.id)}.desc" value="${esc(a.desc||"")}"></div>
@@ -1988,6 +1999,91 @@ function uniqueId(base, taken){
   while (taken.includes(id)) id = base + i++;
   return id;
 }
+const sanitizeId = s => String(s ?? "").trim().replace(/[^A-Za-z0-9_]/g, "");
+
+/* --- 改 API 名 = 一次真正的重命名，所有引用都得跟着走 ---------------
+   这正是 API 名与显示名分开的理由：显示名随便改，API 名一改就是破坏性变更。 */
+function renameObjectType(oldId, raw){
+  const t = OT(oldId); if (!t) return false;
+  const newId = sanitizeId(raw);
+  if (!newId || newId === oldId) return false;
+  if (OT(newId)){ alert(`已经有一个叫 ${newId} 的对象类型了。`); return false; }
+
+  let refs = 0;
+  t.id = newId;
+  for (const l of schema.linkTypes){
+    if (l.from === oldId){ l.from = newId; refs++; }
+    if (l.to   === oldId){ l.to   = newId; refs++; }
+  }
+  for (const a of schema.actionTypes){
+    for (const p of a.params) if (p.objectType === oldId){ p.objectType = newId; refs++; }
+    for (const e of a.edits)  if (e.op === "create" && e.objectType === oldId){ e.objectType = newId; refs++; }
+  }
+  // 实例主键的前缀就是类型 API 名 —— 每个对象都要换 key，链接两端也要跟着改
+  const remap = {};
+  for (const k of Object.keys(world.objects)){
+    const o = world.objects[k];
+    if (o.type !== oldId) continue;
+    const nk = newId + ":" + o.id;
+    o.type = newId; remap[k] = nk;
+    world.objects[nk] = o; delete world.objects[k]; refs++;
+  }
+  for (const l of world.links){
+    if (remap[l.a]) l.a = remap[l.a];
+    if (remap[l.b]) l.b = remap[l.b];
+  }
+  // 日志里存着撤销用的逆操作，key 不换的话撤销就会落空
+  for (const e of logEntries) for (const inv of e.inverse){
+    if (inv.key && remap[inv.key]) inv.key = remap[inv.key];
+    if (inv.a && remap[inv.a]) inv.a = remap[inv.a];
+    if (inv.b && remap[inv.b]) inv.b = remap[inv.b];
+    if (inv.objectType === oldId) inv.objectType = newId;
+  }
+  if (selected && remap[selected]) selected = remap[selected];
+  if (layouts.model.has(oldId)){ layouts.model.set(newId, layouts.model.get(oldId)); layouts.model.delete(oldId); }
+  for (const [k, nk] of Object.entries(remap))
+    if (layouts.operate.has(k)){ layouts.operate.set(nk, layouts.operate.get(k)); layouts.operate.delete(k); }
+  if (editing && editing.kind === "ot" && editing.id === oldId) editing.id = newId;
+  noteSchema(`对象类型 ${oldId} → ${newId}，同步重写 ${refs} 处引用`);
+  return true;
+}
+
+function renameLinkType(oldId, raw){
+  const l = LTof(oldId); if (!l) return false;
+  const newId = sanitizeId(raw);
+  if (!newId || newId === oldId) return false;
+  if (LTof(newId)){ alert(`已经有一个叫 ${newId} 的链接类型了。`); return false; }
+
+  let refs = 0;
+  l.id = newId;
+  for (const x of world.links) if (x.t === oldId){ x.t = newId; refs++; }
+  // 规则、编辑、以及 hop 目标里都可能按 id 引用这条链接
+  const walk = o => {
+    if (!o || typeof o !== "object") return;
+    if (Array.isArray(o)) return o.forEach(walk);
+    for (const k of Object.keys(o)){
+      if (k === "link" && o[k] === oldId){ o[k] = newId; refs++; }
+      else walk(o[k]);
+    }
+  };
+  for (const a of schema.actionTypes) walk(a);
+  if (editing && editing.kind === "lt" && editing.id === oldId) editing.id = newId;
+  noteSchema(`链接类型 ${oldId} → ${newId}，同步重写 ${refs} 处引用`);
+  return true;
+}
+
+function renameActionType(oldId, raw){
+  const a = ATof(oldId); if (!a) return false;
+  const newId = sanitizeId(raw);
+  if (!newId || newId === oldId) return false;
+  if (ATof(newId)){ alert(`已经有一个叫 ${newId} 的操作类型了。`); return false; }
+  a.id = newId;
+  if (activeAction === oldId) activeAction = newId;
+  if (editing && editing.kind === "at" && editing.id === oldId) editing.id = newId;
+  noteSchema(`操作类型 ${oldId} → ${newId}`);
+  return true;
+}
+const RENAMERS = {ot:renameObjectType, lt:renameLinkType, at:renameActionType};
 
 function newObjectType(){
   const id = uniqueId("NewType", schema.objectTypes.map(t => t.id));
@@ -2321,7 +2417,9 @@ function select(key){
 }
 function openEditor(kind, id){
   if (mode !== "model"){ mode = "model"; syncGraph(); }
-  editing = {kind, id};
+  // 刚发生过改名的话，点到的可能是一个已经不存在的旧 id
+  const still = kind === "ot" ? OT(id) : kind === "lt" ? LTof(id) : ATof(id);
+  editing = still ? {kind, id} : null;
   renderAll(); kick();
 }
 function setMode(m){
@@ -2417,12 +2515,30 @@ document.addEventListener("input", ev => {
 
 /* 下拉改的是结构，重绘整个编辑器；文本框只刷新派生文字，
    否则用户 Tab 到下一个输入框时，整张表单会在他手里被拆掉重建 */
+/* 文本框的 change 是失焦才触发的。如果失焦是因为用户去点别的东西，
+   立刻重绘会把他正按着的那个节点换掉，这一下点击就没了。
+   所以按住指针期间先把重绘攒着，等点击走完再放。 */
+let pointerHeld = false, pendingRender = null;
+addEventListener("pointerdown", () => { pointerHeld = true; }, true);
+addEventListener("pointerup", () => {
+  pointerHeld = false;
+  if (pendingRender){ const f = pendingRender; pendingRender = null; setTimeout(f, 0); }
+}, true);
+function renderSoon(fn){ if (pointerHeld) pendingRender = fn; else fn(); }
+
 document.addEventListener("change", ev => {
+  // 改名只在失焦或回车时提交一次 —— 否则每敲一个字母都会重命名一轮
+  const rn = ev.target.closest("[data-rename]");
+  if (rn){
+    if (!RENAMERS[rn.dataset.rename](rn.dataset.id, rn.value)) rn.value = rn.dataset.id;
+    renderSoon(() => { syncGraph(); renderAll(); kick(); });
+    return;
+  }
   const s = ev.target.closest("[data-path]");
   if (!s) return;
   setByPath(s.dataset.path, s.value, s.dataset.json === "1", s.dataset.num === "1");
   if (s.tagName === "SELECT"){ syncGraph(); renderAll(); }
-  else refreshDerived();
+  else renderSoon(refreshDerived);
 });
 
 /** 只更新读取自 schema 的展示文字，不碰任何正在编辑的控件 */
@@ -2442,6 +2558,15 @@ function refreshDerived(){
                        : editing && editing.kind === "ot" ? (OT(editing.id)||{}).cn : h.textContent;
   syncGraph();
 }
+
+/* 回车即提交改名 —— 不然改完名字直接去点别处，那一下点击会被重绘吃掉 */
+document.addEventListener("keydown", ev => {
+  if (ev.key !== "Enter") return;
+  const rn = ev.target.closest("[data-rename]");
+  if (!rn) return;
+  ev.preventDefault();
+  rn.blur();
+});
 
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", refreshTheme);
 new MutationObserver(refreshTheme).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
