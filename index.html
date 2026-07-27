@@ -1,9 +1,9 @@
-<title>Ontology 演练场 · Object / Link / Action</title>
+<title>Ontology 演练场 · 建模与运行</title>
 
 <style>
 /* ============================================================
    TOKENS
-   冷色 = 读（对象、链接）  ·  琥珀 = 写（Action 产生的编辑）
+   冷色 = 类型与数据  ·  琥珀 = 写入（无论写的是 schema 还是实例）
    ============================================================ */
 :root{
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
@@ -14,11 +14,10 @@
   --text:#131E25; --text-2:#3C5058; --muted:#697E88;
 
   --write:#B96A12; --write-bg:#FBF1E3; --write-line:#E6C596; --write-fg:#FFFFFF;
-
   --ok:#2C7A5B; --info:#2F6BA8; --bad:#AF4029; --neutral:#697E88;
 
-  --t-Customer:#3C74B8; --t-Order:#6E5FC0; --t-Product:#2E8A72;
-  --t-Warehouse:#5C7688; --t-Shipment:#AF4E68;
+  --p0:#3C74B8; --p1:#6E5FC0; --p2:#2E8A72; --p3:#5C7688;
+  --p4:#AF4E68; --p5:#6F7F2C; --p6:#2F8FA8; --p7:#8A5A9E;
 
   --r:4px;
   color-scheme: light;
@@ -30,8 +29,8 @@
     --text:#DCE6EA; --text-2:#A6B8C0; --muted:#7A8D98;
     --write:#E5943F; --write-bg:#271D14; --write-line:#563F1E; --write-fg:#1B1207;
     --ok:#57BC92; --info:#6BA3E0; --bad:#DF7259; --neutral:#7A8D98;
-    --t-Customer:#6BA3E0; --t-Order:#9B8CEA; --t-Product:#4FB99B;
-    --t-Warehouse:#8AA5B8; --t-Shipment:#DE7B94;
+    --p0:#6BA3E0; --p1:#9B8CEA; --p2:#4FB99B; --p3:#8AA5B8;
+    --p4:#DE7B94; --p5:#A9BC5C; --p6:#55B4CE; --p7:#B98BCC;
     color-scheme: dark;
   }
 }
@@ -41,8 +40,8 @@
   --text:#DCE6EA; --text-2:#A6B8C0; --muted:#7A8D98;
   --write:#E5943F; --write-bg:#271D14; --write-line:#563F1E; --write-fg:#1B1207;
   --ok:#57BC92; --info:#6BA3E0; --bad:#DF7259; --neutral:#7A8D98;
-  --t-Customer:#6BA3E0; --t-Order:#9B8CEA; --t-Product:#4FB99B;
-  --t-Warehouse:#8AA5B8; --t-Shipment:#DE7B94;
+  --p0:#6BA3E0; --p1:#9B8CEA; --p2:#4FB99B; --p3:#8AA5B8;
+  --p4:#DE7B94; --p5:#A9BC5C; --p6:#55B4CE; --p7:#B98BCC;
   color-scheme: dark;
 }
 :root[data-theme="light"]{
@@ -51,8 +50,8 @@
   --text:#131E25; --text-2:#3C5058; --muted:#697E88;
   --write:#B96A12; --write-bg:#FBF1E3; --write-line:#E6C596; --write-fg:#FFFFFF;
   --ok:#2C7A5B; --info:#2F6BA8; --bad:#AF4029; --neutral:#697E88;
-  --t-Customer:#3C74B8; --t-Order:#6E5FC0; --t-Product:#2E8A72;
-  --t-Warehouse:#5C7688; --t-Shipment:#AF4E68;
+  --p0:#3C74B8; --p1:#6E5FC0; --p2:#2E8A72; --p3:#5C7688;
+  --p4:#AF4E68; --p5:#6F7F2C; --p6:#2F8FA8; --p7:#8A5A9E;
   color-scheme: light;
 }
 
@@ -66,7 +65,7 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 button{font:inherit; color:inherit; background:none; border:none; cursor:pointer}
-select,input{font:inherit; color:inherit}
+select,input,textarea{font:inherit; color:inherit}
 :focus-visible{outline:2px solid var(--write); outline-offset:2px; border-radius:2px}
 
 .eyebrow{
@@ -74,7 +73,6 @@ select,input{font:inherit; color:inherit}
   letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
 }
 .mono{font-family:var(--mono)}
-.num{font-variant-numeric:tabular-nums}
 
 /* ============================================================
    SHELL
@@ -82,41 +80,47 @@ select,input{font:inherit; color:inherit}
 .app{display:flex; flex-direction:column; min-height:100dvh}
 
 .masthead{
-  display:flex; align-items:center; gap:20px; flex-wrap:wrap;
-  padding:14px 20px; background:var(--panel); border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  padding:12px 20px; background:var(--panel); border-bottom:1px solid var(--line);
 }
-.brand{display:flex; align-items:baseline; gap:12px; margin-right:auto}
+.brand{display:flex; align-items:baseline; gap:11px}
 .brand h1{
   margin:0; font-family:var(--mono); font-size:15px; font-weight:600;
   letter-spacing:.06em; text-transform:uppercase; white-space:nowrap;
 }
-.brand p{margin:0; font-size:12.5px; color:var(--muted)}
 
-.stats{display:flex; gap:18px}
+.modes{display:flex; gap:0; border:1px solid var(--line); border-radius:var(--r); overflow:hidden; margin-right:auto}
+.mode{padding:5px 14px; font-size:12.5px; color:var(--muted); background:var(--panel-2)}
+.mode + .mode{border-left:1px solid var(--line)}
+.mode:hover{color:var(--text)}
+.mode[aria-pressed="true"]{background:var(--write-bg); color:var(--write); font-weight:600}
+.mode b{font-family:var(--mono); font-size:11px; margin-right:5px; opacity:.7}
+
+.stats{display:flex; gap:16px}
 .stat{display:flex; flex-direction:column; align-items:flex-end; line-height:1.2}
 .stat b{font-family:var(--mono); font-size:16px; font-weight:600; font-variant-numeric:tabular-nums}
-.stat span{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-family:var(--mono)}
+.stat span{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-family:var(--mono)}
 
-.tools{display:flex; gap:8px}
+.tools{display:flex; gap:7px; flex-wrap:wrap}
 .ghost{
   padding:5px 11px; border:1px solid var(--line); border-radius:var(--r);
-  font-size:12px; color:var(--text-2); background:var(--panel-2);
+  font-size:12px; color:var(--text-2); background:var(--panel-2); white-space:nowrap;
 }
 .ghost:hover{border-color:var(--muted); color:var(--text)}
+.ghost.danger:hover{border-color:var(--bad); color:var(--bad)}
 
 /* concept band -------------------------------------------------- */
 .concepts{
   display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
   background:var(--line); border-bottom:1px solid var(--line);
 }
-.concept{padding:11px 20px; background:var(--panel-2); display:flex; gap:11px; align-items:flex-start}
+.concept{padding:10px 20px; background:var(--panel-2); display:flex; gap:11px; align-items:flex-start}
 .concept .glyph{
   flex:none; width:22px; height:22px; margin-top:1px;
   display:grid; place-items:center; font-family:var(--mono); font-size:11px; font-weight:600;
+  border:1.5px solid currentColor; border-radius:3px;
 }
-.concept .glyph.o{border:1.5px solid var(--t-Customer); color:var(--t-Customer); border-radius:3px}
-.concept .glyph.l{color:var(--muted); font-size:15px}
-.concept .glyph.a{background:var(--write-bg); border:1.5px solid var(--write); color:var(--write); border-radius:11px}
+.concept .glyph.round{border-radius:11px}
 .concept h2{margin:0 0 1px; font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase}
 .concept p{margin:0; font-size:12.5px; color:var(--text-2); line-height:1.5}
 
@@ -125,7 +129,7 @@ select,input{font:inherit; color:inherit}
    ============================================================ */
 .console{
   flex:1; min-height:0; display:grid; gap:1px; background:var(--line);
-  grid-template-columns:270px minmax(0,1fr) 372px;
+  grid-template-columns:270px minmax(0,1fr) 380px;
 }
 .col{background:var(--panel); min-width:0; display:flex; flex-direction:column; min-height:0}
 @media (min-width:1101px){ .col{overflow-y:auto} }
@@ -136,64 +140,57 @@ select,input{font:inherit; color:inherit}
   display:flex; align-items:center; gap:8px;
 }
 .pane-head .hint{margin-left:auto; font-size:11px; color:var(--muted)}
-.sub-head{padding:16px 16px 7px; display:flex; align-items:center; gap:8px}
-.sub-head .rule{flex:1; height:1px; background:var(--line-soft)}
+.sub-head{padding:15px 16px 6px; display:flex; align-items:center; gap:8px}
+.sub-head .hair{flex:1; height:1px; background:var(--line-soft)}
+.sub-head .plus{
+  font-family:var(--mono); font-size:11px; color:var(--write); padding:1px 6px;
+  border:1px dashed var(--write-line); border-radius:2px;
+}
+.sub-head .plus:hover{background:var(--write-bg)}
 
 /* ============================================================
-   LEFT — 本体模型
+   左栏 —— 类型清单
    ============================================================ */
-.type-list{display:flex; flex-direction:column; padding:0 8px 8px}
-.type-row{
+.type-list{display:flex; flex-direction:column; padding:0 8px 6px}
+.type-row,.link-row,.act-row{
   display:flex; align-items:center; gap:9px; width:100%;
   padding:7px 8px; border-radius:var(--r); text-align:left; border:1px solid transparent;
 }
-.type-row:hover{background:var(--panel-2)}
-.type-row[aria-pressed="true"]{background:var(--panel-2); border-color:var(--line)}
+.link-row{display:block}
+.type-row:hover,.link-row:hover,.act-row:hover{background:var(--panel-2)}
+.type-row[aria-pressed="true"],.link-row[aria-pressed="true"],.act-row[aria-pressed="true"]{
+  background:var(--panel-2); border-color:var(--line);
+}
 .swatch{flex:none; width:10px; height:10px; border-radius:2px}
-.type-row .body{flex:1; min-width:0}   /* 没有 min-width:0，下面那行的 ellipsis 不会生效 */
+.type-row .body{flex:1; min-width:0}
 .type-row .name{font-family:var(--mono); font-size:12.5px}
 .type-row .cn{font-size:12px; color:var(--muted)}
-.type-row .count{
-  margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--muted);
-  font-variant-numeric:tabular-nums;
-}
 .type-row .props{
   display:block; font-size:11px; color:var(--muted); font-family:var(--mono);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-
-.link-row{
-  display:block; width:100%; text-align:left; padding:7px 8px;
-  border-radius:var(--r); border:1px solid transparent;
+.type-row .count{
+  margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--muted);
+  font-variant-numeric:tabular-nums; flex:none;
 }
-.link-row:hover{background:var(--panel-2)}
-.link-row[aria-pressed="true"]{background:var(--panel-2); border-color:var(--line)}
-.link-sig{display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11.5px}
+.link-sig{display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11.5px; flex-wrap:wrap}
 .link-sig .arrow{color:var(--muted)}
-.link-meta{display:flex; gap:8px; font-size:11px; color:var(--muted); margin-top:1px}
+.link-meta{display:flex; gap:8px; font-size:11px; color:var(--muted); margin-top:1px; flex-wrap:wrap}
 .card-badge{
   font-family:var(--mono); font-size:10px; padding:0 4px; border:1px solid var(--line);
-  border-radius:2px; color:var(--muted); letter-spacing:.02em;
+  border-radius:2px; color:var(--muted); flex:none;
 }
-
-.act-row{
-  display:flex; align-items:center; gap:8px; width:100%; text-align:left;
-  padding:7px 8px; border-radius:var(--r); border:1px solid transparent;
-}
-.act-row:hover{background:var(--write-bg); border-color:var(--write-line)}
 .act-row .dot{flex:none; width:6px; height:6px; border-radius:50%; background:var(--write)}
 .act-row .name{font-family:var(--mono); font-size:12px; color:var(--write)}
 .act-row .cn{font-size:12px; color:var(--text-2)}
+.rail-empty{padding:4px 16px 8px; font-size:12px; color:var(--muted)}
 
 /* ============================================================
-   CENTER — 图谱 + 详情
+   中栏 —— 图谱
    ============================================================ */
-.graph-wrap{position:relative; flex:none; height:clamp(320px, 46vh, 520px); border-bottom:1px solid var(--line)}
-#graph{display:block; width:100%; height:100%; touch-action:none; cursor:default}
-.graph-legend{
-  position:absolute; left:14px; bottom:12px; display:flex; flex-wrap:wrap; gap:4px 12px;
-  pointer-events:none;
-}
+.graph-wrap{position:relative; flex:none; height:clamp(300px, 42vh, 480px); border-bottom:1px solid var(--line)}
+#graph{display:block; width:100%; height:100%; touch-action:none}
+.graph-legend{position:absolute; left:14px; bottom:12px; display:flex; flex-wrap:wrap; gap:4px 12px; pointer-events:none}
 .lg{display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted)}
 .lg i{width:8px; height:8px; border-radius:2px; display:block}
 .graph-tip{
@@ -201,9 +198,10 @@ select,input{font:inherit; color:inherit}
   background:color-mix(in srgb, var(--panel) 82%, transparent); padding:3px 8px; border-radius:var(--r);
 }
 
+/* 对象详情 ------------------------------------------------------- */
 .detail{padding:0 0 28px}
 .obj-head{padding:16px 20px 14px; border-bottom:1px solid var(--line-soft)}
-.obj-kicker{display:flex; align-items:center; gap:8px; margin-bottom:5px}
+.obj-kicker{display:flex; align-items:center; gap:8px; margin-bottom:5px; flex-wrap:wrap}
 .pill{
   display:inline-flex; align-items:center; gap:5px; font-family:var(--mono); font-size:11px;
   padding:1px 7px; border-radius:2px; border:1px solid;
@@ -218,7 +216,7 @@ table.props th small{display:block; font-family:var(--mono); font-size:10px; let
 table.props td{font-variant-numeric:tabular-nums}
 
 .link-group{padding:2px 20px 12px}
-.link-group-head{display:flex; align-items:center; gap:8px; padding:9px 0 6px; font-size:12px}
+.link-group-head{display:flex; align-items:center; gap:8px; padding:9px 0 6px; font-size:12px; flex-wrap:wrap}
 .link-group-head .lt{font-family:var(--mono); font-size:11.5px; color:var(--text-2)}
 .link-group-head .dir{color:var(--muted); font-size:11.5px}
 .chips{display:flex; flex-wrap:wrap; gap:6px}
@@ -230,11 +228,70 @@ table.props td{font-variant-numeric:tabular-nums}
 .chip i{width:8px; height:8px; border-radius:2px; flex:none}
 .chip .rid{font-family:var(--mono); font-size:11px; color:var(--muted)}
 
-.empty{padding:28px 20px; color:var(--muted); font-size:13px; max-width:62ch}
+.empty{padding:26px 20px; color:var(--muted); font-size:13px; max-width:64ch; line-height:1.65}
 .empty b{color:var(--text-2); font-weight:600}
+.empty .lead{color:var(--text); font-size:15px; margin:0 0 10px}
 
 /* ============================================================
-   RIGHT — Action runner + 日志
+   建模 —— 编辑器表单
+   ============================================================ */
+.ed{padding:0 0 32px}
+.ed-head{padding:16px 20px 13px; border-bottom:1px solid var(--line-soft)}
+.ed-head h3{margin:4px 0 0; font-size:19px}
+.ed-sec{padding:13px 20px; border-bottom:1px solid var(--line-soft)}
+.ed-sec > .eyebrow{display:block; margin-bottom:9px}
+
+.f-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px}
+.field{display:flex; flex-direction:column; gap:3px}
+.field label{font-size:12px; color:var(--text-2); display:flex; align-items:baseline; gap:6px}
+.field label code{font-family:var(--mono); font-size:10.5px; color:var(--muted)}
+.field select,.field input,.field textarea{
+  width:100%; padding:6px 8px; background:var(--panel); color:var(--text);
+  border:1px solid var(--line); border-radius:var(--r); font-size:13px;
+}
+.field select:hover,.field input:hover{border-color:var(--muted)}
+.field input[readonly]{background:var(--sunken); color:var(--muted)}
+
+/* 一行结构化配置（参数 / 规则 / 编辑） */
+.spec{
+  display:flex; flex-wrap:wrap; align-items:center; gap:6px;
+  padding:8px 9px; margin-bottom:7px; background:var(--panel-2);
+  border:1px solid var(--line); border-radius:var(--r);
+}
+.spec.write{border-color:var(--write-line); background:var(--write-bg)}
+.spec .lead{font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:var(--muted); flex:none}
+.spec .txt{font-size:12.5px; color:var(--text-2); flex:none}
+.spec .kill{margin-left:auto; color:var(--muted); font-size:14px; line-height:1; padding:2px 5px; border-radius:2px; flex:none}
+.spec .kill:hover{color:var(--bad); background:var(--panel)}
+.spec .gloss{
+  flex-basis:100%; font-size:11.5px; color:var(--muted); font-family:var(--mono);
+  border-top:1px dashed var(--line); padding-top:6px; margin-top:1px; line-height:1.5;
+}
+.spec.write .gloss{border-top-color:var(--write-line); color:var(--write)}
+.mini{
+  padding:3px 6px; background:var(--panel); color:var(--text);
+  border:1px solid var(--line); border-radius:2px; font-size:12px; max-width:190px;
+}
+.mini.n{width:74px; font-variant-numeric:tabular-nums}
+.mini.s{width:112px}
+select.mini{max-width:200px}
+.mini:hover{border-color:var(--muted)}
+.add{
+  width:100%; padding:6px; border:1px dashed var(--line); border-radius:var(--r);
+  font-size:12px; color:var(--muted); background:none;
+}
+.add:hover{border-color:var(--write); color:var(--write); background:var(--write-bg)}
+.add.tight{width:auto; padding:4px 12px}
+
+.prop-assign{display:grid; grid-template-columns:minmax(90px,auto) 1fr; gap:5px 8px; align-items:center; flex-basis:100%; margin-top:5px}
+.prop-assign .k{font-size:12px; color:var(--text-2); font-family:var(--mono)}
+.prop-assign .v{display:flex; gap:5px; align-items:center; flex-wrap:wrap}
+
+.note{font-size:12px; color:var(--muted); line-height:1.6; margin:0}
+.note code{font-family:var(--mono); font-size:11.5px}
+
+/* ============================================================
+   右栏 —— 运行：Action runner；建模：影响面板
    ============================================================ */
 .action-tabs{display:flex; flex-wrap:wrap; gap:6px; padding:0 16px 12px}
 .tab{
@@ -251,16 +308,8 @@ table.props td{font-variant-numeric:tabular-nums}
 .runner-sec{padding:11px 14px; border-bottom:1px solid var(--line-soft)}
 .runner-sec:last-child{border-bottom:none}
 .runner-sec > .eyebrow{display:block; margin-bottom:8px}
-
-.field{display:flex; flex-direction:column; gap:3px; margin-bottom:9px}
-.field:last-child{margin-bottom:0}
-.field label{font-size:12px; color:var(--text-2); display:flex; align-items:baseline; gap:6px}
-.field label code{font-family:var(--mono); font-size:10.5px; color:var(--muted)}
-.field select,.field input{
-  width:100%; padding:6px 8px; background:var(--panel); color:var(--text);
-  border:1px solid var(--line); border-radius:var(--r); font-size:13px;
-}
-.field select:hover,.field input:hover{border-color:var(--muted)}
+.runner .field{margin-bottom:9px}
+.runner .field:last-child{margin-bottom:0}
 
 .check{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:2px 0; color:var(--text-2)}
 .check .mk{font-family:var(--mono); font-size:12px; flex:none; width:14px; text-align:center}
@@ -287,13 +336,23 @@ table.props td{font-variant-numeric:tabular-nums}
 .apply:not(:disabled):hover{filter:brightness(1.08)}
 .apply-note{margin:7px 0 0; font-size:11.5px; color:var(--muted); text-align:center}
 
-/* log ----------------------------------------------------------- */
+.impact{margin:0 16px 4px; border:1px solid var(--line); border-radius:var(--r); background:var(--panel-2); overflow:hidden}
+.impact-sec{padding:11px 14px; border-bottom:1px solid var(--line-soft)}
+.impact-sec:last-child{border-bottom:none}
+.impact-sec > .eyebrow{display:block; margin-bottom:7px}
+.impact-list{display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--text-2)}
+.impact-list .row{display:flex; gap:8px; align-items:baseline}
+.impact-list .row .n{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--text); min-width:26px}
+.warn{
+  font-size:12px; color:var(--bad); background:color-mix(in srgb, var(--bad) 8%, transparent);
+  border:1px solid color-mix(in srgb, var(--bad) 30%, transparent); border-radius:var(--r);
+  padding:8px 10px; line-height:1.55; margin:0 0 8px;
+}
+
+/* 日志 ----------------------------------------------------------- */
 .log{padding:0 16px 24px; display:flex; flex-direction:column; gap:7px}
 .log-entry{border:1px solid var(--line); border-radius:var(--r); background:var(--panel-2); overflow:hidden}
-.log-entry > summary{
-  padding:8px 11px; cursor:pointer; display:flex; align-items:center; gap:8px;
-  font-size:12.5px; list-style:none;
-}
+.log-entry > summary{padding:8px 11px; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:12.5px; list-style:none}
 .log-entry > summary::-webkit-details-marker{display:none}
 .log-entry > summary::before{content:"▸"; color:var(--muted); font-size:10px; transition:transform .15s}
 .log-entry[open] > summary::before{transform:rotate(90deg)}
@@ -302,105 +361,68 @@ table.props td{font-variant-numeric:tabular-nums}
 .log-entry .n{margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--muted)}
 .log-body{padding:2px 11px 11px; border-top:1px solid var(--line-soft)}
 .log-params{font-size:11.5px; color:var(--muted); font-family:var(--mono); padding:7px 0 4px; word-break:break-all}
-.undo{
-  margin-top:8px; padding:4px 10px; border:1px solid var(--line); border-radius:var(--r);
-  font-size:11.5px; color:var(--text-2);
-}
+.undo{margin-top:8px; padding:4px 10px; border:1px solid var(--line); border-radius:var(--r); font-size:11.5px; color:var(--text-2)}
 .undo:hover{border-color:var(--bad); color:var(--bad)}
+.slog{padding:0 16px 24px; display:flex; flex-direction:column; gap:5px; font-size:12.5px}
+.slog .row{display:flex; gap:8px; align-items:baseline; color:var(--text-2)}
+.slog .row .ts{font-family:var(--mono); font-size:11px; color:var(--muted); flex:none}
+
+/* JSON 抽屉 ------------------------------------------------------ */
+.drawer{
+  position:fixed; inset:0; z-index:20; background:color-mix(in srgb, var(--bg) 78%, transparent);
+  display:grid; place-items:center; padding:24px;
+}
+.drawer-box{
+  width:min(860px, 100%); max-height:86vh; display:flex; flex-direction:column;
+  background:var(--panel); border:1px solid var(--line); border-radius:6px; overflow:hidden;
+}
+.drawer-head{padding:13px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px}
+.drawer-head h3{margin:0; font-size:15px}
+.drawer-head .ghost{margin-left:auto}
+.drawer-box textarea{
+  flex:1; min-height:340px; margin:0; padding:14px 16px; border:none; resize:none;
+  background:var(--sunken); font-family:var(--mono); font-size:11.5px; line-height:1.6;
+}
+.drawer-foot{padding:11px 16px; border-top:1px solid var(--line); display:flex; align-items:center; gap:10px}
+.drawer-foot .note{flex:1}
 
 @media (max-width:1100px){
   .console{grid-template-columns:1fr}
   .concepts{grid-template-columns:1fr}
   .graph-wrap{height:340px}
-  .masthead{gap:12px}
 }
-@media (prefers-reduced-motion: reduce){
-  *{transition:none !important; animation:none !important}
-}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
 </style>
 
 <div class="app">
-
   <header class="masthead">
-    <div class="brand">
-      <h1>Ontology 演练场</h1>
-      <p>Object · Link · Action —— 本体的三个基本件</p>
+    <div class="brand"><h1>Ontology 演练场</h1></div>
+    <div class="modes">
+      <button class="mode" data-mode="model"><b>01</b>本体建模</button>
+      <button class="mode" data-mode="operate"><b>02</b>实例运行</button>
     </div>
-    <div class="stats">
-      <div class="stat"><b id="s-obj">0</b><span>Objects</span></div>
-      <div class="stat"><b id="s-link">0</b><span>Links</span></div>
-      <div class="stat"><b id="s-act">0</b><span>Actions</span></div>
-      <div class="stat"><b id="s-edit">0</b><span>Edits</span></div>
-    </div>
+    <div class="stats" id="stats"></div>
     <div class="tools">
       <button class="ghost" id="relayout">重排图谱</button>
-      <button class="ghost" id="reset">重置数据</button>
+      <button class="ghost" id="spec">本体规格 JSON</button>
+      <button class="ghost" id="blank">从零开始</button>
+      <button class="ghost" id="reset">载入示例</button>
     </div>
   </header>
 
-  <div class="concepts">
-    <div class="concept">
-      <span class="glyph o">▣</span>
-      <div>
-        <h2>Object 对象</h2>
-        <p>现实世界里的一个实体：一位客户、一张订单。属于某个<b>对象类型</b>，有固定的属性表和唯一主键。</p>
-      </div>
-    </div>
-    <div class="concept">
-      <span class="glyph l">⇄</span>
-      <div>
-        <h2>Link 链接</h2>
-        <p>对象之间的关系，有类型、有方向、有基数（1:N、N:N）。查询不写 JOIN —— 沿着链接走就行。</p>
-      </div>
-    </div>
-    <div class="concept">
-      <span class="glyph a">↯</span>
-      <div>
-        <h2>Action 操作</h2>
-        <p>唯一的写入口。接收参数 → 校验规则 → 生成一组编辑 → 原子写回，并留下可追溯、可撤销的记录。</p>
-      </div>
-    </div>
-  </div>
+  <div class="concepts" id="concepts"></div>
 
   <main class="console">
-
-    <!-- ======== 左：本体模型 ======== -->
-    <div class="col" id="col-model">
-      <div class="pane-head">
-        <span class="eyebrow">本体模型 / Schema</span>
-        <span class="hint" id="filter-hint"></span>
-      </div>
-
-      <div class="sub-head"><span class="eyebrow">对象类型</span><span class="rule"></span></div>
-      <div class="type-list" id="ot-list"></div>
-
-      <div class="sub-head"><span class="eyebrow">链接类型</span><span class="rule"></span></div>
-      <div class="type-list" id="lt-list"></div>
-
-      <div class="sub-head"><span class="eyebrow">操作类型</span><span class="rule"></span></div>
-      <div class="type-list" id="at-list"></div>
-    </div>
-
-    <!-- ======== 中：图谱 + 详情 ======== -->
-    <div class="col" id="col-stage">
+    <div class="col" id="col-left"></div>
+    <div class="col" id="col-mid">
       <div class="graph-wrap">
         <canvas id="graph"></canvas>
-        <div class="graph-tip">点击节点查看对象 · 可拖拽</div>
+        <div class="graph-tip" id="graph-tip"></div>
         <div class="graph-legend" id="legend"></div>
       </div>
-      <div class="detail" id="detail"></div>
+      <div id="mid-body"></div>
     </div>
-
-    <!-- ======== 右：操作 + 日志 ======== -->
-    <div class="col" id="col-write">
-      <div class="pane-head"><span class="eyebrow">操作执行器 / Action</span></div>
-      <div class="action-tabs" id="action-tabs"></div>
-      <div class="runner" id="runner"></div>
-
-      <div class="sub-head"><span class="eyebrow">写入日志 / Audit</span><span class="rule"></span></div>
-      <div class="log" id="log"></div>
-    </div>
-
+    <div class="col" id="col-right"></div>
   </main>
 </div>
 
@@ -408,273 +430,491 @@ table.props td{font-variant-numeric:tabular-nums}
 "use strict";
 
 /* ============================================================
-   1. 本体定义 —— 对象类型 / 链接类型
+   §1  基础工具
    ============================================================ */
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let uidN = 0;
+const uid = () => "u" + (++uidN);
+const clone = o => JSON.parse(JSON.stringify(o));
 
-const OBJECT_TYPES = {
-  Customer: { id:"Customer", cn:"客户", title:"name", props:[
-    {id:"name",  cn:"姓名", type:"string"},
-    {id:"tier",  cn:"等级", type:"enum"},
-    {id:"city",  cn:"城市", type:"string"},
-  ]},
-  Order: { id:"Order", cn:"订单", title:"orderNo", props:[
-    {id:"orderNo",  cn:"订单号",   type:"string"},
-    {id:"status",   cn:"状态",     type:"enum"},
-    {id:"qty",      cn:"数量",     type:"integer"},
-    {id:"total",    cn:"金额",     type:"currency"},
-    {id:"placedAt", cn:"下单时间", type:"timestamp"},
-  ]},
-  Product: { id:"Product", cn:"商品", title:"name", props:[
-    {id:"sku",   cn:"SKU",  type:"string"},
-    {id:"name",  cn:"名称", type:"string"},
-    {id:"price", cn:"单价", type:"currency"},
-    {id:"stock", cn:"库存", type:"integer"},
-  ]},
-  Warehouse: { id:"Warehouse", cn:"仓库", title:"name", props:[
-    {id:"name", cn:"仓库名", type:"string"},
-    {id:"city", cn:"城市",   type:"string"},
-  ]},
-  Shipment: { id:"Shipment", cn:"运单", title:"trackingNo", props:[
-    {id:"trackingNo", cn:"运单号", type:"string"},
-    {id:"carrier",    cn:"承运商", type:"string"},
-    {id:"status",     cn:"状态",   type:"enum"},
-    {id:"eta",        cn:"预计送达", type:"date"},
-  ]},
-};
-
-const LINK_TYPES = [
-  {id:"placed",      from:"Customer", to:"Order",     card:"1 : N", fwd:"下的订单",   inv:"下单客户"},
-  {id:"contains",    from:"Order",    to:"Product",   card:"N : N", fwd:"包含商品",   inv:"相关订单"},
-  {id:"fulfilledBy", from:"Order",    to:"Shipment",  card:"1 : 1", fwd:"履约运单",   inv:"所属订单"},
-  {id:"shipsFrom",   from:"Shipment", to:"Warehouse", card:"N : 1", fwd:"发货仓库",   inv:"发出的运单"},
-  {id:"stockedAt",   from:"Product",  to:"Warehouse", card:"N : N", fwd:"存放仓库",   inv:"在库商品"},
+const PROP_TYPES = [
+  {id:"string",    cn:"文本"},
+  {id:"integer",   cn:"整数"},
+  {id:"currency",  cn:"金额"},
+  {id:"enum",      cn:"枚举"},
+  {id:"date",      cn:"日期"},
+  {id:"timestamp", cn:"时间"},
+  {id:"boolean",   cn:"布尔"},
 ];
-const LT = Object.fromEntries(LINK_TYPES.map(l => [l.id, l]));
+const CARDS = ["1 : 1", "1 : N", "N : 1", "N : N"];
 
-const STATUS = {
-  PENDING:   {cn:"待审核", tone:"neutral"},
-  APPROVED:  {cn:"已审核", tone:"info"},
-  SHIPPED:   {cn:"已发货", tone:"info"},
-  DELIVERED: {cn:"已送达", tone:"ok"},
-  CANCELLED: {cn:"已取消", tone:"bad"},
-  IN_TRANSIT:{cn:"运输中", tone:"info"},
-  金牌:{cn:"金牌", tone:"info"}, 银牌:{cn:"银牌", tone:"neutral"}, 普通:{cn:"普通", tone:"neutral"},
+// 枚举值的语气着色：只影响颜色，不影响语义；认不出来的一律中性
+const TONE = {"已送达":"ok","已完成":"ok","已取消":"bad","作废":"bad",
+              "运输中":"info","已发货":"info","已审核":"info","进行中":"info"};
+
+const defaultFor = p => {
+  if (p.type === "integer" || p.type === "currency") return 0;
+  if (p.type === "boolean") return false;
+  if (p.type === "enum") return (p.options && p.options[0]) || "";
+  return "";
 };
+const nowStamp = () => new Date().toISOString().slice(0,16).replace("T"," ");
+const todayPlus = d => new Date(Date.now() + (d||0)*864e5).toISOString().slice(0,10);
 
 /* ============================================================
-   2. 实例数据（世界的初始状态）
+   §2  默认本体 —— schema 是数据，不是代码
    ============================================================ */
+function demoSchema(){
+  const P = (id, cn, type, options) => options ? {id, cn, type, options} : {id, cn, type};
+  return {
+    objectTypes: [
+      {id:"Customer", cn:"客户", idPrefix:"C", seq:105, color:0, titleProp:"name", props:[
+        P("name","姓名","string"), P("tier","等级","enum",["金牌","银牌","普通"]), P("city","城市","string")]},
+      {id:"Order", cn:"订单", idPrefix:"O", seq:2005, color:1, titleProp:"orderNo", props:[
+        P("orderNo","订单号","string"),
+        P("status","状态","enum",["待审核","已审核","已发货","已送达","已取消"]),
+        P("qty","数量","integer"), P("total","金额","currency"), P("placedAt","下单时间","timestamp")]},
+      {id:"Product", cn:"商品", idPrefix:"P", seq:15, color:2, titleProp:"name", props:[
+        P("sku","SKU","string"), P("name","名称","string"),
+        P("price","单价","currency"), P("stock","库存","integer")]},
+      {id:"Warehouse", cn:"仓库", idPrefix:"W", seq:3, color:3, titleProp:"name", props:[
+        P("name","仓库名","string"), P("city","城市","string")]},
+      {id:"Shipment", cn:"运单", idPrefix:"S", seq:9003, color:4, titleProp:"trackingNo", props:[
+        P("trackingNo","运单号","string"), P("carrier","承运商","string"),
+        P("status","状态","enum",["运输中","已送达"]), P("eta","预计送达","date")]},
+    ],
+    linkTypes: [
+      {id:"placed",      from:"Customer", to:"Order",     card:"1 : N", fwd:"下的订单", inv:"下单客户"},
+      {id:"contains",    from:"Order",    to:"Product",   card:"N : N", fwd:"包含商品", inv:"相关订单"},
+      {id:"fulfilledBy", from:"Order",    to:"Shipment",  card:"1 : 1", fwd:"履约运单", inv:"所属订单"},
+      {id:"shipsFrom",   from:"Shipment", to:"Warehouse", card:"N : 1", fwd:"发货仓库", inv:"发出的运单"},
+      {id:"stockedAt",   from:"Product",  to:"Warehouse", card:"N : N", fwd:"存放仓库", inv:"在库商品"},
+    ],
+    actionTypes: demoActions(),
+  };
+}
 
-function seedWorld(){
-  const o = {};
-  const put = (type, id, props) => { o[type+":"+id] = {type, id, props}; };
+/* --- 6 个内置操作，用与用户新建的完全相同的声明式格式写成 --------- */
+function demoActions(){
+  const pm  = p => ({kind:"param", param:p});
+  const hop = (from, link, dir) => ({kind:"hop", from, link, dir});
+  const K   = v => ({src:"const", value:v});
+  const PR  = p => ({src:"param", param:p});
+  const PROP= (of, prop) => ({src:"prop", of, prop});
 
+  return [
+    {id:"createOrder", cn:"下单", uid:uid(),
+     desc:"从零创建一个订单对象，把它连到客户和商品上，同时扣减库存 —— 一个 Action 写多个对象。",
+     params:[
+       {uid:"pc", id:"customer", cn:"客户", kind:"object", objectType:"Customer"},
+       {uid:"pp", id:"product",  cn:"商品", kind:"object", objectType:"Product"},
+       {uid:"pq", id:"qty",      cn:"数量", kind:"number", def:1},
+     ],
+     rules:[
+       {uid:uid(), type:"compare", left:PR("qty"), op:">=", right:K(1)},
+       {uid:uid(), type:"compare", left:PROP(pm("product"),"stock"), op:">=", right:PR("qty")},
+     ],
+     edits:[
+       {uid:"e1", op:"create", objectType:"Order", props:{
+          orderNo:{src:"newId"}, status:K("待审核"), qty:PR("qty"),
+          total:{src:"calc", a:PROP(pm("product"),"price"), op:"*", b:PR("qty")},
+          placedAt:{src:"now"}}},
+       {uid:uid(), op:"link", a:pm("customer"), b:{kind:"new", uid:"e1"}, link:"placed"},
+       {uid:uid(), op:"link", a:{kind:"new", uid:"e1"}, b:pm("product"), link:"contains"},
+       {uid:uid(), op:"modify", target:pm("product"), prop:"stock", mode:"dec", value:PR("qty")},
+     ]},
+
+    {id:"approveOrder", cn:"审核订单", uid:uid(),
+     desc:"最小的 Action：只改一个属性。状态机由校验规则守住 —— 只有待审核的订单能被审核。",
+     params:[{uid:"po", id:"order", cn:"订单", kind:"object", objectType:"Order"}],
+     rules:[{uid:uid(), type:"compare", left:PROP(pm("order"),"status"), op:"==", right:K("待审核")}],
+     edits:[{uid:uid(), op:"modify", target:pm("order"), prop:"status", mode:"set", value:K("已审核")}]},
+
+    {id:"shipOrder", cn:"发货", uid:uid(),
+     desc:"创建运单并挂到订单上。校验会沿着 订单 → 商品 → 存放仓库 走一遍，确认这个仓库真的有货。",
+     params:[
+       {uid:"so", id:"order",     cn:"订单",   kind:"object", objectType:"Order"},
+       {uid:"sw", id:"warehouse", cn:"发货仓", kind:"object", objectType:"Warehouse"},
+       {uid:"sc", id:"carrier",   cn:"承运商", kind:"enum", options:["顺丰","京东物流","中通"], def:"顺丰"},
+     ],
+     rules:[
+       {uid:uid(), type:"compare", left:PROP(pm("order"),"status"), op:"==", right:K("已审核")},
+       {uid:uid(), type:"linkCount", target:pm("order"), link:"fulfilledBy", dir:"fwd", op:"==", n:0},
+       {uid:uid(), type:"linkExists", a:hop(pm("order"),"contains","fwd"), b:pm("warehouse"),
+        link:"stockedAt", expect:true},
+     ],
+     edits:[
+       {uid:"s1", op:"create", objectType:"Shipment", props:{
+          trackingNo:{src:"newId"}, carrier:PR("carrier"), status:K("运输中"),
+          eta:{src:"today", plusDays:3}}},
+       {uid:uid(), op:"link", a:pm("order"), b:{kind:"new", uid:"s1"}, link:"fulfilledBy"},
+       {uid:uid(), op:"link", a:{kind:"new", uid:"s1"}, b:pm("warehouse"), link:"shipsFrom"},
+       {uid:uid(), op:"modify", target:pm("order"), prop:"status", mode:"set", value:K("已发货")},
+     ]},
+
+    {id:"deliverShipment", cn:"确认送达", uid:uid(),
+     desc:"参数里只给了运单，但编辑会顺着 fulfilledBy 的反向链接找到订单，把两个对象一起改掉。",
+     params:[{uid:"ds", id:"shipment", cn:"运单", kind:"object", objectType:"Shipment"}],
+     rules:[{uid:uid(), type:"compare", left:PROP(pm("shipment"),"status"), op:"==", right:K("运输中")}],
+     edits:[
+       {uid:uid(), op:"modify", target:pm("shipment"), prop:"status", mode:"set", value:K("已送达")},
+       {uid:uid(), op:"modify", target:hop(pm("shipment"),"fulfilledBy","inv"), prop:"status",
+        mode:"set", value:K("已送达")},
+     ]},
+
+    {id:"cancelOrder", cn:"取消订单", uid:uid(),
+     desc:"撤销类操作也是 Action：改订单状态之余，还要沿链接找回商品，把占用的库存还回去。",
+     params:[
+       {uid:"co", id:"order",  cn:"订单", kind:"object", objectType:"Order"},
+       {uid:"cr", id:"reason", cn:"原因", kind:"enum", options:["客户取消","缺货","地址有误"], def:"客户取消"},
+     ],
+     rules:[{uid:uid(), type:"compare", left:PROP(pm("order"),"status"), op:"in",
+             right:{src:"consts", values:["待审核","已审核"]}}],
+     edits:[
+       {uid:uid(), op:"modify", target:pm("order"), prop:"status", mode:"set", value:K("已取消")},
+       {uid:uid(), op:"modify", target:hop(pm("order"),"contains","fwd"), prop:"stock",
+        mode:"inc", value:PROP(pm("order"),"qty")},
+     ]},
+
+    {id:"restockProduct", cn:"补货入仓", uid:uid(),
+     desc:"编辑可以是有条件的：商品和仓库之间如果还没有链接，这次就顺手建一条。",
+     params:[
+       {uid:"rp", id:"product",   cn:"商品", kind:"object", objectType:"Product"},
+       {uid:"rw", id:"warehouse", cn:"仓库", kind:"object", objectType:"Warehouse"},
+       {uid:"rq", id:"qty",       cn:"数量", kind:"number", def:10},
+     ],
+     rules:[{uid:uid(), type:"compare", left:PR("qty"), op:">=", right:K(1)}],
+     edits:[
+       {uid:uid(), op:"modify", target:pm("product"), prop:"stock", mode:"inc", value:PR("qty")},
+       {uid:uid(), op:"link", a:pm("product"), b:pm("warehouse"), link:"stockedAt"},
+     ]},
+  ];
+}
+
+function demoWorld(){
+  const objects = {};
+  const put = (type, id, props) => { objects[type+":"+id] = {type, id, props}; };
   put("Customer","C-101",{name:"张昀", tier:"金牌", city:"上海"});
   put("Customer","C-102",{name:"陆微", tier:"银牌", city:"杭州"});
   put("Customer","C-103",{name:"何叙", tier:"金牌", city:"广州"});
   put("Customer","C-104",{name:"苏亦", tier:"普通", city:"成都"});
-
-  put("Product","P-11",{sku:"GR-ARES", name:"磨豆机 Ares",  price:1280, stock:24});
-  put("Product","P-12",{sku:"KT-FOLD", name:"手冲壶 Fold",  price:420,  stock:60});
-  put("Product","P-13",{sku:"EM-KITE", name:"意式机 Kite",  price:5600, stock:6});
-  put("Product","P-14",{sku:"FP-100",  name:"滤纸 100 张",  price:38,   stock:400});
-
+  put("Product","P-11",{sku:"GR-ARES", name:"磨豆机 Ares", price:1280, stock:24});
+  put("Product","P-12",{sku:"KT-FOLD", name:"手冲壶 Fold", price:420,  stock:60});
+  put("Product","P-13",{sku:"EM-KITE", name:"意式机 Kite", price:5600, stock:6});
+  put("Product","P-14",{sku:"FP-100",  name:"滤纸 100 张", price:38,   stock:400});
   put("Warehouse","W-1",{name:"华东中心仓", city:"上海"});
   put("Warehouse","W-2",{name:"华南分仓",   city:"广州"});
+  put("Order","O-2001",{orderNo:"O-2001", status:"已审核", qty:1, total:1280, placedAt:"2026-07-24 10:12"});
+  put("Order","O-2002",{orderNo:"O-2002", status:"待审核", qty:2, total:840,  placedAt:"2026-07-25 16:40"});
+  put("Order","O-2003",{orderNo:"O-2003", status:"已发货", qty:1, total:5600, placedAt:"2026-07-22 09:05"});
+  put("Order","O-2004",{orderNo:"O-2004", status:"已送达", qty:5, total:190,  placedAt:"2026-07-18 11:30"});
+  put("Shipment","S-9001",{trackingNo:"SF-7788-2103", carrier:"顺丰",     status:"运输中", eta:"2026-07-28"});
+  put("Shipment","S-9002",{trackingNo:"JD-1122-5540", carrier:"京东物流", status:"已送达", eta:"2026-07-20"});
 
-  put("Order","O-2001",{orderNo:"O-2001", status:"APPROVED",  qty:1, total:1280, placedAt:"2026-07-24 10:12"});
-  put("Order","O-2002",{orderNo:"O-2002", status:"PENDING",   qty:2, total:840,  placedAt:"2026-07-25 16:40"});
-  put("Order","O-2003",{orderNo:"O-2003", status:"SHIPPED",   qty:1, total:5600, placedAt:"2026-07-22 09:05"});
-  put("Order","O-2004",{orderNo:"O-2004", status:"DELIVERED", qty:5, total:190,  placedAt:"2026-07-18 11:30"});
-
-  put("Shipment","S-9001",{trackingNo:"SF-7788-2103", carrier:"顺丰",     status:"IN_TRANSIT", eta:"2026-07-28"});
-  put("Shipment","S-9002",{trackingNo:"JD-1122-5540", carrier:"京东物流", status:"DELIVERED",  eta:"2026-07-20"});
-
-  const l = [];
-  const link = (t,a,b) => l.push({t, a, b});
-  link("placed","Customer:C-101","Order:O-2001");
-  link("placed","Customer:C-102","Order:O-2002");
-  link("placed","Customer:C-103","Order:O-2003");
-  link("placed","Customer:C-101","Order:O-2004");
-  link("contains","Order:O-2001","Product:P-11");
-  link("contains","Order:O-2002","Product:P-12");
-  link("contains","Order:O-2003","Product:P-13");
-  link("contains","Order:O-2004","Product:P-14");
-  link("fulfilledBy","Order:O-2003","Shipment:S-9001");
-  link("fulfilledBy","Order:O-2004","Shipment:S-9002");
-  link("shipsFrom","Shipment:S-9001","Warehouse:W-1");
-  link("shipsFrom","Shipment:S-9002","Warehouse:W-1");
-  link("stockedAt","Product:P-11","Warehouse:W-1");
-  link("stockedAt","Product:P-12","Warehouse:W-1");
-  link("stockedAt","Product:P-12","Warehouse:W-2");
-  link("stockedAt","Product:P-13","Warehouse:W-1");
-  link("stockedAt","Product:P-14","Warehouse:W-1");
-  link("stockedAt","Product:P-14","Warehouse:W-2");
-
-  return {objects:o, links:l, seq:{Order:2005, Shipment:9003}};
+  const L = (t,a,b) => ({t,a,b});
+  const links = [
+    L("placed","Customer:C-101","Order:O-2001"), L("placed","Customer:C-102","Order:O-2002"),
+    L("placed","Customer:C-103","Order:O-2003"), L("placed","Customer:C-101","Order:O-2004"),
+    L("contains","Order:O-2001","Product:P-11"), L("contains","Order:O-2002","Product:P-12"),
+    L("contains","Order:O-2003","Product:P-13"), L("contains","Order:O-2004","Product:P-14"),
+    L("fulfilledBy","Order:O-2003","Shipment:S-9001"), L("fulfilledBy","Order:O-2004","Shipment:S-9002"),
+    L("shipsFrom","Shipment:S-9001","Warehouse:W-1"), L("shipsFrom","Shipment:S-9002","Warehouse:W-1"),
+    L("stockedAt","Product:P-11","Warehouse:W-1"), L("stockedAt","Product:P-12","Warehouse:W-1"),
+    L("stockedAt","Product:P-12","Warehouse:W-2"), L("stockedAt","Product:P-13","Warehouse:W-1"),
+    L("stockedAt","Product:P-14","Warehouse:W-1"), L("stockedAt","Product:P-14","Warehouse:W-2"),
+  ];
+  return {objects, links};
 }
 
-let world = seedWorld();
-let logEntries = [];
-let editCount = 0;
+/* ============================================================
+   §3  状态
+   ============================================================ */
+let schema, world, logEntries, schemaLog, editCount;
 
-/* --- 世界查询工具 ------------------------------------------------ */
+function loadDemo(){
+  schema = demoSchema(); world = demoWorld();
+  logEntries = []; schemaLog = []; editCount = 0;
+  selected = "Order:O-2003"; editing = null; highlight = null; formState = {};
+  layouts.operate.clear(); layouts.model.clear(); flashes.clear();
+}
+function loadBlank(){
+  schema = {objectTypes:[], linkTypes:[], actionTypes:[]};
+  world = {objects:{}, links:[]};
+  logEntries = []; schemaLog = []; editCount = 0;
+  selected = null; editing = null; highlight = null; formState = {};
+  layouts.operate.clear(); layouts.model.clear(); flashes.clear();
+}
+
+let mode = "operate";                    // "model" | "operate"
+let selected = null;                     // 运行模式：选中的实例 key
+let editing = null;                      // 建模模式：{kind:'ot'|'lt'|'at', id}
+let highlight = null;
+let activeAction = null;
+let formState = {};
+let drawerOpen = false;
+
+/* --- 查询工具 --------------------------------------------------- */
+const OT = id => schema.objectTypes.find(t => t.id === id);
+const LTof = id => schema.linkTypes.find(l => l.id === id);
+const ATof = id => schema.actionTypes.find(a => a.id === id);
 const get = k => world.objects[k];
 const keysOf = type => Object.keys(world.objects).filter(k => world.objects[k].type === type);
-// 编辑预览里的对象可能还没被创建 —— 退回主键，不要把 "Order:O-2005" 这种内部 key 露出来
-const titleOf = k => { const o = get(k); return o ? String(o.props[OBJECT_TYPES[o.type].title]) : String(k).split(":").pop(); };
-const hasLink = (t,a,b) => world.links.some(x => x.t===t && x.a===a && x.b===b);
-/** 沿链接走一步；dir="fwd" 表示 a→b，"inv" 表示 b→a */
-function traverse(key, ltId, dir="fwd"){
-  return world.links
-    .filter(x => x.t===ltId && (dir==="fwd" ? x.a===key : x.b===key))
-    .map(x => dir==="fwd" ? x.b : x.a);
+const propOf = (typeId, propId) => { const t = OT(typeId); return t && t.props.find(p => p.id === propId); };
+function titleOf(k){
+  const o = get(k);
+  if (!o) return String(k).split(":").pop();
+  const t = OT(o.type);
+  const v = t ? o.props[t.titleProp] : undefined;
+  return (v === undefined || v === "") ? o.id : String(v);
 }
-const one = (key, ltId, dir) => traverse(key, ltId, dir)[0] || null;
+const typeColor = typeId => { const t = OT(typeId); return `var(--p${t ? (t.color % 8) : 3})`; };
+const hasLink = (t,a,b) => world.links.some(x => x.t===t && x.a===a && x.b===b);
+function traverse(key, ltId, dir){
+  return world.links.filter(x => x.t===ltId && (dir==="fwd" ? x.a===key : x.b===key))
+                    .map(x => dir==="fwd" ? x.b : x.a);
+}
 
 /* ============================================================
-   3. Action 定义
-   每个 Action = 参数 + 校验规则 + 一组编辑（edits）
+   §4  Action 解释器
+   声明式的 Target / Ref / Rule / EditSpec 在这里被求值
    ============================================================ */
 
-const E = {
-  create: (objectType, id, props) => ({op:"create", key:objectType+":"+id, objectType, id, props}),
-  modify: (key, changes)          => ({op:"modify", key, changes}),
-  link:   (t, a, b)               => ({op:"link", t, a, b}),
-  unlink: (t, a, b)               => ({op:"unlink", t, a, b}),
-  del:    (key)                   => ({op:"delete", key}),
+/** 把一个 Target 解析成实例 key。解析不了返回 null（编辑会被跳过）。 */
+function resolveTarget(t, ctx){
+  if (!t) return null;
+  if (t.kind === "param") return ctx.params[t.param] || null;
+  if (t.kind === "new")   return ctx.created[t.uid] || null;
+  if (t.kind === "hop"){
+    const base = resolveTarget(t.from, ctx);
+    if (!base) return null;
+    return traverse(base, t.link, t.dir)[0] || null;
+  }
+  return null;
+}
+
+/** 把一个 Ref 解析成标量值。 */
+function resolveRef(r, ctx){
+  if (!r) return undefined;
+  switch (r.src){
+    case "const":  return r.value;
+    case "consts": return r.values;
+    case "param":  return ctx.params[r.param];
+    case "prop": {
+      const k = resolveTarget(r.of, ctx); if (!k) return undefined;
+      const o = get(k); return o ? o.props[r.prop] : undefined;
+    }
+    case "calc": {
+      const a = Number(resolveRef(r.a, ctx)), b = Number(resolveRef(r.b, ctx));
+      if (!isFinite(a) || !isFinite(b)) return undefined;
+      return r.op === "*" ? a*b : r.op === "-" ? a-b : a+b;
+    }
+    case "now":    return nowStamp();
+    case "today":  return todayPlus(r.plusDays || 0);
+    case "newId":  return ctx.newId;          // 只在 create 的属性赋值里有意义
+    default: return undefined;
+  }
+}
+
+const CMP = {
+  "==": (a,b) => a === b,
+  "!=": (a,b) => a !== b,
+  ">":  (a,b) => Number(a) >  Number(b),
+  ">=": (a,b) => Number(a) >= Number(b),
+  "<":  (a,b) => Number(a) <  Number(b),
+  "<=": (a,b) => Number(a) <= Number(b),
+  "in": (a,b) => Array.isArray(b) && b.includes(a),
 };
 
-const ACTIONS = [
-  {
-    id:"createOrder", cn:"下单",
-    desc:"从零创建一个订单对象，把它连到客户和商品上，同时扣减商品库存 —— 一个 Action 写多个对象。",
-    params:[
-      {id:"customer", cn:"客户", kind:"object", objectType:"Customer"},
-      {id:"product",  cn:"商品", kind:"object", objectType:"Product"},
-      {id:"qty",      cn:"数量", kind:"number", min:1, def:1},
-    ],
-    rules:[
-      {cn:"数量必须 ≥ 1", check:p => p.qty >= 1},
-      {cn:"商品库存充足", check:p => get(p.product).props.stock >= p.qty,
-       why:p => `当前库存 ${get(p.product).props.stock}`},
-    ],
-    edits(p){
-      const prod = get(p.product), id = "O-" + world.seq.Order;
-      const total = prod.props.price * p.qty;
-      return [
-        E.create("Order", id, {orderNo:id, status:"PENDING", qty:p.qty, total,
-                               placedAt:new Date().toISOString().slice(0,16).replace("T"," ")}),
-        E.link("placed", p.customer, "Order:"+id),
-        E.link("contains", "Order:"+id, p.product),
-        E.modify(p.product, {stock: prod.props.stock - p.qty}),
-      ];
-    },
-    after(){ world.seq.Order++; },
-  },
+/** 求值一条规则，返回 {ok, why} */
+function evalRule(rule, ctx){
+  if (rule.type === "compare"){
+    const l = resolveRef(rule.left, ctx), r = resolveRef(rule.right, ctx);
+    if (l === undefined) return {ok:false, why:"取不到左值"};
+    const ok = (CMP[rule.op] || CMP["=="])(l, r);
+    return {ok, why: ok ? "" : `当前 ${fmtRaw(l)}`};
+  }
+  if (rule.type === "linkCount"){
+    const k = resolveTarget(rule.target, ctx);
+    if (!k) return {ok:false, why:"取不到目标对象"};
+    const n = traverse(k, rule.link, rule.dir).length;
+    const ok = (CMP[rule.op] || CMP["=="])(n, rule.n);
+    return {ok, why: ok ? "" : `当前 ${n} 条`};
+  }
+  if (rule.type === "linkExists"){
+    const a = resolveTarget(rule.a, ctx), b = resolveTarget(rule.b, ctx);
+    if (!a || !b) return {ok:false, why:"取不到两端对象"};
+    const has = hasLink(rule.link, a, b);
+    const ok = rule.expect ? has : !has;
+    return {ok, why: ok ? "" : (has ? "链接已存在" : "链接不存在")};
+  }
+  return {ok:true, why:""};
+}
 
-  {
-    id:"approveOrder", cn:"审核订单",
-    desc:"最小的 Action：只改一个属性。状态机由校验规则守住 —— 只有待审核的订单能被审核。",
-    params:[{id:"order", cn:"订单", kind:"object", objectType:"Order"}],
-    rules:[{cn:"订单状态为「待审核」", check:p => get(p.order).props.status === "PENDING",
-            why:p => `当前 ${STATUS[get(p.order).props.status].cn}`}],
-    edits:p => [E.modify(p.order, {status:"APPROVED"})],
-  },
+/** 生成具体编辑。纯函数 —— 不改动 world，可以在每次输入时调用。 */
+function buildEdits(action, params){
+  const ctx = {params, created:{}};
+  const seqUsed = {};
+  const out = [];
 
-  {
-    id:"shipOrder", cn:"发货",
-    desc:"创建运单并挂到订单上。校验会沿着 订单 → 商品 → 存放仓库 走一遍，确认这个仓库真的有货。",
-    params:[
-      {id:"order",     cn:"订单",   kind:"object", objectType:"Order"},
-      {id:"warehouse", cn:"发货仓", kind:"object", objectType:"Warehouse"},
-      {id:"carrier",   cn:"承运商", kind:"enum", options:["顺丰","京东物流","中通"], def:"顺丰"},
-    ],
-    rules:[
-      {cn:"订单状态为「已审核」", check:p => get(p.order).props.status === "APPROVED",
-       why:p => `当前 ${STATUS[get(p.order).props.status].cn}`},
-      {cn:"订单尚未关联运单", check:p => traverse(p.order,"fulfilledBy").length === 0},
-      {cn:"该仓库有此订单的商品", check:p => {
-        const prod = one(p.order, "contains");
-        return !!prod && hasLink("stockedAt", prod, p.warehouse);
-      }, why:p => {
-        const prod = one(p.order,"contains");
-        return prod ? `${titleOf(prod)} 不在该仓库` : "订单未关联商品";
-      }},
-    ],
-    edits(p){
-      const id = "S-" + world.seq.Shipment;
-      const eta = new Date(Date.now() + 3*864e5).toISOString().slice(0,10);
-      const no = (p.carrier==="顺丰"?"SF":p.carrier==="京东物流"?"JD":"ZT") + "-" +
-                 Math.floor(1000+Math.random()*8999) + "-" + Math.floor(1000+Math.random()*8999);
-      return [
-        E.create("Shipment", id, {trackingNo:no, carrier:p.carrier, status:"IN_TRANSIT", eta}),
-        E.link("fulfilledBy", p.order, "Shipment:"+id),
-        E.link("shipsFrom", "Shipment:"+id, p.warehouse),
-        E.modify(p.order, {status:"SHIPPED"}),
-      ];
-    },
-    after(){ world.seq.Shipment++; },
-  },
+  // 先给所有 create 分配主键，这样后面的 link 才能引用它们
+  for (const spec of action.edits){
+    if (spec.op !== "create") continue;
+    const t = OT(spec.objectType); if (!t) continue;
+    seqUsed[t.id] = (seqUsed[t.id] || 0);
+    ctx.created[spec.uid] = `${t.id}:${t.idPrefix}-${t.seq + seqUsed[t.id]}`;
+    seqUsed[t.id]++;
+  }
 
-  {
-    id:"deliverShipment", cn:"确认送达",
-    desc:"参数里只给了运单，但编辑会顺着 fulfilledBy 的反向链接找到订单，把两个对象一起改掉。",
-    params:[{id:"shipment", cn:"运单", kind:"object", objectType:"Shipment"}],
-    rules:[{cn:"运单处于「运输中」", check:p => get(p.shipment).props.status === "IN_TRANSIT",
-            why:p => `当前 ${STATUS[get(p.shipment).props.status].cn}`}],
-    edits(p){
-      const es = [E.modify(p.shipment, {status:"DELIVERED"})];
-      const order = one(p.shipment, "fulfilledBy", "inv");
-      if (order) es.push(E.modify(order, {status:"DELIVERED"}));
-      return es;
-    },
-  },
+  for (const spec of action.edits){
+    if (spec.op === "create"){
+      const t = OT(spec.objectType); if (!t) continue;
+      const key = ctx.created[spec.uid], id = key.split(":")[1];
+      const props = {};
+      for (const p of t.props){
+        const ref = spec.props && spec.props[p.id];
+        const v = ref ? resolveRef(ref, {...ctx, newId:id}) : undefined;
+        props[p.id] = v === undefined ? defaultFor(p) : v;
+      }
+      out.push({op:"create", key, objectType:t.id, id, props});
 
-  {
-    id:"cancelOrder", cn:"取消订单",
-    desc:"撤销类操作也是 Action：改订单状态之余，还要沿链接找回商品，把占用的库存还回去。",
-    params:[
-      {id:"order",  cn:"订单", kind:"object", objectType:"Order"},
-      {id:"reason", cn:"原因", kind:"enum", options:["客户取消","缺货","地址有误"], def:"客户取消"},
-    ],
-    rules:[{cn:"订单尚未发货", check:p => ["PENDING","APPROVED"].includes(get(p.order).props.status),
-            why:p => `当前 ${STATUS[get(p.order).props.status].cn}，已不可取消`}],
-    edits(p){
-      const es = [E.modify(p.order, {status:"CANCELLED"})];
-      const prod = one(p.order, "contains");
-      if (prod) es.push(E.modify(prod, {stock: get(prod).props.stock + get(p.order).props.qty}));
-      return es;
-    },
-  },
+    } else if (spec.op === "modify"){
+      const key = resolveTarget(spec.target, ctx); if (!key) continue;
+      const o = get(key); if (!o) continue;
+      const v = resolveRef(spec.value, ctx); if (v === undefined) continue;
+      const cur = o.props[spec.prop];
+      let next = v;
+      if (spec.mode === "inc") next = Number(cur) + Number(v);
+      if (spec.mode === "dec") next = Number(cur) - Number(v);
+      if (spec.mode === "mul") next = Number(cur) * Number(v);
+      out.push({op:"modify", key, changes:{[spec.prop]: next}});
 
-  {
-    id:"restockProduct", cn:"补货入仓",
-    desc:"编辑可以是有条件的：商品和仓库之间如果还没有链接，这次就顺手建一条。",
-    params:[
-      {id:"product",   cn:"商品", kind:"object", objectType:"Product"},
-      {id:"warehouse", cn:"仓库", kind:"object", objectType:"Warehouse"},
-      {id:"qty",       cn:"数量", kind:"number", min:1, def:10},
-    ],
-    rules:[{cn:"数量必须 ≥ 1", check:p => p.qty >= 1}],
-    edits(p){
-      const es = [E.modify(p.product, {stock: get(p.product).props.stock + p.qty})];
-      if (!hasLink("stockedAt", p.product, p.warehouse)) es.push(E.link("stockedAt", p.product, p.warehouse));
-      return es;
-    },
-  },
-];
-const AT = Object.fromEntries(ACTIONS.map(a => [a.id, a]));
+    } else if (spec.op === "link"){
+      const a = resolveTarget(spec.a, ctx), b = resolveTarget(spec.b, ctx);
+      const lt = LTof(spec.link);
+      if (!a || !b || !lt) continue;
+      if (hasLink(lt.id, a, b)) continue;                  // 已存在 → 这条编辑没必要
+      // 基数守卫：重数为 1 的一端要先断开旧链接，约束才是真的生效
+      const [fromMult, toMult] = lt.card.split(":").map(s => s.trim());
+      if (toMult === "1")
+        for (const l of world.links) if (l.t===lt.id && l.a===a) out.push({op:"unlink", t:lt.id, a:l.a, b:l.b});
+      if (fromMult === "1")
+        for (const l of world.links) if (l.t===lt.id && l.b===b) out.push({op:"unlink", t:lt.id, a:l.a, b:l.b});
+      out.push({op:"link", t:lt.id, a, b});
+
+    } else if (spec.op === "unlink"){
+      const a = resolveTarget(spec.a, ctx), b = resolveTarget(spec.b, ctx);
+      if (a && b && hasLink(spec.link, a, b)) out.push({op:"unlink", t:spec.link, a, b});
+
+    } else if (spec.op === "delete"){
+      const key = resolveTarget(spec.target, ctx);
+      if (key && get(key)) out.push({op:"delete", key});
+    }
+  }
+  return out;
+}
+
+/* --- 把声明式结构翻译成中文 --------------------------------------- */
+function describeTarget(t, action){
+  if (!t) return "？";
+  if (t.kind === "param"){
+    const p = action.params.find(x => x.id === t.param);
+    return p ? p.cn : t.param;
+  }
+  if (t.kind === "new"){
+    const e = action.edits.find(x => x.uid === t.uid);
+    const ot = e && OT(e.objectType);
+    return ot ? `新建的${ot.cn}` : "新建对象";
+  }
+  if (t.kind === "hop"){
+    const lt = LTof(t.link);
+    return `${describeTarget(t.from, action)} 的 ${lt ? (t.dir==="fwd" ? lt.fwd : lt.inv) : t.link}`;
+  }
+  return "？";
+}
+function targetType(t, action){
+  if (!t) return null;
+  if (t.kind === "param"){ const p = action.params.find(x => x.id === t.param); return p ? p.objectType : null; }
+  if (t.kind === "new"){ const e = action.edits.find(x => x.uid === t.uid); return e ? e.objectType : null; }
+  if (t.kind === "hop"){ const lt = LTof(t.link); return lt ? (t.dir === "fwd" ? lt.to : lt.from) : null; }
+  return null;
+}
+function describeRef(r, action){
+  if (!r) return "？";
+  switch (r.src){
+    case "const":  return String(r.value);
+    case "consts": return (r.values||[]).join(" / ");
+    case "param":  { const p = action.params.find(x => x.id === r.param); return p ? p.cn : r.param; }
+    case "prop":   { const pr = propOf(targetType(r.of, action), r.prop);
+                     return `${describeTarget(r.of, action)}.${pr ? pr.cn : r.prop}`; }
+    case "calc":   return `${describeRef(r.a, action)} ${r.op} ${describeRef(r.b, action)}`;
+    case "now":    return "当前时间";
+    case "today":  return r.plusDays ? `${r.plusDays} 天后` : "今天";
+    case "newId":  return "新对象的主键";
+    default: return "？";
+  }
+}
+const OPCN = {"==":"等于","!=":"不等于",">":"大于",">=":"大于等于","<":"小于","<=":"小于等于","in":"属于"};
+function describeRule(rule, action){
+  if (rule.type === "compare")
+    return `${describeRef(rule.left, action)} ${OPCN[rule.op]} ${describeRef(rule.right, action)}`;
+  if (rule.type === "linkCount"){
+    const lt = LTof(rule.link);
+    return `${describeTarget(rule.target, action)} 的「${lt ? (rule.dir==="fwd"?lt.fwd:lt.inv) : rule.link}」数量 ${OPCN[rule.op]} ${rule.n}`;
+  }
+  if (rule.type === "linkExists"){
+    const lt = LTof(rule.link);
+    return `${describeTarget(rule.a, action)} 与 ${describeTarget(rule.b, action)} 之间${rule.expect ? "存在" : "不存在"}「${lt ? lt.id : rule.link}」链接`;
+  }
+  return "";
+}
+const MODECN = {set:"设为", inc:"增加", dec:"减少", mul:"乘以"};
+function describeSpec(spec, action){
+  if (spec.op === "create"){
+    const t = OT(spec.objectType);
+    return {op:"CREATE", txt:`新建一个${t ? t.cn : spec.objectType}对象`};
+  }
+  if (spec.op === "modify"){
+    const pr = propOf(targetType(spec.target, action), spec.prop);
+    return {op:"MODIFY", txt:`${describeTarget(spec.target, action)}.${pr ? pr.cn : spec.prop} ${MODECN[spec.mode]} ${describeRef(spec.value, action)}`};
+  }
+  if (spec.op === "link")
+    return {op:"LINK", txt:`${describeTarget(spec.a, action)} ──${spec.link}──▸ ${describeTarget(spec.b, action)}`};
+  if (spec.op === "unlink")
+    return {op:"UNLINK", txt:`断开 ${describeTarget(spec.a, action)} ──${spec.link}──▸ ${describeTarget(spec.b, action)}`};
+  return {op:"DELETE", txt:`删除 ${describeTarget(spec.target, action)}`};
+}
+/** 描述一条已经具体化的编辑（用于预览与日志） */
+function describeEdit(e){
+  if (e.op === "create"){
+    const t = OT(e.objectType);
+    return {op:"CREATE", html:`新建 <b>${esc(t ? t.cn : e.objectType)}</b> <code>${esc(e.id)}</code>`};
+  }
+  if (e.op === "modify"){
+    const o = get(e.key);
+    const parts = Object.entries(e.changes).map(([k,v]) => {
+      const pr = o ? propOf(o.type, k) : null;
+      return `${esc(pr ? pr.cn : k)} → <code>${esc(fmtRaw(v))}</code>`;
+    }).join("，");
+    return {op:"MODIFY", html:`<b>${esc(titleOf(e.key))}</b> ${parts}`};
+  }
+  if (e.op === "link")
+    return {op:"LINK", html:`<b>${esc(titleOf(e.a))}</b> <code>${esc(e.t)}</code> <b>${esc(titleOf(e.b))}</b>`};
+  if (e.op === "unlink")
+    return {op:"UNLINK", html:`断开 <b>${esc(titleOf(e.a))}</b> <code>${esc(e.t)}</code> <b>${esc(titleOf(e.b))}</b>`};
+  return {op:"DELETE", html:`删除 <b>${esc(titleOf(e.key))}</b>`};
+}
 
 /* ============================================================
-   4. 编辑引擎 —— 应用一组 edits，并返回其逆操作（供撤销）
+   §5  编辑引擎
    ============================================================ */
-
 function applyEdits(edits){
   const inverse = [];
   for (const e of edits){
     if (e.op === "create"){
       world.objects[e.key] = {type:e.objectType, id:e.id, props:{...e.props}};
+      const t = OT(e.objectType);
+      const n = parseInt(String(e.id).split("-").pop(), 10);
+      if (t && isFinite(n) && n >= t.seq) t.seq = n + 1;
       inverse.unshift({op:"delete", key:e.key});
       flash(e.key);
     } else if (e.op === "modify"){
@@ -685,7 +925,9 @@ function applyEdits(edits){
       flash(e.key);
     } else if (e.op === "delete"){
       const o = get(e.key); if (!o) continue;
+      const cut = world.links.filter(x => x.a === e.key || x.b === e.key);
       inverse.unshift({op:"create", key:e.key, objectType:o.type, id:o.id, props:{...o.props}});
+      for (const l of cut) inverse.unshift({op:"link", t:l.t, a:l.a, b:l.b});
       world.links = world.links.filter(x => x.a !== e.key && x.b !== e.key);
       delete world.objects[e.key];
     } else if (e.op === "link"){
@@ -700,21 +942,22 @@ function applyEdits(edits){
 }
 
 function runAction(action, params){
-  const edits = action.edits(params);
+  const edits = buildEdits(action, params);
+  const seqBefore = Object.fromEntries(schema.objectTypes.map(t => [t.id, t.seq]));
   const inverse = applyEdits(edits);
-  if (action.after) action.after();
   editCount += edits.length;
   logEntries.unshift({
     ts: new Date().toTimeString().slice(0,8),
     actionId: action.id, actionCn: action.cn,
-    params: describeParams(action, params),
-    edits: edits.map(describeEdit),
-    inverse,
-    editN: edits.length,
+    params: action.params.map(pr => {
+      const v = params[pr.id];
+      return `${pr.id}=${pr.kind === "object" ? titleOf(v) : v}`;
+    }).join("  "),
+    edits: edits.map(describeEdit), inverse, editN: edits.length, seqBefore,
   });
-  // 选中这次操作创建的对象，否则选中第一个参数对象
   const created = edits.find(e => e.op === "create");
-  selected = created ? created.key : (Object.values(params).find(v => typeof v === "string" && world.objects[v]) || selected);
+  selected = created ? created.key
+           : (Object.values(params).find(v => typeof v === "string" && world.objects[v]) || selected);
   syncGraph(); renderAll();
 }
 
@@ -722,112 +965,98 @@ function undoLast(){
   const entry = logEntries.shift();
   if (!entry) return;
   applyEdits(entry.inverse);
+  if (entry.seqBefore) for (const t of schema.objectTypes)
+    if (entry.seqBefore[t.id] !== undefined) t.seq = entry.seqBefore[t.id];
   editCount -= entry.editN;
   if (!world.objects[selected]) selected = null;
   syncGraph(); renderAll();
 }
 
-/* --- 编辑的人话描述 --------------------------------------------- */
-function describeParams(action, p){
-  return action.params.map(pr => {
-    const v = p[pr.id];
-    return pr.kind === "object" ? `${pr.id}=${titleOf(v)}` : `${pr.id}=${v}`;
-  }).join("  ");
-}
-function describeEdit(e){
-  if (e.op === "create")
-    return {op:"CREATE", html:`新建 <b>${OBJECT_TYPES[e.objectType].cn}</b> <code>${e.id}</code>`};
-  if (e.op === "modify"){
-    const o = get(e.key);
-    const parts = Object.entries(e.changes).map(([k,v]) => {
-      const def = o ? OBJECT_TYPES[o.type].props.find(x => x.id===k) : null;
-      return `${def ? def.cn : k} → <code>${fmtRaw(v)}</code>`;
-    }).join("，");
-    return {op:"MODIFY", html:`<b>${titleOf(e.key)}</b> ${parts}`};
-  }
-  if (e.op === "link")
-    return {op:"LINK", html:`<b>${titleOf(e.a)}</b> <code>${e.t}</code> <b>${titleOf(e.b)}</b>`};
-  if (e.op === "unlink")
-    return {op:"UNLINK", html:`断开 <b>${titleOf(e.a)}</b> <code>${e.t}</code> <b>${titleOf(e.b)}</b>`};
-  return {op:"DELETE", html:`删除 <b>${titleOf(e.key)}</b>`};
-}
-
 /* ============================================================
-   5. 格式化
+   §6  格式化
    ============================================================ */
-const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const fmtRaw = v => (STATUS[v] ? STATUS[v].cn : v);
-function fmtValue(v, type){
-  if (type === "currency") return "¥" + Number(v).toLocaleString("zh-CN");
-  if (type === "integer")  return Number(v).toLocaleString("zh-CN");
-  if (type === "enum" && STATUS[v]) return statusPill(v);
+const fmtRaw = v => (v === true ? "是" : v === false ? "否" : String(v));
+function fmtValue(v, p){
+  if (v === undefined || v === "") return `<span style="color:var(--muted)">—</span>`;
+  if (p.type === "currency") return "¥" + Number(v).toLocaleString("zh-CN");
+  if (p.type === "integer")  return Number(v).toLocaleString("zh-CN");
+  if (p.type === "boolean")  return v ? "是" : "否";
+  if (p.type === "enum"){
+    const tone = TONE[v] || "neutral";
+    return `<span class="pill" style="color:var(--${tone});border-color:currentColor">${esc(v)}</span>`;
+  }
   return esc(v);
 }
-function statusPill(v){
-  const s = STATUS[v] || {cn:v, tone:"neutral"};
-  return `<span class="pill" style="color:var(--${s.tone});border-color:currentColor">${esc(s.cn)}</span>`;
-}
 
 /* ============================================================
-   6. UI 状态
-   ============================================================ */
-let selected  = "Order:O-2003";
-let highlight = null;              // {kind:"objectType"|"linkType", id}
-let activeAction = ACTIONS[0].id;
-let formState = {};
-
-/* ============================================================
-   7. 图谱 —— canvas 力导向布局
+   §7  图谱 —— 建模模式画类型图，运行模式画实例图
    ============================================================ */
 const canvas = document.getElementById("graph");
-const ctx = canvas.getContext("2d");
-let nodes = new Map();             // key -> {x,y,vx,vy,w,h,pinned}
-let flashes = new Map();           // key -> timestamp
+const ctx2d = canvas.getContext("2d");
+const layouts = {operate:new Map(), model:new Map()};
+let flashes = new Map();
 let alpha = 1, raf = null, dragging = null, hovered = null;
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const flash = key => flashes.set(key, performance.now());
+const nodes = () => layouts[mode];
 
-function flash(key){ flashes.set(key, performance.now()); }
+/** 两种模式共用一套布局与绘制，只是喂进去的数据不同 */
+function graphData(){
+  if (mode === "model"){
+    return {
+      nodes: schema.objectTypes.map(t => ({key:t.id, label:t.id, color:typeColor(t.id),
+                                           active: editing && editing.kind==="ot" && editing.id===t.id})),
+      edges: schema.linkTypes.map(l => ({a:l.from, b:l.to, label:l.id, id:l.id,
+                                         active: editing && editing.kind==="lt" && editing.id===l.id})),
+    };
+  }
+  return {
+    nodes: Object.keys(world.objects).map(k => ({key:k, label:titleOf(k), color:typeColor(get(k).type),
+                                                 active: k === selected})),
+    edges: world.links.map(l => ({a:l.a, b:l.b, label:l.t, id:l.t, active: selected && (l.a===selected||l.b===selected)})),
+  };
+}
 
 let theme = {};
 function refreshTheme(){
   const cs = getComputedStyle(document.documentElement);
-  theme = {
-    line: cs.getPropertyValue("--line").trim(),
-    muted: cs.getPropertyValue("--muted").trim(),
-    text: cs.getPropertyValue("--text").trim(),
-    panel: cs.getPropertyValue("--panel").trim(),
-    write: cs.getPropertyValue("--write").trim(),
-  };
-  for (const t in OBJECT_TYPES) theme[t] = cs.getPropertyValue("--t-"+t).trim();
+  theme = {line:cs.getPropertyValue("--line").trim(), muted:cs.getPropertyValue("--muted").trim(),
+           text:cs.getPropertyValue("--text").trim(), panel:cs.getPropertyValue("--panel").trim(),
+           write:cs.getPropertyValue("--write").trim()};
+  for (let i=0;i<8;i++) theme["p"+i] = cs.getPropertyValue("--p"+i).trim();
   kick();
 }
+const solid = c => { const m = /var\(--(p\d)\)/.exec(c); return m ? theme[m[1]] : c; };
 
 function syncGraph(){
+  const map = nodes();
   const cx = canvas.clientWidth/2 || 300, cy = canvas.clientHeight/2 || 200;
-  const keys = Object.keys(world.objects);
-  keys.forEach((k,i) => {
-    if (!nodes.has(k)){
-      const a = (i / Math.max(keys.length,1)) * Math.PI*2;
-      nodes.set(k, {x:cx + Math.cos(a)*140 + Math.random()*8, y:cy + Math.sin(a)*110 + Math.random()*8,
-                    vx:0, vy:0, w:80, h:26, pinned:false});
+  const data = graphData();
+  data.nodes.forEach((n,i) => {
+    if (!map.has(n.key)){
+      const a = (i / Math.max(data.nodes.length,1)) * Math.PI*2;
+      map.set(n.key, {x:cx + Math.cos(a)*140 + Math.random()*8, y:cy + Math.sin(a)*110 + Math.random()*8,
+                      vx:0, vy:0, w:80, h:26, pinned:false});
     }
   });
-  for (const k of [...nodes.keys()]) if (!world.objects[k]) nodes.delete(k);
+  const live = new Set(data.nodes.map(n => n.key));
+  for (const k of [...map.keys()]) if (!live.has(k)) map.delete(k);
   measureNodes();
   kick();
 }
 function measureNodes(){
-  ctx.font = '600 11.5px ' + getComputedStyle(document.body).getPropertyValue("--mono");
-  for (const [k,n] of nodes){
-    n.w = Math.min(160, ctx.measureText(titleOf(k)).width + 30);
-    n.h = 26;
+  ctx2d.font = '600 11.5px ' + getComputedStyle(document.body).getPropertyValue("--mono");
+  for (const n of graphData().nodes){
+    const g = nodes().get(n.key); if (!g) continue;
+    g.w = Math.min(170, ctx2d.measureText(n.label).width + 30);
+    g.h = 26;
   }
 }
 function relayout(){
   const cx = canvas.clientWidth/2, cy = canvas.clientHeight/2;
-  const keys = [...nodes.keys()];
+  const keys = [...nodes().keys()];
   keys.forEach((k,i) => {
-    const n = nodes.get(k), a = (i/keys.length)*Math.PI*2;
+    const n = nodes().get(k), a = (i/keys.length)*Math.PI*2;
     n.x = cx + Math.cos(a)*150; n.y = cy + Math.sin(a)*120; n.vx = n.vy = 0; n.pinned = false;
   });
   kick();
@@ -835,18 +1064,17 @@ function relayout(){
 
 function step(){
   const W = canvas.clientWidth, H = canvas.clientHeight;
-  const arr = [...nodes.values()];
+  const map = nodes(), arr = [...map.values()];
+  const data = graphData();
   for (const n of arr){ n.fx = 0; n.fy = 0; }
   const GAP = 14;
   for (let i=0;i<arr.length;i++) for (let j=i+1;j<arr.length;j++){
     const a = arr[i], b = arr[j];
     let dx = b.x-a.x, dy = b.y-a.y, d2 = dx*dx+dy*dy;
-    if (d2 < 1) { dx = Math.random()-0.5; dy = Math.random()-0.5; d2 = 1; }
+    if (d2 < 1){ dx = Math.random()-0.5; dy = Math.random()-0.5; d2 = 1; }
     const d = Math.sqrt(d2), ux = dx/d, uy = dy/d;
-    // 远场斥力
     const f = Math.min(13000/d2, 45);
     a.fx -= ux*f; a.fy -= uy*f; b.fx += ux*f; b.fy += uy*f;
-    // 近场矩形分离：节点是有宽高的框，重叠了就沿重叠最浅的轴推开
     const ox = (a.w+b.w)/2 + GAP - Math.abs(dx);
     const oy = (a.h+b.h)/2 + GAP - Math.abs(dy);
     if (ox > 0 && oy > 0){
@@ -854,20 +1082,18 @@ function step(){
       else        { const p = Math.sign(dy||1) * oy * 0.55; a.fy -= p; b.fy += p; }
     }
   }
-  // 弹簧
-  for (const l of world.links){
-    const a = nodes.get(l.a), b = nodes.get(l.b);
-    if (!a || !b) continue;
+  for (const e of data.edges){
+    const a = map.get(e.a), b = map.get(e.b);
+    if (!a || !b || a === b) continue;
     const dx = b.x-a.x, dy = b.y-a.y, d = Math.hypot(dx,dy) || 1;
     const rest = (a.w+b.w)/2 + 74;
     const f = (d - rest) * 0.04, ux = dx/d, uy = dy/d;
     a.fx += ux*f; a.fy += uy*f; b.fx -= ux*f; b.fy -= uy*f;
   }
-  // 向心 + 积分
   const cx = W/2, cy = H/2;
   for (const n of arr){
     n.fx += (cx-n.x)*0.009; n.fy += (cy-n.y)*0.016;
-    if (n.pinned) { n.vx = n.vy = 0; continue; }
+    if (n.pinned){ n.vx = n.vy = 0; continue; }
     n.vx = (n.vx + n.fx*alpha) * 0.84;
     n.vy = (n.vy + n.fy*alpha) * 0.84;
     n.x += n.vx; n.y += n.vy;
@@ -875,21 +1101,6 @@ function step(){
     n.y = Math.max(n.h/2+8, Math.min(H-n.h/2-8, n.y));
   }
   alpha *= 0.985;
-}
-
-function dimOf(key){
-  const o = get(key); if (!o) return 1;
-  if (highlight){
-    if (highlight.kind === "objectType") return o.type === highlight.id ? 1 : 0.16;
-    const lt = LT[highlight.id];
-    return (o.type === lt.from || o.type === lt.to) ? 1 : 0.16;
-  }
-  if (selected){
-    if (key === selected) return 1;
-    const nb = world.links.some(l => (l.a===selected && l.b===key) || (l.b===selected && l.a===key));
-    return nb ? 1 : 0.3;
-  }
-  return 1;
 }
 
 function rectEdge(n, dx, dy){
@@ -901,107 +1112,125 @@ function rectEdge(n, dx, dy){
 function draw(){
   const dpr = Math.min(devicePixelRatio||1, 2);
   const W = canvas.clientWidth, H = canvas.clientHeight;
-  if (canvas.width !== W*dpr || canvas.height !== H*dpr){
-    canvas.width = W*dpr; canvas.height = H*dpr;
-  }
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.clearRect(0,0,W,H);
+  if (canvas.width !== W*dpr || canvas.height !== H*dpr){ canvas.width = W*dpr; canvas.height = H*dpr; }
+  ctx2d.setTransform(dpr,0,0,dpr,0,0);
+  ctx2d.clearRect(0,0,W,H);
 
+  const map = nodes(), data = graphData();
   const monoFace = getComputedStyle(document.body).getPropertyValue("--mono");
+  const anyActive = data.nodes.some(n => n.active);
+  const nbr = new Set();
+  if (mode === "operate" && selected)
+    for (const e of data.edges){ if (e.a===selected) nbr.add(e.b); if (e.b===selected) nbr.add(e.a); }
 
-  // ---- 边
-  for (const l of world.links){
-    const a = nodes.get(l.a), b = nodes.get(l.b);
+  const dimNode = n => {
+    if (highlight){
+      if (highlight.kind === "objectType")
+        return (mode==="model" ? n.key===highlight.id : get(n.key) && get(n.key).type===highlight.id) ? 1 : 0.16;
+      const lt = LTof(highlight.id);
+      const ty = mode==="model" ? n.key : (get(n.key) && get(n.key).type);
+      return lt && (ty===lt.from || ty===lt.to) ? 1 : 0.16;
+    }
+    if (mode === "operate" && selected) return n.key===selected ? 1 : (nbr.has(n.key) ? 1 : 0.3);
+    if (mode === "model" && anyActive)  return n.active ? 1 : 0.42;
+    return 1;
+  };
+  const dimByKey = k => { const n = data.nodes.find(x => x.key===k); return n ? dimNode(n) : 1; };
+
+  for (const e of data.edges){
+    const a = map.get(e.a), b = map.get(e.b);
     if (!a || !b) continue;
-    const touches = selected && (l.a===selected || l.b===selected);
-    let op = Math.min(dimOf(l.a), dimOf(l.b));
-    if (highlight && highlight.kind === "linkType") op = l.t === highlight.id ? 1 : 0.1;
+    let op = Math.min(dimByKey(e.a), dimByKey(e.b));
+    if (highlight && highlight.kind === "linkType") op = e.id === highlight.id ? 1 : 0.1;
+    const strong = e.active || (highlight && highlight.kind==="linkType" && e.id===highlight.id);
     const dx = b.x-a.x, dy = b.y-a.y;
+    if (a === b) continue;
     const [x1,y1] = rectEdge(a, dx, dy);
     const [x2,y2] = rectEdge(b, -dx, -dy);
 
-    ctx.globalAlpha = op * (touches ? 0.95 : 0.5);
-    ctx.strokeStyle = touches ? theme.text : theme.line;
-    ctx.lineWidth = touches ? 1.4 : 1;
-    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    ctx2d.globalAlpha = op * (strong ? 0.95 : 0.5);
+    ctx2d.strokeStyle = strong ? theme.text : theme.line;
+    ctx2d.lineWidth = strong ? 1.4 : 1;
+    ctx2d.beginPath(); ctx2d.moveTo(x1,y1); ctx2d.lineTo(x2,y2); ctx2d.stroke();
 
-    // 箭头（链接是有方向的）
     const ang = Math.atan2(y2-y1, x2-x1);
-    ctx.fillStyle = touches ? theme.text : theme.line;
-    ctx.beginPath();
-    ctx.moveTo(x2,y2);
-    ctx.lineTo(x2 - 7*Math.cos(ang-0.4), y2 - 7*Math.sin(ang-0.4));
-    ctx.lineTo(x2 - 7*Math.cos(ang+0.4), y2 - 7*Math.sin(ang+0.4));
-    ctx.closePath(); ctx.fill();
+    ctx2d.fillStyle = strong ? theme.text : theme.line;
+    ctx2d.beginPath(); ctx2d.moveTo(x2,y2);
+    ctx2d.lineTo(x2 - 7*Math.cos(ang-0.4), y2 - 7*Math.sin(ang-0.4));
+    ctx2d.lineTo(x2 - 7*Math.cos(ang+0.4), y2 - 7*Math.sin(ang+0.4));
+    ctx2d.closePath(); ctx2d.fill();
 
-    // 选中对象的边上标出链接类型名
-    if (touches || (highlight && highlight.kind==="linkType" && l.t===highlight.id)){
+    if (strong || mode === "model"){
       const mx = (x1+x2)/2, my = (y1+y2)/2;
-      ctx.font = '500 10px ' + monoFace;
-      const tw = ctx.measureText(l.t).width;
-      ctx.globalAlpha = op * 0.95;
-      ctx.fillStyle = theme.panel;
-      ctx.fillRect(mx-tw/2-3, my-7, tw+6, 13);
-      ctx.fillStyle = theme.muted;
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(l.t, mx, my);
+      ctx2d.font = '500 10px ' + monoFace;
+      const tw = ctx2d.measureText(e.label).width;
+      ctx2d.globalAlpha = op * 0.95;
+      ctx2d.fillStyle = theme.panel;
+      ctx2d.fillRect(mx-tw/2-3, my-7, tw+6, 13);
+      ctx2d.fillStyle = strong ? theme.text : theme.muted;
+      ctx2d.textAlign = "center"; ctx2d.textBaseline = "middle";
+      ctx2d.fillText(e.label, mx, my);
     }
   }
 
-  // ---- 节点
-  ctx.textAlign = "left"; ctx.textBaseline = "middle";
-  for (const [k,n] of nodes){
-    const o = get(k); if (!o) continue;
-    const col = theme[o.type] || theme.text;
-    const op = dimOf(k);
-    const isSel = k === selected;
-    const x = n.x - n.w/2, y = n.y - n.h/2;
+  ctx2d.textAlign = "left"; ctx2d.textBaseline = "middle";
+  for (const n of data.nodes){
+    const g = map.get(n.key); if (!g) continue;
+    const col = solid(n.color), op = dimNode(n);
+    const x = g.x - g.w/2, y = g.y - g.h/2;
 
-    ctx.globalAlpha = op;
-    roundRect(x, y, n.w, n.h, 4);
-    ctx.fillStyle = theme.panel; ctx.fill();
-    ctx.globalAlpha = op * 0.1;
-    ctx.fillStyle = col; ctx.fill();
-    ctx.globalAlpha = op;
-    ctx.strokeStyle = col; ctx.lineWidth = isSel ? 2 : 1; ctx.stroke();
+    ctx2d.globalAlpha = op;
+    roundRect(x, y, g.w, g.h, 4);
+    ctx2d.fillStyle = theme.panel; ctx2d.fill();
+    ctx2d.globalAlpha = op * 0.1; ctx2d.fillStyle = col; ctx2d.fill();
+    ctx2d.globalAlpha = op;
+    ctx2d.strokeStyle = col; ctx2d.lineWidth = n.active ? 2 : 1; ctx2d.stroke();
 
-    if (isSel){
-      ctx.globalAlpha = op * 0.35;
-      roundRect(x-3.5, y-3.5, n.w+7, n.h+7, 6);
-      ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.stroke();
+    if (n.active){
+      ctx2d.globalAlpha = op * 0.35;
+      roundRect(x-3.5, y-3.5, g.w+7, g.h+7, 6);
+      ctx2d.strokeStyle = col; ctx2d.lineWidth = 1; ctx2d.stroke();
     }
-    const f = flashes.get(k);
+    const f = flashes.get(n.key);
     if (f !== undefined){
       const t = (performance.now() - f) / 2200;
-      if (t >= 1) flashes.delete(k);
+      if (t >= 1) flashes.delete(n.key);
       else {
-        ctx.globalAlpha = (1-t) * 0.9;
-        roundRect(x-3-t*7, y-3-t*7, n.w+6+t*14, n.h+6+t*14, 6+t*6);
-        ctx.strokeStyle = theme.write; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx2d.globalAlpha = (1-t) * 0.9;
+        roundRect(x-3-t*7, y-3-t*7, g.w+6+t*14, g.h+6+t*14, 6+t*6);
+        ctx2d.strokeStyle = theme.write; ctx2d.lineWidth = 1.5; ctx2d.stroke();
       }
     }
-
-    ctx.globalAlpha = op;
-    ctx.fillStyle = col;
-    ctx.beginPath(); ctx.arc(x+11, n.y, 3.2, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = theme.text;
-    ctx.font = '500 11.5px ' + monoFace;
-    ctx.fillText(clip(titleOf(k), n.w-26), x+19, n.y+0.5);
+    ctx2d.globalAlpha = op;
+    ctx2d.fillStyle = col;
+    ctx2d.beginPath(); ctx2d.arc(x+11, g.y, 3.2, 0, Math.PI*2); ctx2d.fill();
+    ctx2d.fillStyle = theme.text;
+    ctx2d.font = '500 11.5px ' + monoFace;
+    ctx2d.fillText(clip(n.label, g.w-26), x+19, g.y+0.5);
   }
-  ctx.globalAlpha = 1;
+  ctx2d.globalAlpha = 1;
+
+  if (!data.nodes.length){
+    ctx2d.fillStyle = theme.muted;
+    ctx2d.font = '13px ' + getComputedStyle(document.body).getPropertyValue("--sans");
+    ctx2d.textAlign = "center";
+    ctx2d.fillText(mode === "model" ? "本体还是空的 —— 从左边新建第一个对象类型"
+                                    : "还没有任何实例 —— 去建模模式定义类型，再用操作创建对象",
+                   W/2, H/2);
+    ctx2d.textAlign = "left";
+  }
 }
 function clip(s, max){
-  if (ctx.measureText(s).width <= max) return s;
+  if (ctx2d.measureText(s).width <= max) return s;
   let t = s;
-  while (t.length > 1 && ctx.measureText(t+"…").width > max) t = t.slice(0,-1);
+  while (t.length > 1 && ctx2d.measureText(t+"…").width > max) t = t.slice(0,-1);
   return t + "…";
 }
 function roundRect(x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
-  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  ctx2d.beginPath();
+  ctx2d.moveTo(x+r,y); ctx2d.arcTo(x+w,y,x+w,y+h,r); ctx2d.arcTo(x+w,y+h,x,y+h,r);
+  ctx2d.arcTo(x,y+h,x,y,r); ctx2d.arcTo(x,y,x+w,y,r); ctx2d.closePath();
 }
-
 function loop(){
   step(); draw();
   if (alpha > 0.008 || dragging || flashes.size) raf = requestAnimationFrame(loop);
@@ -1012,9 +1241,8 @@ function kick(){
   if (REDUCED){ for (let i=0;i<220;i++) step(); alpha = 0; draw(); return; }
   if (!raf) raf = requestAnimationFrame(loop);
 }
-
 function nodeAt(px, py){
-  for (const [k,n] of [...nodes].reverse())
+  for (const [k,n] of [...nodes()].reverse())
     if (Math.abs(px-n.x) <= n.w/2 && Math.abs(py-n.y) <= n.h/2) return k;
   return null;
 }
@@ -1022,143 +1250,181 @@ canvas.addEventListener("pointerdown", ev => {
   const r = canvas.getBoundingClientRect();
   const k = nodeAt(ev.clientX-r.left, ev.clientY-r.top);
   if (!k) return;
-  dragging = k; nodes.get(k).pinned = true;
+  dragging = k; nodes().get(k).pinned = true;
   canvas.setPointerCapture(ev.pointerId);
-  select(k);
+  if (mode === "operate") select(k); else openEditor("ot", k);
 });
 canvas.addEventListener("pointermove", ev => {
   const r = canvas.getBoundingClientRect();
   const px = ev.clientX-r.left, py = ev.clientY-r.top;
-  if (dragging){
-    const n = nodes.get(dragging);
-    if (n){ n.x = px; n.y = py; }
-    kick();
-    return;
-  }
+  if (dragging){ const n = nodes().get(dragging); if (n){ n.x = px; n.y = py; } kick(); return; }
   const k = nodeAt(px, py);
   if (k !== hovered){ hovered = k; canvas.style.cursor = k ? "pointer" : "default"; }
 });
-function endDrag(){
-  if (dragging){ const n = nodes.get(dragging); if (n) n.pinned = false; dragging = null; kick(); }
-}
+const endDrag = () => { if (dragging){ const n = nodes().get(dragging); if (n) n.pinned = false; dragging = null; kick(); } };
 canvas.addEventListener("pointerup", endDrag);
 canvas.addEventListener("pointercancel", endDrag);
 new ResizeObserver(() => kick()).observe(canvas);
 
 /* ============================================================
-   8. 渲染 —— 左栏（本体模型）
+   §8  概念带 / 统计 / 左栏
    ============================================================ */
-function renderModel(){
-  const otList = document.getElementById("ot-list");
-  otList.innerHTML = Object.values(OBJECT_TYPES).map(t => `
-    <button class="type-row" data-hl="objectType" data-id="${t.id}"
-            aria-pressed="${highlight && highlight.kind==='objectType' && highlight.id===t.id}">
-      <span class="swatch" style="background:var(--t-${t.id})"></span>
+function renderConcepts(){
+  const cards = mode === "model" ? [
+    {g:"▣", cn:"Object Type 对象类型", en:"", round:false, color:"var(--p0)",
+     p:"给一类实体定一张属性表：属性有名字、有数据类型。类型是模板，实例照着它长出来。"},
+    {g:"⇄", cn:"Link Type 链接类型", en:"", round:false, color:"var(--p2)",
+     p:"声明两个对象类型之间的关系：谁指向谁、基数是多少、正反两个方向各叫什么。"},
+    {g:"↯", cn:"Action Type 操作类型", en:"", round:true, color:"var(--write)",
+     p:"配置写入口：要哪些参数、提交前校验什么、通过后往本体里写哪几条编辑。"},
+  ] : [
+    {g:"▣", cn:"Object 对象", round:false, color:"var(--p0)",
+     p:"照着对象类型长出来的一个实体。属性表由类型决定，主键唯一。"},
+    {g:"⇄", cn:"Link 链接", round:false, color:"var(--p2)",
+     p:"两个对象之间的一条实际关系。查询不写 JOIN —— 沿着链接走就行。"},
+    {g:"↯", cn:"Action 操作", round:true, color:"var(--write)",
+     p:"唯一的写入口。填参数 → 校验 → 生成一组编辑 → 原子写回，留下可撤销的记录。"},
+  ];
+  document.getElementById("concepts").innerHTML = cards.map(c => `
+    <div class="concept">
+      <span class="glyph ${c.round?"round":""}" style="color:${c.color}">${c.g}</span>
+      <div><h2>${esc(c.cn)}</h2><p>${esc(c.p)}</p></div>
+    </div>`).join("");
+}
+
+function renderStats(){
+  const s = mode === "model"
+    ? [["对象类型", schema.objectTypes.length], ["链接类型", schema.linkTypes.length],
+       ["操作类型", schema.actionTypes.length], ["实例", Object.keys(world.objects).length]]
+    : [["Objects", Object.keys(world.objects).length], ["Links", world.links.length],
+       ["Actions", logEntries.length], ["Edits", editCount]];
+  document.getElementById("stats").innerHTML = s.map(([k,v]) =>
+    `<div class="stat"><b>${v}</b><span>${esc(k)}</span></div>`).join("");
+  document.querySelectorAll(".mode").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode));
+  document.getElementById("graph-tip").textContent =
+    mode === "model" ? "这是类型图谱：节点是对象类型，连线是链接类型" : "点击节点查看对象 · 可拖拽";
+}
+
+function renderLeft(){
+  const modelling = mode === "model";
+  const otRows = schema.objectTypes.map(t => `
+    <button class="${modelling ? "type-row" : "type-row"}" ${modelling
+        ? `data-edit="ot" data-id="${esc(t.id)}" aria-pressed="${editing&&editing.kind==="ot"&&editing.id===t.id}"`
+        : `data-hl="objectType" data-id="${esc(t.id)}" aria-pressed="${highlight&&highlight.kind==="objectType"&&highlight.id===t.id}"`}>
+      <span class="swatch" style="background:${typeColor(t.id)}"></span>
       <span class="body">
-        <span class="name">${t.id}</span> <span class="cn">${t.cn}</span>
-        <span class="props">${t.props.map(p => p.id).join(" · ")}</span>
+        <span class="name">${esc(t.id)}</span> <span class="cn">${esc(t.cn)}</span>
+        <span class="props">${t.props.length ? esc(t.props.map(p => p.id).join(" · ")) : "还没有属性"}</span>
       </span>
       <span class="count">${keysOf(t.id).length}</span>
-    </button>`).join("");
+    </button>`).join("") || `<p class="rail-empty">还没有对象类型。</p>`;
 
-  document.getElementById("lt-list").innerHTML = LINK_TYPES.map(l => `
-    <button class="link-row" data-hl="linkType" data-id="${l.id}"
-            aria-pressed="${highlight && highlight.kind==='linkType' && highlight.id===l.id}">
+  const ltRows = schema.linkTypes.map(l => `
+    <button class="link-row" ${modelling
+        ? `data-edit="lt" data-id="${esc(l.id)}" aria-pressed="${editing&&editing.kind==="lt"&&editing.id===l.id}"`
+        : `data-hl="linkType" data-id="${esc(l.id)}" aria-pressed="${highlight&&highlight.kind==="linkType"&&highlight.id===l.id}"`}>
       <span class="link-sig">
-        <span style="color:var(--t-${l.from})">${l.from}</span>
+        <span style="color:${typeColor(l.from)}">${esc(l.from)}</span>
         <span class="arrow">──▸</span>
-        <span style="color:var(--t-${l.to})">${l.to}</span>
+        <span style="color:${typeColor(l.to)}">${esc(l.to)}</span>
       </span>
       <span class="link-meta">
-        <span class="card-badge">${l.card}</span>
-        <span>${l.id} · ${l.fwd} / ${l.inv}</span>
+        <span class="card-badge">${esc(l.card)}</span>
+        <span>${esc(l.id)} · ${esc(l.fwd)} / ${esc(l.inv)}</span>
       </span>
-    </button>`).join("");
+    </button>`).join("") || `<p class="rail-empty">还没有链接类型。</p>`;
 
-  document.getElementById("at-list").innerHTML = ACTIONS.map(a => `
-    <button class="act-row" data-action="${a.id}">
+  const atRows = schema.actionTypes.map(a => `
+    <button class="act-row" ${modelling
+        ? `data-edit="at" data-id="${esc(a.id)}" aria-pressed="${editing&&editing.kind==="at"&&editing.id===a.id}"`
+        : `data-action="${esc(a.id)}"`}>
       <span class="dot"></span>
-      <span class="name">${a.id}</span>
-      <span class="cn">${a.cn}</span>
-    </button>`).join("");
+      <span class="name">${esc(a.id)}</span>
+      <span class="cn">${esc(a.cn)}</span>
+    </button>`).join("") || `<p class="rail-empty">还没有操作类型。</p>`;
 
-  document.getElementById("filter-hint").textContent = highlight ? "点同一项取消筛选" : "";
-  document.getElementById("legend").innerHTML = Object.values(OBJECT_TYPES).map(t =>
-    `<span class="lg"><i style="background:var(--t-${t.id})"></i>${t.cn}</span>`).join("");
+  const plus = (kind, label) => modelling ? `<button class="plus" data-new="${kind}">+ ${label}</button>` : "";
+
+  document.getElementById("col-left").innerHTML = `
+    <div class="pane-head">
+      <span class="eyebrow">${modelling ? "本体模型 / Schema" : "本体模型 / Schema"}</span>
+      <span class="hint">${modelling ? "点类型开始编辑" : (highlight ? "点同一项取消筛选" : "")}</span>
+    </div>
+    <div class="sub-head"><span class="eyebrow">对象类型</span><span class="hair"></span>${plus("ot","新建")}</div>
+    <div class="type-list">${otRows}</div>
+    <div class="sub-head"><span class="eyebrow">链接类型</span><span class="hair"></span>${plus("lt","新建")}</div>
+    <div class="type-list">${ltRows}</div>
+    <div class="sub-head"><span class="eyebrow">操作类型</span><span class="hair"></span>${plus("at","新建")}</div>
+    <div class="type-list">${atRows}</div>`;
+
+  document.getElementById("legend").innerHTML = schema.objectTypes.map(t =>
+    `<span class="lg"><i style="background:${typeColor(t.id)}"></i>${esc(t.cn)}</span>`).join("");
 }
 
 /* ============================================================
-   9. 渲染 —— 中栏（对象详情）
+   §9  运行模式 —— 对象详情 + Action runner
    ============================================================ */
 function renderDetail(){
-  const el = document.getElementById("detail");
+  const el = document.getElementById("mid-body");
   const o = selected ? get(selected) : null;
   if (!o){
     el.innerHTML = `<div class="empty">
-      在图谱里点一个节点，或从左边的<b>对象类型</b>里挑一类看看。<br><br>
-      每个节点都是一个 <b>Object</b>；节点之间的连线是 <b>Link</b>，箭头方向就是链接类型的正向；
-      右边所有的写入都必须经过一个 <b>Action</b>。</div>`;
+      <p class="lead">在图谱里点一个节点，看看一个 Object 长什么样。</p>
+      每个节点是一个 <b>Object</b>；节点之间的连线是 <b>Link</b>，箭头方向就是链接类型的正向；
+      右边所有的写入都必须经过一个 <b>Action</b>。<br><br>
+      想看这些类型是怎么定义出来的，切到上方的<b>本体建模</b>。</div>`;
     return;
   }
-  const t = OBJECT_TYPES[o.type];
-
+  const t = OT(o.type);
   const propRows = t.props.map(p => `
-    <tr><th>${p.cn}<small>${p.id} : ${p.type}</small></th>
-        <td>${fmtValue(o.props[p.id], p.type)}</td></tr>`).join("");
+    <tr><th>${esc(p.cn)}<small>${esc(p.id)} : ${esc(p.type)}</small></th>
+        <td>${fmtValue(o.props[p.id], p)}</td></tr>`).join("")
+    || `<tr><td colspan="2" style="color:var(--muted)">这个对象类型还没有定义任何属性。</td></tr>`;
 
-  // 关联对象：正向 + 反向都要能走
   const groups = [];
-  for (const l of LINK_TYPES){
-    if (l.from === o.type){
-      const t2 = traverse(selected, l.id, "fwd");
-      if (t2.length) groups.push({lt:l, dir:"fwd", label:l.fwd, targets:t2});
-    }
-    if (l.to === o.type){
-      const t2 = traverse(selected, l.id, "inv");
-      if (t2.length) groups.push({lt:l, dir:"inv", label:l.inv, targets:t2});
-    }
+  for (const l of schema.linkTypes){
+    if (l.from === o.type){ const x = traverse(selected, l.id, "fwd"); if (x.length) groups.push({lt:l, dir:"fwd", label:l.fwd, targets:x}); }
+    if (l.to === o.type){ const x = traverse(selected, l.id, "inv"); if (x.length) groups.push({lt:l, dir:"inv", label:l.inv, targets:x}); }
   }
   const linkHtml = groups.length ? groups.map(g => `
     <div class="link-group-head">
-      <span class="card-badge">${g.lt.card}</span>
-      <span class="lt">${g.dir==="fwd" ? "" : "◂── "}${g.lt.id}${g.dir==="fwd" ? " ──▸" : ""}</span>
-      <span class="dir">${g.label}</span>
+      <span class="card-badge">${esc(g.lt.card)}</span>
+      <span class="lt">${g.dir==="fwd" ? "" : "◂── "}${esc(g.lt.id)}${g.dir==="fwd" ? " ──▸" : ""}</span>
+      <span class="dir">${esc(g.label)}</span>
     </div>
     <div class="chips">${g.targets.map(k => {
       const to = get(k);
-      const rid = titleOf(k) === to.id ? "" : `<span class="rid">${to.id}</span>`;
-      return `<button class="chip" data-goto="${k}" style="color:var(--t-${to.type})">
-        <i style="background:var(--t-${to.type})"></i>
+      const rid = titleOf(k) === to.id ? "" : `<span class="rid">${esc(to.id)}</span>`;
+      return `<button class="chip" data-goto="${esc(k)}" style="color:${typeColor(to.type)}">
+        <i style="background:${typeColor(to.type)}"></i>
         <span style="color:var(--text)">${esc(titleOf(k))}</span>${rid}</button>`;
     }).join("")}</div>`).join("")
-    : `<p style="color:var(--muted);font-size:12.5px;margin:8px 0 0">这个对象目前没有任何链接。</p>`;
+    : `<p class="note" style="margin-top:8px">这个对象目前没有任何链接。</p>`;
 
-  const usable = ACTIONS.filter(a => a.params.some(p => p.kind==="object" && p.objectType===o.type));
+  const usable = schema.actionTypes.filter(a => a.params.some(p => p.kind==="object" && p.objectType===o.type));
   const actHtml = usable.map(a =>
-    `<button class="chip" data-run="${a.id}" style="color:var(--write)">
-       <span style="color:var(--write)">↯ ${a.cn}</span>
-       <span class="rid">${a.id}</span></button>`).join("");
+    `<button class="chip" data-run="${esc(a.id)}" style="color:var(--write)">
+       <span style="color:var(--write)">↯ ${esc(a.cn)}</span>
+       <span class="rid">${esc(a.id)}</span></button>`).join("")
+    || `<span class="note">没有以该类型为参数的操作 —— 去建模模式建一个。</span>`;
 
   el.innerHTML = `
     <div class="obj-head">
       <div class="obj-kicker">
-        <span class="pill" style="color:var(--t-${o.type});border-color:currentColor">▣ ${o.type}</span>
-        <span class="rid">${t.cn} · 主键 ${o.id}</span>
+        <span class="pill" style="color:${typeColor(o.type)};border-color:currentColor">▣ ${esc(o.type)}</span>
+        <span class="rid">${esc(t.cn)} · 主键 ${esc(o.id)}</span>
       </div>
       <h3>${esc(titleOf(selected))}</h3>
     </div>
     <table class="props">${propRows}</table>
     <div class="link-group">
-      <div class="sub-head" style="padding-left:0"><span class="eyebrow">关联对象 / Links</span><span class="rule"></span></div>
+      <div class="sub-head" style="padding-left:0"><span class="eyebrow">关联对象 / Links</span><span class="hair"></span></div>
       ${linkHtml}
-      <div class="sub-head" style="padding-left:0"><span class="eyebrow">可用操作 / Actions</span><span class="rule"></span></div>
-      <div class="chips">${actHtml || '<span style="color:var(--muted);font-size:12.5px">没有以该类型为参数的操作。</span>'}</div>
+      <div class="sub-head" style="padding-left:0"><span class="eyebrow">可用操作 / Actions</span><span class="hair"></span></div>
+      <div class="chips">${actHtml}</div>
     </div>`;
 }
 
-/* ============================================================
-   10. 渲染 —— 右栏（Action runner）
-   ============================================================ */
 function defaultParams(action){
   const p = {};
   for (const pr of action.params){
@@ -1166,34 +1432,39 @@ function defaultParams(action){
       const opts = keysOf(pr.objectType);
       p[pr.id] = (selected && get(selected) && get(selected).type === pr.objectType && opts.includes(selected))
                  ? selected : (opts[0] || "");
-    } else p[pr.id] = pr.def;
+    } else if (pr.kind === "enum") p[pr.id] = pr.def ?? (pr.options||[])[0] ?? "";
+    else if (pr.kind === "number") p[pr.id] = pr.def ?? 0;
+    else p[pr.id] = pr.def ?? "";
   }
   return p;
 }
 function evaluate(action, p){
   const complete = action.params.every(pr => p[pr.id] !== "" && p[pr.id] !== undefined && p[pr.id] !== null);
+  const ctx = {params:p, created:{}};
   const results = action.rules.map(r => {
-    if (!complete) return {cn:r.cn, state:"idle"};
-    let ok = false, why = "";
-    try { ok = !!r.check(p); if (!ok && r.why) why = r.why(p); }
-    catch { ok = false; why = "参数不完整"; }
-    return {cn:r.cn, state: ok ? "pass" : "fail", why};
+    if (!complete) return {cn:describeRule(r, action), state:"idle"};
+    let res; try { res = evalRule(r, ctx); } catch { res = {ok:false, why:"求值失败"}; }
+    return {cn:describeRule(r, action), state:res.ok ? "pass" : "fail", why:res.why};
   });
   const valid = complete && results.every(r => r.state === "pass");
   let edits = [];
-  if (valid){ try { edits = action.edits(p).map(describeEdit); } catch { edits = []; } }
+  if (valid){ try { edits = buildEdits(action, p); } catch { edits = []; } }
   return {complete, results, valid, edits};
 }
 
 function renderRunner(){
-  document.getElementById("action-tabs").innerHTML = ACTIONS.map(a =>
-    `<button class="tab" data-action="${a.id}" aria-pressed="${a.id===activeAction}">${a.cn}</button>`).join("");
-
-  const action = AT[activeAction];
-  if (!formState.__action || formState.__action !== activeAction){
-    formState = {__action: activeAction, ...defaultParams(action)};
+  const right = document.getElementById("col-right");
+  if (!schema.actionTypes.length){
+    right.innerHTML = `<div class="pane-head"><span class="eyebrow">操作执行器 / Action</span></div>
+      <div class="empty">本体里还没有操作类型。<br><br>
+      在 Ontology 里，实例数据不能被随手改写 —— 必须经过一个 <b>Action</b>。
+      切到<b>本体建模</b>建一个操作类型，这里就能执行了。</div>`;
+    return;
   }
-  // 撤销可能删掉了表单里引用的对象 —— 让参数回到一个合法值
+  if (!ATof(activeAction)) activeAction = schema.actionTypes[0].id;
+  const action = ATof(activeAction);
+
+  if (formState.__action !== activeAction) formState = {__action: activeAction, ...defaultParams(action)};
   for (const pr of action.params){
     if (pr.kind !== "object") continue;
     const opts = keysOf(pr.objectType);
@@ -1203,66 +1474,69 @@ function renderRunner(){
   const ev = evaluate(action, p);
 
   const fields = action.params.map(pr => {
-    let input;
+    let input, hint;
     if (pr.kind === "object"){
       const opts = keysOf(pr.objectType);
-      input = `<select data-p="${pr.id}">
-        ${opts.length ? "" : '<option value="">（无可选对象）</option>'}
-        ${opts.map(k => {
+      hint = pr.objectType;
+      input = `<select data-p="${esc(pr.id)}">${opts.length ? "" : '<option value="">（还没有这类对象）</option>'}${
+        opts.map(k => {
           const label = titleOf(k) === get(k).id ? titleOf(k) : `${titleOf(k)} · ${get(k).id}`;
-          return `<option value="${k}" ${k===p[pr.id]?"selected":""}>${esc(label)}</option>`;
-        }).join("")}
-      </select>`;
+          return `<option value="${esc(k)}" ${k===p[pr.id]?"selected":""}>${esc(label)}</option>`;
+        }).join("")}</select>`;
     } else if (pr.kind === "enum"){
-      input = `<select data-p="${pr.id}">${pr.options.map(o =>
+      hint = "enum";
+      input = `<select data-p="${esc(pr.id)}">${(pr.options||[]).map(o =>
         `<option ${o===p[pr.id]?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
+    } else if (pr.kind === "number"){
+      hint = "number";
+      input = `<input type="number" data-p="${esc(pr.id)}" value="${esc(p[pr.id])}">`;
     } else {
-      input = `<input type="number" data-p="${pr.id}" min="${pr.min ?? 0}" value="${p[pr.id]}">`;
+      hint = "text";
+      input = `<input type="text" data-p="${esc(pr.id)}" value="${esc(p[pr.id])}">`;
     }
-    const typeHint = pr.kind === "object" ? pr.objectType : (pr.kind === "number" ? "integer" : "enum");
-    return `<div class="field"><label>${pr.cn} <code>${pr.id} : ${typeHint}</code></label>${input}</div>`;
-  }).join("");
+    return `<div class="field"><label>${esc(pr.cn)} <code>${esc(pr.id)} : ${esc(hint)}</code></label>${input}</div>`;
+  }).join("") || `<p class="note">这个操作没有参数。</p>`;
 
-  const rules = ev.results.map(r => `
+  const checks = ev.results.map(r => `
     <div class="check ${r.state}">
       <span class="mk">${r.state==="pass" ? "✓" : r.state==="fail" ? "✕" : "·"}</span>
-      <span>${r.cn}${r.why ? ` <span style="opacity:.8">— ${esc(r.why)}</span>` : ""}</span>
-    </div>`).join("");
+      <span>${esc(r.cn)}${r.why ? ` <span style="opacity:.8">— ${esc(r.why)}</span>` : ""}</span>
+    </div>`).join("") || `<p class="note">没有校验规则 —— 这个操作永远可以提交。</p>`;
 
-  const edits = ev.valid && ev.edits.length
-    ? ev.edits.map(e => `<div class="edit"><span class="op">${e.op}</span><span class="txt">${e.html}</span></div>`).join("")
-    : `<p style="margin:0;font-size:12.5px;color:var(--muted)">${ev.complete ? "校验未通过，暂无编辑可提交。" : "填完参数后这里会列出将要写入的编辑。"}</p>`;
+  const previews = ev.valid && ev.edits.length
+    ? ev.edits.map(describeEdit).map(e =>
+        `<div class="edit"><span class="op">${e.op}</span><span class="txt">${e.html}</span></div>`).join("")
+    : `<p class="note">${ev.complete ? "校验未通过，暂无编辑可提交。" : "填完参数后这里会列出将要写入的编辑。"}</p>`;
 
-  document.getElementById("runner").innerHTML = `
-    <div class="runner-head">
-      <h3>${action.cn} <span class="mono" style="font-size:11.5px;color:var(--muted)">${action.id}</span></h3>
-      <p>${action.desc}</p>
+  right.innerHTML = `
+    <div class="pane-head"><span class="eyebrow">操作执行器 / Action</span></div>
+    <div class="action-tabs">${schema.actionTypes.map(a =>
+      `<button class="tab" data-action="${esc(a.id)}" aria-pressed="${a.id===activeAction}">${esc(a.cn)}</button>`).join("")}</div>
+    <div class="runner">
+      <div class="runner-head">
+        <h3>${esc(action.cn)} <span class="mono" style="font-size:11.5px;color:var(--muted)">${esc(action.id)}</span></h3>
+        <p>${esc(action.desc || "")}</p>
+      </div>
+      <div class="runner-sec"><span class="eyebrow">① 参数 Parameters</span>${fields}</div>
+      <div class="runner-sec"><span class="eyebrow">② 校验 Validation</span>${checks}</div>
+      <div class="runner-sec"><span class="eyebrow">③ 编辑预览 Edits <span style="color:var(--write)">${ev.valid ? ev.edits.length : 0}</span></span>${previews}</div>
+      <div class="runner-sec">
+        <button class="apply" id="apply" ${ev.valid ? "" : "disabled"}>应用操作 · 写回本体</button>
+        <p class="apply-note">${ev.valid ? "全部编辑将作为一个事务原子提交" : "校验未通过时无法提交"}</p>
+      </div>
     </div>
-    <div class="runner-sec"><span class="eyebrow">① 参数 Parameters</span>${fields}</div>
-    <div class="runner-sec"><span class="eyebrow">② 校验 Validation</span>${rules}</div>
-    <div class="runner-sec"><span class="eyebrow">③ 编辑预览 Edits <span style="color:var(--write)">${ev.valid ? ev.edits.length : 0}</span></span>${edits}</div>
-    <div class="runner-sec">
-      <button class="apply" id="apply" ${ev.valid ? "" : "disabled"}>应用操作 · 写回本体</button>
-      <p class="apply-note">${ev.valid ? "全部编辑将作为一个事务原子提交" : "校验未通过时无法提交"}</p>
-    </div>`;
+    <div class="sub-head"><span class="eyebrow">写入日志 / Audit</span><span class="hair"></span></div>
+    <div class="log">${renderLogHtml()}</div>`;
 }
 
-/* ============================================================
-   11. 渲染 —— 日志
-   ============================================================ */
-function renderLog(){
-  const el = document.getElementById("log");
-  if (!logEntries.length){
-    el.innerHTML = `<p style="color:var(--muted);font-size:12.5px;margin:2px 0 0">
-      还没有写入。每应用一次操作，这里就会留下它产生的全部编辑 —— 本体里的每一次改动都有出处。</p>`;
-    return;
-  }
-  el.innerHTML = logEntries.map((e,i) => `
+function renderLogHtml(){
+  if (!logEntries.length) return `<p class="note">还没有写入。每应用一次操作，这里就会留下它产生的全部编辑 —— 本体里的每一次改动都有出处。</p>`;
+  return logEntries.map((e,i) => `
     <details class="log-entry" ${i===0?"open":""}>
       <summary>
-        <span class="ts">${e.ts}</span>
-        <span class="who">${e.actionId}</span>
-        <span style="color:var(--text-2)">${e.actionCn}</span>
+        <span class="ts">${esc(e.ts)}</span>
+        <span class="who">${esc(e.actionId)}</span>
+        <span style="color:var(--text-2)">${esc(e.actionCn)}</span>
         <span class="n">${e.editN} edits</span>
       </summary>
       <div class="log-body">
@@ -1274,73 +1548,905 @@ function renderLog(){
 }
 
 /* ============================================================
-   12. 组装
+   §10  建模模式 —— 三种编辑器
    ============================================================ */
-function renderStats(){
-  document.getElementById("s-obj").textContent  = Object.keys(world.objects).length;
-  document.getElementById("s-link").textContent = world.links.length;
-  document.getElementById("s-act").textContent  = logEntries.length;
-  document.getElementById("s-edit").textContent = editCount;
-}
-function renderAll(){ renderModel(); renderDetail(); renderRunner(); renderLog(); renderStats(); measureNodes(); }
 
+/** 枚举一个 Action 里所有可选的对象目标：参数、参数走一跳、本次新建 */
+function targetsFor(action){
+  const out = [];
+  for (const p of action.params)
+    if (p.kind === "object" && OT(p.objectType))
+      out.push({t:{kind:"param", param:p.id}, label:p.cn, objectType:p.objectType});
+  for (const b of [...out]){
+    for (const lt of schema.linkTypes){
+      if (lt.from === b.objectType)
+        out.push({t:{kind:"hop", from:b.t, link:lt.id, dir:"fwd"}, label:`${b.label} 的 ${lt.fwd}`, objectType:lt.to});
+      if (lt.to === b.objectType)
+        out.push({t:{kind:"hop", from:b.t, link:lt.id, dir:"inv"}, label:`${b.label} 的 ${lt.inv}`, objectType:lt.from});
+    }
+  }
+  for (const e of action.edits)
+    if (e.op === "create" && OT(e.objectType))
+      out.push({t:{kind:"new", uid:e.uid}, label:`新建的${OT(e.objectType).cn}`, objectType:e.objectType});
+  return out;
+}
+const tkey = t => JSON.stringify(t);
+
+/** 通用小控件 */
+function sel(path, value, options, cls){
+  return `<select class="mini ${cls||""}" data-path="${esc(path)}">${
+    options.map(o => `<option value="${esc(o.v)}" ${String(o.v)===String(value)?"selected":""}>${esc(o.l)}</option>`).join("")
+  }</select>`;
+}
+function selT(path, value, targets, filterType){
+  const list = targets.filter(t => !filterType || t.objectType === filterType);
+  if (!list.length) return `<span class="txt" style="color:var(--bad)">没有可用目标</span>`;
+  const cur = tkey(value);
+  const known = list.some(t => tkey(t.t) === cur);
+  return `<select class="mini" data-path="${esc(path)}" data-json="1">${
+    (known ? "" : `<option value="${esc(cur)}" selected>（当前引用已失效）</option>`) +
+    list.map(t => `<option value="${esc(tkey(t.t))}" ${tkey(t.t)===cur?"selected":""}>${esc(t.label)}</option>`).join("")
+  }</select>`;
+}
+function txt(path, value, cls, ph){
+  return `<input class="mini ${cls||""}" type="text" data-path="${esc(path)}" value="${esc(value ?? "")}" placeholder="${esc(ph||"")}">`;
+}
+function numf(path, value){
+  return `<input class="mini n" type="number" data-path="${esc(path)}" data-num="1" value="${esc(value ?? 0)}">`;
+}
+
+/* --- 对象类型编辑器 --------------------------------------------- */
+function renderObjectTypeEditor(t){
+  const propRows = t.props.map((p,i) => `
+    <div class="spec">
+      <span class="lead">属性</span>
+      ${txt(`ot.${t.id}.props.${i}.cn`, p.cn, "s", "中文名")}
+      <input class="mini s" type="text" value="${esc(p.id)}" readonly title="属性 API 名创建后不可改">
+      ${sel(`ot.${t.id}.props.${i}.type`, p.type, PROP_TYPES.map(x => ({v:x.id, l:x.cn})))}
+      ${p.type === "enum" ? txt(`ot.${t.id}.props.${i}.optionsCsv`, (p.options||[]).join("，"), "", "枚举值，用逗号分隔") : ""}
+      <button class="kill" data-del="prop" data-ot="${esc(t.id)}" data-i="${i}" title="删除属性">✕</button>
+    </div>`).join("");
+
+  return `
+    <div class="ed">
+      <div class="ed-head">
+        <div class="obj-kicker">
+          <span class="pill" style="color:${typeColor(t.id)};border-color:currentColor">▣ Object Type</span>
+          <span class="rid mono" style="font-size:12px;color:var(--muted)">${keysOf(t.id).length} 个实例</span>
+        </div>
+        <h3><span class="cn-live">${esc(t.cn)}</span> <span class="mono" style="font-size:14px;color:var(--muted)">${esc(t.id)}</span></h3>
+      </div>
+
+      <div class="ed-sec">
+        <span class="eyebrow">基本信息</span>
+        <div class="f-grid">
+          <div class="field"><label>API 名 <code>不可修改</code></label>
+            <input type="text" value="${esc(t.id)}" readonly></div>
+          <div class="field"><label>中文名</label>
+            <input type="text" data-path="ot.${esc(t.id)}.cn" value="${esc(t.cn)}"></div>
+          <div class="field"><label>主键前缀 <code>${esc(t.idPrefix)}-${t.seq}</code></label>
+            <input type="text" data-path="ot.${esc(t.id)}.idPrefix" value="${esc(t.idPrefix)}"></div>
+          <div class="field"><label>标题属性 <code>列表里显示哪一个</code></label>
+            ${t.props.length
+              ? `<select data-path="ot.${esc(t.id)}.titleProp">${t.props.map(p =>
+                  `<option value="${esc(p.id)}" ${p.id===t.titleProp?"selected":""}>${esc(p.cn)}</option>`).join("")}</select>`
+              : `<input type="text" value="（先加一个属性）" readonly>`}</div>
+          <div class="field"><label>配色</label>
+            ${sel(`ot.${t.id}.color`, t.color, Array.from({length:8},(_,i)=>({v:i,l:"色板 "+i})))}</div>
+        </div>
+      </div>
+
+      <div class="ed-sec">
+        <span class="eyebrow">属性 Properties</span>
+        ${propRows || `<p class="note" style="margin-bottom:8px">还没有属性。对象类型至少要有一个属性才能显示得出来。</p>`}
+        <div class="spec" style="background:none;border-style:dashed">
+          ${txt("draft.propCn", draft.propCn, "s", "中文名，如 折扣")}
+          ${txt("draft.propId", draft.propId, "s", "API 名，如 discount")}
+          ${sel("draft.propType", draft.propType, PROP_TYPES.map(x => ({v:x.id, l:x.cn})))}
+          <button class="add tight" data-add="prop" data-ot="${esc(t.id)}">添加属性</button>
+        </div>
+        <p class="note">新增属性会立刻给这 ${keysOf(t.id).length} 个已有实例补上默认值 —— 这就是 schema 变更的数据迁移。</p>
+      </div>
+    </div>`;
+}
+
+/* --- 链接类型编辑器 --------------------------------------------- */
+function renderLinkTypeEditor(l){
+  const opts = schema.objectTypes.map(t => ({v:t.id, l:`${t.id} ${t.cn}`}));
+  const n = world.links.filter(x => x.t === l.id).length;
+  return `
+    <div class="ed">
+      <div class="ed-head">
+        <div class="obj-kicker">
+          <span class="pill" style="color:var(--p2);border-color:currentColor">⇄ Link Type</span>
+          <span class="rid mono" style="font-size:12px;color:var(--muted)">${n} 条实际链接</span>
+        </div>
+        <h3 class="mono" style="font-size:17px">${esc(l.from)} <span style="color:var(--muted)">──${esc(l.id)}──▸</span> ${esc(l.to)}</h3>
+      </div>
+      <div class="ed-sec">
+        <span class="eyebrow">两端与基数</span>
+        <div class="f-grid">
+          <div class="field"><label>API 名 <code>不可修改</code></label><input type="text" value="${esc(l.id)}" readonly></div>
+          <div class="field"><label>起点类型 from</label>
+            <select data-path="lt.${esc(l.id)}.from">${opts.map(o =>
+              `<option value="${esc(o.v)}" ${o.v===l.from?"selected":""}>${esc(o.l)}</option>`).join("")}</select></div>
+          <div class="field"><label>终点类型 to</label>
+            <select data-path="lt.${esc(l.id)}.to">${opts.map(o =>
+              `<option value="${esc(o.v)}" ${o.v===l.to?"selected":""}>${esc(o.l)}</option>`).join("")}</select></div>
+          <div class="field"><label>基数 cardinality</label>
+            <select data-path="lt.${esc(l.id)}.card">${CARDS.map(c =>
+              `<option ${c===l.card?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
+        </div>
+        <p class="note" style="margin-top:9px">基数不只是标注：重数为 <code>1</code> 的一端，建立新链接时会自动断开旧的那条 —— 你会在编辑预览里看到这条 <code>UNLINK</code>。</p>
+      </div>
+      <div class="ed-sec">
+        <span class="eyebrow">双向命名</span>
+        <div class="f-grid">
+          <div class="field"><label>正向 <code>从 ${esc(l.from)} 看过去</code></label>
+            <input type="text" data-path="lt.${esc(l.id)}.fwd" value="${esc(l.fwd)}"></div>
+          <div class="field"><label>反向 <code>从 ${esc(l.to)} 看回来</code></label>
+            <input type="text" data-path="lt.${esc(l.id)}.inv" value="${esc(l.inv)}"></div>
+        </div>
+        <p class="note" style="margin-top:9px">链接是双向可达的：一个 ${esc(OT(l.from)?OT(l.from).cn:l.from)} 能看到它的「${esc(l.fwd)}」，一个 ${esc(OT(l.to)?OT(l.to).cn:l.to)} 也能看到它的「${esc(l.inv)}」。</p>
+      </div>
+    </div>`;
+}
+
+/* --- 操作类型编辑器（本体建模里最有内容的一块） -------------------- */
+function renderActionTypeEditor(a){
+  const T = targetsFor(a);
+  const otOpts = schema.objectTypes.map(t => ({v:t.id, l:`${t.id} ${t.cn}`}));
+  const ltOpts = schema.linkTypes.map(l => ({v:l.id, l:l.id}));
+  const cmpOpts = Object.keys(OPCN).map(o => ({v:o, l:OPCN[o]}));
+
+  /* 参数 */
+  const paramRows = a.params.map((p,i) => `
+    <div class="spec">
+      <span class="lead">参数</span>
+      ${txt(`at.${a.id}.params.${i}.cn`, p.cn, "s", "中文名")}
+      <input class="mini s" type="text" value="${esc(p.id)}" readonly title="参数 API 名创建后不可改 —— 规则和编辑都按它引用">
+      ${sel(`at.${a.id}.params.${i}.kind`, p.kind,
+            [{v:"object",l:"对象引用"},{v:"number",l:"数字"},{v:"text",l:"文本"},{v:"enum",l:"枚举"}])}
+      ${p.kind === "object" ? sel(`at.${a.id}.params.${i}.objectType`, p.objectType, otOpts) : ""}
+      ${p.kind === "enum"   ? txt(`at.${a.id}.params.${i}.optionsCsv`, (p.options||[]).join("，"), "", "选项，逗号分隔") : ""}
+      ${p.kind === "number" ? numf(`at.${a.id}.params.${i}.def`, p.def ?? 0) : ""}
+      <button class="kill" data-del="param" data-at="${esc(a.id)}" data-i="${i}">✕</button>
+    </div>`).join("") || `<p class="note" style="margin-bottom:8px">还没有参数。</p>`;
+
+  /* 值来源（规则两侧、编辑赋值都用它） */
+  function refCtl(path, r, allowProp){
+    const kinds = [{v:"const",l:"常量"},{v:"param",l:"参数"}];
+    if (allowProp) kinds.push({v:"prop",l:"属性"});
+    const src = r && r.src ? r.src : "const";
+    let tail = "";
+    if (src === "const") tail = txt(`${path}.value`, r ? r.value : "", "s", "值");
+    else if (src === "param"){
+      const ps = a.params.map(p => ({v:p.id, l:p.cn}));
+      tail = ps.length ? sel(`${path}.param`, r && r.param, ps) : `<span class="txt" style="color:var(--bad)">先加参数</span>`;
+    } else if (src === "prop"){
+      const ty = targetType(r && r.of, a);
+      const props = ty && OT(ty) ? OT(ty).props.map(p => ({v:p.id, l:p.cn})) : [];
+      tail = selT(`${path}.of`, r && r.of, T) +
+             (props.length ? sel(`${path}.prop`, r && r.prop, props) : `<span class="txt">（无属性）</span>`);
+    }
+    return sel(`${path}.src`, src, kinds) + tail;
+  }
+
+  /* 规则 */
+  const ruleRows = a.rules.map((r,i) => {
+    const base = `at.${a.id}.rules.${i}`;
+    let body = "";
+    if (r.type === "compare"){
+      body = refCtl(`${base}.left`, r.left, true) +
+             sel(`${base}.op`, r.op, cmpOpts) +
+             (r.op === "in"
+               ? txt(`${base}.right.valuesCsv`, (r.right && r.right.values || []).join("，"), "", "允许的值，逗号分隔")
+               : refCtl(`${base}.right`, r.right, true));
+    } else if (r.type === "linkCount"){
+      body = selT(`${base}.target`, r.target, T) +
+             sel(`${base}.link`, r.link, ltOpts) +
+             sel(`${base}.dir`, r.dir, [{v:"fwd",l:"正向"},{v:"inv",l:"反向"}]) +
+             `<span class="txt">数量</span>` + sel(`${base}.op`, r.op, cmpOpts) + numf(`${base}.n`, r.n);
+    } else {
+      body = selT(`${base}.a`, r.a, T) + sel(`${base}.link`, r.link, ltOpts) + selT(`${base}.b`, r.b, T) +
+             sel(`${base}.expect`, r.expect ? "1" : "0", [{v:"1",l:"存在"},{v:"0",l:"不存在"}]);
+    }
+    return `<div class="spec">
+      <span class="lead">规则</span>
+      ${sel(`${base}.type`, r.type, [{v:"compare",l:"属性比较"},{v:"linkCount",l:"链接数量"},{v:"linkExists",l:"链接存在"}])}
+      ${body}
+      <button class="kill" data-del="rule" data-at="${esc(a.id)}" data-i="${i}">✕</button>
+      <span class="gloss" data-gloss="rule.${i}">${esc(describeRule(r, a))}</span>
+    </div>`;
+  }).join("") || `<p class="note" style="margin-bottom:8px">没有规则 —— 这个操作永远可以提交。</p>`;
+
+  /* 编辑 */
+  const editRows = a.edits.map((e,i) => {
+    const base = `at.${a.id}.edits.${i}`;
+    let body = "";
+    if (e.op === "create"){
+      const t = OT(e.objectType);
+      const assigns = t ? `<div class="prop-assign">${t.props.map(p => {
+        const ref = (e.props && e.props[p.id]) || {src:"const", value:""};
+        const kinds = [{v:"const",l:"常量"},{v:"param",l:"参数"},{v:"prop",l:"属性"},
+                       {v:"calc",l:"计算"},{v:"now",l:"当前时间"},{v:"today",l:"日期"},{v:"newId",l:"主键"}];
+        const rp = `${base}.props.${p.id}`;
+        let tail = "";
+        if (ref.src === "const") tail = txt(`${rp}.value`, ref.value, "s", "值");
+        else if (ref.src === "param"){
+          const ps = a.params.map(x => ({v:x.id, l:x.cn}));
+          tail = ps.length ? sel(`${rp}.param`, ref.param, ps) : `<span class="txt" style="color:var(--bad)">先加参数</span>`;
+        } else if (ref.src === "prop"){
+          const ty = targetType(ref.of, a);
+          const props = ty && OT(ty) ? OT(ty).props.map(x => ({v:x.id, l:x.cn})) : [];
+          tail = selT(`${rp}.of`, ref.of, T) + (props.length ? sel(`${rp}.prop`, ref.prop, props) : "");
+        } else if (ref.src === "calc"){
+          tail = refCtl(`${rp}.a`, ref.a, true) +
+                 sel(`${rp}.op`, ref.op, [{v:"*",l:"×"},{v:"+",l:"+"},{v:"-",l:"−"}]) +
+                 refCtl(`${rp}.b`, ref.b, true);
+        } else if (ref.src === "today"){
+          tail = numf(`${rp}.plusDays`, ref.plusDays || 0) + `<span class="txt">天后</span>`;
+        }
+        return `<span class="k">${esc(p.cn)}</span><span class="v">${sel(`${rp}.src`, ref.src, kinds)}${tail}</span>`;
+      }).join("")}</div>` : "";
+      body = sel(`${base}.objectType`, e.objectType, otOpts) + assigns;
+    } else if (e.op === "modify"){
+      const ty = targetType(e.target, a);
+      const props = ty && OT(ty) ? OT(ty).props.map(p => ({v:p.id, l:p.cn})) : [];
+      body = selT(`${base}.target`, e.target, T) +
+             (props.length ? sel(`${base}.prop`, e.prop, props) : `<span class="txt" style="color:var(--bad)">目标无属性</span>`) +
+             sel(`${base}.mode`, e.mode, [{v:"set",l:"设为"},{v:"inc",l:"增加"},{v:"dec",l:"减少"},{v:"mul",l:"乘以"}]) +
+             refCtl(`${base}.value`, e.value, true);
+    } else if (e.op === "link" || e.op === "unlink"){
+      body = selT(`${base}.a`, e.a, T) + sel(`${base}.link`, e.link, ltOpts) + selT(`${base}.b`, e.b, T);
+    } else {
+      body = selT(`${base}.target`, e.target, T);
+    }
+    const d = describeSpec(e, a);
+    return `<div class="spec write">
+      <span class="op">${d.op}</span>
+      ${sel(`${base}.op`, e.op, [{v:"create",l:"新建对象"},{v:"modify",l:"修改属性"},
+                                 {v:"link",l:"建立链接"},{v:"unlink",l:"断开链接"},{v:"delete",l:"删除对象"}])}
+      ${body}
+      <button class="kill" data-del="edit" data-at="${esc(a.id)}" data-i="${i}">✕</button>
+      <span class="gloss" data-gloss="edit.${i}">${esc(d.txt)}</span>
+    </div>`;
+  }).join("") || `<p class="note" style="margin-bottom:8px">还没有编辑 —— 这个操作什么也不会写。</p>`;
+
+  return `
+    <div class="ed">
+      <div class="ed-head">
+        <div class="obj-kicker">
+          <span class="pill" style="color:var(--write);border-color:currentColor">↯ Action Type</span>
+        </div>
+        <h3><span class="cn-live">${esc(a.cn)}</span> <span class="mono" style="font-size:14px;color:var(--muted)">${esc(a.id)}</span></h3>
+      </div>
+
+      <div class="ed-sec">
+        <span class="eyebrow">基本信息</span>
+        <div class="f-grid">
+          <div class="field"><label>中文名</label><input type="text" data-path="at.${esc(a.id)}.cn" value="${esc(a.cn)}"></div>
+          <div class="field"><label>API 名 <code>不可修改</code></label><input type="text" value="${esc(a.id)}" readonly></div>
+        </div>
+        <div class="field" style="margin-top:10px"><label>一句话说明</label>
+          <input type="text" data-path="at.${esc(a.id)}.desc" value="${esc(a.desc||"")}"></div>
+      </div>
+
+      <div class="ed-sec">
+        <span class="eyebrow">① 参数 Parameters</span>
+        ${paramRows}
+        <button class="add" data-add="param" data-at="${esc(a.id)}">+ 添加参数</button>
+      </div>
+
+      <div class="ed-sec">
+        <span class="eyebrow">② 校验规则 Validation</span>
+        ${ruleRows}
+        <button class="add" data-add="rule" data-at="${esc(a.id)}">+ 添加规则</button>
+        <p class="note" style="margin-top:9px">全部规则通过，提交按钮才会亮 —— 这是本体的完整性防线，不是前端的表单校验。</p>
+      </div>
+
+      <div class="ed-sec">
+        <span class="eyebrow">③ 写入编辑 Edits</span>
+        ${editRows}
+        <button class="add" data-add="edit" data-at="${esc(a.id)}">+ 添加编辑</button>
+        <p class="note" style="margin-top:9px">目标可以是参数本身，也可以是「参数沿某条链接走一步」得到的对象 —— 一个操作因此能顺着图改到好几个对象。</p>
+      </div>
+    </div>`;
+}
+
+function renderModelMid(){
+  const el = document.getElementById("mid-body");
+  if (!editing){
+    el.innerHTML = `<div class="empty">
+      <p class="lead">这里是本体的类型层 —— 先有类型，才有实例。</p>
+      从左栏挑一个类型开始改，或者点「+ 新建」从零加一个。上方图谱画的是<b>类型</b>之间的关系，
+      不是具体数据。<br><br>
+      三件事按顺序做：<b>对象类型</b>定义实体长什么样 → <b>链接类型</b>声明它们怎么连 →
+      <b>操作类型</b>规定谁能怎么改。改完切到<b>实例运行</b>去用。</div>`;
+    return;
+  }
+  if (editing.kind === "ot"){ const t = OT(editing.id); el.innerHTML = t ? renderObjectTypeEditor(t) : ""; }
+  if (editing.kind === "lt"){ const l = LTof(editing.id); el.innerHTML = l ? renderLinkTypeEditor(l) : ""; }
+  if (editing.kind === "at"){ const a = ATof(editing.id); el.innerHTML = a ? renderActionTypeEditor(a) : ""; }
+}
+
+/* --- 建模模式右栏：变更影响 -------------------------------------- */
+function usageOf(kind, id){
+  const links = [], actions = [];
+  if (kind === "ot"){
+    for (const l of schema.linkTypes) if (l.from === id || l.to === id) links.push(l.id);
+    for (const a of schema.actionTypes){
+      const s = JSON.stringify(a);
+      if (a.params.some(p => p.objectType === id) || s.includes(`"objectType":"${id}"`)) actions.push(a.id);
+    }
+    return {links, actions, objects:keysOf(id).length,
+            linkRows: world.links.filter(l => { const lt = LTof(l.t); return lt && (lt.from===id||lt.to===id); }).length};
+  }
+  if (kind === "lt"){
+    for (const a of schema.actionTypes) if (JSON.stringify(a).includes(`"${id}"`)) actions.push(a.id);
+    return {actions, linkRows: world.links.filter(l => l.t === id).length};
+  }
+  return {};
+}
+
+function renderModelRight(){
+  const right = document.getElementById("col-right");
+  const head = `<div class="pane-head"><span class="eyebrow">变更影响 / Impact</span></div>`;
+  let box = "";
+
+  if (!editing){
+    box = `<div class="empty">选中一个类型后，这里会说明它牵动了哪些数据和哪些其它类型 ——
+      改本体不是改一张表，schema 一动，实例就要跟着迁移。</div>`;
+  } else if (editing.kind === "ot"){
+    const t = OT(editing.id);
+    if (t){
+      const u = usageOf("ot", t.id);
+      box = `<div class="impact">
+        <div class="impact-sec"><span class="eyebrow">当前占用</span>
+          <div class="impact-list">
+            <div class="row"><span class="n">${u.objects}</span><span>个 ${esc(t.cn)} 实例</span></div>
+            <div class="row"><span class="n">${u.linkRows}</span><span>条与之相关的链接</span></div>
+            <div class="row"><span class="n">${u.links.length}</span><span>个链接类型引用它${u.links.length?"："+esc(u.links.join("、")):""}</span></div>
+            <div class="row"><span class="n">${u.actions.length}</span><span>个操作类型引用它${u.actions.length?"："+esc(u.actions.join("、")):""}</span></div>
+          </div>
+        </div>
+        <div class="impact-sec"><span class="eyebrow">脚手架</span>
+          <button class="add" data-scaffold="ot" data-id="${esc(t.id)}">生成「新建${esc(t.cn)}」操作</button>
+          <p class="note" style="margin-top:7px">对象只能由 Action 创建。生成出来的就是一个普通操作类型，可以接着改。</p>
+        </div>
+        <div class="impact-sec"><span class="eyebrow">危险操作</span>
+          ${(u.objects || u.links.length || u.actions.length)
+            ? `<p class="warn">删除会连带移除 ${u.objects} 个实例、${u.linkRows} 条链接、${u.links.length} 个链接类型和 ${u.actions.length} 个操作类型。</p>` : ""}
+          <button class="ghost danger" data-del-type="ot" data-id="${esc(t.id)}">删除对象类型 ${esc(t.id)}</button>
+        </div>
+      </div>`;
+    }
+  } else if (editing.kind === "lt"){
+    const l = LTof(editing.id);
+    if (l){
+      const u = usageOf("lt", l.id);
+      box = `<div class="impact">
+        <div class="impact-sec"><span class="eyebrow">当前占用</span>
+          <div class="impact-list">
+            <div class="row"><span class="n">${u.linkRows}</span><span>条实际链接</span></div>
+            <div class="row"><span class="n">${u.actions.length}</span><span>个操作类型引用它${u.actions.length?"："+esc(u.actions.join("、")):""}</span></div>
+          </div>
+        </div>
+        <div class="impact-sec"><span class="eyebrow">脚手架</span>
+          <button class="add" data-scaffold="lt" data-id="${esc(l.id)}">生成「关联」操作</button>
+        </div>
+        <div class="impact-sec"><span class="eyebrow">危险操作</span>
+          ${u.linkRows || u.actions.length
+            ? `<p class="warn">删除会移除 ${u.linkRows} 条实际链接，并清掉 ${u.actions.length} 个操作里引用它的规则与编辑。</p>` : ""}
+          <button class="ghost danger" data-del-type="lt" data-id="${esc(l.id)}">删除链接类型 ${esc(l.id)}</button>
+        </div>
+      </div>`;
+    }
+  } else if (editing.kind === "at"){
+    const a = ATof(editing.id);
+    if (a){
+      box = `<div class="impact">
+        <div class="impact-sec"><span class="eyebrow">这个操作会做什么</span>
+          <div class="impact-list">
+            <div class="row"><span class="n">${a.params.length}</span><span>个参数</span></div>
+            <div class="row"><span class="n">${a.rules.length}</span><span>条校验规则</span></div>
+            <div class="row"><span class="n">${a.edits.length}</span><span>条写入编辑</span></div>
+          </div>
+          <p class="note" style="margin-top:9px">操作类型只定义规则，不碰数据 —— 切到实例运行去执行它。</p>
+        </div>
+        <div class="impact-sec">
+          <button class="add" data-try="${esc(a.id)}">去运行这个操作 →</button>
+        </div>
+        <div class="impact-sec"><span class="eyebrow">危险操作</span>
+          <button class="ghost danger" data-del-type="at" data-id="${esc(a.id)}">删除操作类型 ${esc(a.id)}</button>
+        </div>
+      </div>`;
+    }
+  }
+
+  const slog = schemaLog.length
+    ? schemaLog.map(e => `<div class="row"><span class="ts">${esc(e.ts)}</span><span>${esc(e.txt)}</span></div>`).join("")
+    : `<p class="note">对本体的每一次改动都会记在这里 —— schema 也是数据。</p>`;
+
+  right.innerHTML = head + box +
+    `<div class="sub-head"><span class="eyebrow">本体变更记录</span><span class="hair"></span></div>
+     <div class="slog">${slog}</div>`;
+}
+
+const noteSchema = txt => {
+  schemaLog.unshift({ts:new Date().toTimeString().slice(0,8), txt});
+  if (schemaLog.length > 60) schemaLog.pop();
+};
+
+/* ============================================================
+   §11  schema 变更 —— 每一次都要把实例数据一起迁移
+   ============================================================ */
+let draft = {propCn:"", propId:"", propType:"string"};
+
+function uniqueId(base, taken){
+  let id = base, i = 2;
+  while (taken.includes(id)) id = base + i++;
+  return id;
+}
+
+function newObjectType(){
+  const id = uniqueId("NewType", schema.objectTypes.map(t => t.id));
+  const t = {id, cn:"新类型", idPrefix:id[0].toUpperCase(), seq:1,
+             color:schema.objectTypes.length % 8, titleProp:"name",
+             props:[{id:"name", cn:"名称", type:"string"}]};
+  schema.objectTypes.push(t);
+  noteSchema(`新建对象类型 ${id}`);
+  openEditor("ot", id);
+}
+function newLinkType(){
+  if (schema.objectTypes.length < 1) return alert("先建至少一个对象类型。");
+  const id = uniqueId("newLink", schema.linkTypes.map(l => l.id));
+  const a = schema.objectTypes[0].id;
+  const b = (schema.objectTypes[1] || schema.objectTypes[0]).id;
+  schema.linkTypes.push({id, from:a, to:b, card:"1 : N", fwd:"关联对象", inv:"来源对象"});
+  noteSchema(`新建链接类型 ${id}：${a} → ${b}`);
+  openEditor("lt", id);
+}
+function newActionType(){
+  const id = uniqueId("newAction", schema.actionTypes.map(a => a.id));
+  schema.actionTypes.push({id, cn:"新操作", uid:uid(), desc:"", params:[], rules:[], edits:[]});
+  noteSchema(`新建操作类型 ${id}`);
+  openEditor("at", id);
+}
+
+function addProp(otId){
+  const t = OT(otId); if (!t) return;
+  const cn = (draft.propCn || "").trim() || "新属性";
+  let id = (draft.propId || "").trim() || "prop";
+  id = uniqueId(id.replace(/[^A-Za-z0-9_]/g, ""), t.props.map(p => p.id)) || "prop";
+  const p = {id, cn, type:draft.propType};
+  if (p.type === "enum") p.options = ["选项一","选项二"];
+  t.props.push(p);
+  const d = defaultFor(p);
+  let n = 0;
+  for (const k of keysOf(t.id)){ world.objects[k].props[id] = d; n++; }
+  if (!t.props.some(x => x.id === t.titleProp)) t.titleProp = id;
+  draft = {propCn:"", propId:"", propType:"string"};
+  noteSchema(`${t.id} 新增属性 ${id}，${n} 个实例已补默认值`);
+  syncGraph(); renderAll();
+}
+function delProp(otId, i){
+  const t = OT(otId); if (!t || !t.props[i]) return;
+  const p = t.props[i];
+  t.props.splice(i, 1);
+  for (const k of keysOf(t.id)) delete world.objects[k].props[p.id];
+  if (t.titleProp === p.id) t.titleProp = t.props[0] ? t.props[0].id : "";
+  // 清掉操作里引用这个属性的规则与编辑
+  let cut = 0;
+  for (const a of schema.actionTypes){
+    const before = a.rules.length + a.edits.length;
+    a.rules = a.rules.filter(r => !refsProp(r, a, t.id, p.id));
+    a.edits = a.edits.filter(e => !(e.op === "modify" && targetType(e.target, a) === t.id && e.prop === p.id));
+    for (const e of a.edits) if (e.op === "create" && e.objectType === t.id && e.props) delete e.props[p.id];
+    cut += before - (a.rules.length + a.edits.length);
+  }
+  noteSchema(`${t.id} 删除属性 ${p.id}${cut ? `，连带清理 ${cut} 条规则/编辑` : ""}`);
+  syncGraph(); renderAll();
+}
+function refsProp(rule, action, otId, propId){
+  const hit = r => r && r.src === "prop" && r.prop === propId && targetType(r.of, action) === otId;
+  return hit(rule.left) || hit(rule.right);
+}
+
+function delObjectType(id){
+  const u = usageOf("ot", id);
+  schema.objectTypes = schema.objectTypes.filter(t => t.id !== id);
+  schema.linkTypes = schema.linkTypes.filter(l => l.from !== id && l.to !== id);
+  schema.actionTypes = schema.actionTypes.filter(a => !u.actions.includes(a.id));
+  for (const k of Object.keys(world.objects)) if (world.objects[k].type === id) delete world.objects[k];
+  world.links = world.links.filter(l => world.objects[l.a] && world.objects[l.b] && LTof(l.t));
+  noteSchema(`删除对象类型 ${id}：连带 ${u.objects} 个实例、${u.links.length} 个链接类型、${u.actions.length} 个操作类型`);
+  editing = null; selected = null;
+  layouts.model.clear(); layouts.operate.clear();
+  syncGraph(); renderAll();
+}
+function delLinkType(id){
+  const u = usageOf("lt", id);
+  schema.linkTypes = schema.linkTypes.filter(l => l.id !== id);
+  world.links = world.links.filter(l => l.t !== id);
+  for (const a of schema.actionTypes){
+    a.rules = a.rules.filter(r => !JSON.stringify(r).includes(`"${id}"`));
+    a.edits = a.edits.filter(e => !JSON.stringify(e).includes(`"${id}"`));
+  }
+  noteSchema(`删除链接类型 ${id}：移除 ${u.linkRows} 条链接`);
+  editing = null; syncGraph(); renderAll();
+}
+function delActionType(id){
+  schema.actionTypes = schema.actionTypes.filter(a => a.id !== id);
+  noteSchema(`删除操作类型 ${id}`);
+  editing = null; renderAll();
+}
+
+/* --- 脚手架：一键生成一个可用的 Action ---------------------------- */
+function scaffoldCreate(otId){
+  const t = OT(otId); if (!t) return;
+  const id = uniqueId("create" + t.id, schema.actionTypes.map(a => a.id));
+  const eu = uid();
+  const params = [], props = {};
+  for (const p of t.props){
+    if (p.id === t.titleProp || p.type === "string" || p.type === "integer" || p.type === "currency"){
+      const pid = uniqueId(p.id, params.map(x => x.id));
+      params.push({uid:uid(), id:pid, cn:p.cn,
+                   kind: (p.type === "integer" || p.type === "currency") ? "number" : "text",
+                   def: (p.type === "integer" || p.type === "currency") ? 0 : ""});
+      props[p.id] = {src:"param", param:pid};
+    } else if (p.type === "enum"){
+      props[p.id] = {src:"const", value:(p.options||[])[0] || ""};
+    }
+  }
+  schema.actionTypes.push({id, cn:`新建${t.cn}`, uid:uid(),
+    desc:`创建一个 ${t.cn} 对象。对象只能由 Action 创建 —— 这是本体唯一的写入口。`,
+    params, rules:[], edits:[{uid:eu, op:"create", objectType:t.id, props}]});
+  noteSchema(`脚手架生成操作 ${id}`);
+  openEditor("at", id);
+}
+function scaffoldLink(ltId){
+  const l = LTof(ltId); if (!l) return;
+  const id = uniqueId("link" + l.id[0].toUpperCase() + l.id.slice(1), schema.actionTypes.map(a => a.id));
+  const A = OT(l.from), B = OT(l.to);
+  schema.actionTypes.push({id, cn:`关联${A?A.cn:l.from}与${B?B.cn:l.to}`, uid:uid(),
+    desc:`在两个对象之间建立一条 ${l.id} 链接。`,
+    params:[{uid:uid(), id:"a", cn:A?A.cn:l.from, kind:"object", objectType:l.from},
+            {uid:uid(), id:"b", cn:B?B.cn:l.to,   kind:"object", objectType:l.to}],
+    rules:[{uid:uid(), type:"linkExists", a:{kind:"param",param:"a"}, b:{kind:"param",param:"b"},
+            link:l.id, expect:false}],
+    edits:[{uid:uid(), op:"link", a:{kind:"param",param:"a"}, b:{kind:"param",param:"b"}, link:l.id}]});
+  noteSchema(`脚手架生成操作 ${id}`);
+  openEditor("at", id);
+}
+
+/* --- 新增参数/规则/编辑 ------------------------------------------ */
+function addParam(atId){
+  const a = ATof(atId); if (!a) return;
+  const id = uniqueId("p" + (a.params.length+1), a.params.map(p => p.id));
+  const ot = schema.objectTypes[0];
+  a.params.push(ot ? {uid:uid(), id, cn:"新参数", kind:"object", objectType:ot.id}
+                   : {uid:uid(), id, cn:"新参数", kind:"number", def:0});
+  renderAll();
+}
+function addRule(atId){
+  const a = ATof(atId); if (!a) return;
+  const T = targetsFor(a);
+  const first = T[0];
+  const ot = first ? OT(first.objectType) : null;
+  a.rules.push(first && ot && ot.props.length
+    ? {uid:uid(), type:"compare", left:{src:"prop", of:first.t, prop:ot.props[0].id}, op:"==", right:{src:"const", value:""}}
+    : {uid:uid(), type:"compare", left:{src:"const", value:""}, op:"==", right:{src:"const", value:""}});
+  renderAll();
+}
+function addEdit(atId){
+  const a = ATof(atId); if (!a) return;
+  const T = targetsFor(a);
+  a.edits.push(T.length
+    ? {uid:uid(), op:"modify", target:T[0].t, prop:(OT(T[0].objectType).props[0]||{}).id, mode:"set", value:{src:"const", value:""}}
+    : {uid:uid(), op:"create", objectType:(schema.objectTypes[0]||{}).id, props:{}});
+  renderAll();
+}
+
+/* ============================================================
+   §12  表单写回 —— 用路径把控件值写进 schema
+   ============================================================ */
+function setByPath(path, raw, isJson, isNum){
+  const seg = path.split(".");
+  let value = raw;
+  if (isJson) { try { value = JSON.parse(raw); } catch { return; } }
+  else if (isNum) value = Number(raw);
+
+  if (seg[0] === "draft"){ draft[seg[1]] = value; return; }
+
+  let root = null, rest = null;
+  if (seg[0] === "ot"){ root = OT(seg[1]); rest = seg.slice(2); }
+  if (seg[0] === "lt"){ root = LTof(seg[1]); rest = seg.slice(2); }
+  if (seg[0] === "at"){ root = ATof(seg[1]); rest = seg.slice(2); }
+  if (!root) return;
+
+  // 逗号分隔的列表字段
+  const last = rest[rest.length-1];
+  if (last === "optionsCsv" || last === "valuesCsv"){
+    const arr = String(raw).split(/[,，]/).map(s => s.trim()).filter(Boolean);
+    let o = root;
+    for (let i=0;i<rest.length-1;i++){ if (o[rest[i]] === undefined) o[rest[i]] = {}; o = o[rest[i]]; }
+    o[last === "optionsCsv" ? "options" : "values"] = arr;
+    return;
+  }
+
+  let o = root;
+  for (let i=0;i<rest.length-1;i++){ if (o[rest[i]] === undefined) o[rest[i]] = {}; o = o[rest[i]]; }
+  const key = rest[rest.length-1];
+
+  if (key === "expect") value = raw === "1";
+  if (key === "color" || key === "n" || key === "plusDays") value = Number(raw);
+
+  o[key] = value;
+  afterSchemaEdit(seg, rest, key, o, root);
+}
+
+/** 结构性字段变了就得把相邻字段拉回一致状态，否则会留下悬空引用 */
+function afterSchemaEdit(seg, rest, key, holder, root){
+  if (seg[0] === "ot"){
+    if (key === "type"){                       // 属性类型换了 → 枚举要有选项，实例值要迁移
+      const t = root, p = holder;
+      if (p.type === "enum" && !(p.options && p.options.length)) p.options = ["选项一","选项二"];
+      if (p.type !== "enum") delete p.options;
+      for (const k of keysOf(t.id)){
+        const v = world.objects[k].props[p.id];
+        if (p.type === "integer" || p.type === "currency"){
+          const n = Number(v); world.objects[k].props[p.id] = isFinite(n) ? n : 0;
+        } else if (p.type === "boolean") world.objects[k].props[p.id] = !!v;
+        else if (p.type === "enum" && !(p.options||[]).includes(v)) world.objects[k].props[p.id] = p.options[0];
+        else if (v === undefined) world.objects[k].props[p.id] = defaultFor(p);
+      }
+      noteSchema(`${t.id}.${p.id} 类型改为 ${p.type}，实例值已迁移`);
+    }
+  }
+  if (seg[0] === "lt"){
+    if (key === "from" || key === "to"){       // 两端类型换了 → 不合法的链接必须清掉
+      const l = root;
+      const before = world.links.length;
+      world.links = world.links.filter(x => x.t !== l.id ||
+        (get(x.a) && get(x.a).type === l.from && get(x.b) && get(x.b).type === l.to));
+      const cut = before - world.links.length;
+      if (cut) noteSchema(`${l.id} 端点变更，清理 ${cut} 条不再合法的链接`);
+      layouts.model.clear();
+    }
+  }
+  if (seg[0] === "at"){
+    const a = root;
+    if (key === "kind"){                       // 参数种类换了 → 补齐它需要的字段
+      const p = holder;
+      if (p.kind === "object" && !p.objectType) p.objectType = (schema.objectTypes[0]||{}).id;
+      if (p.kind === "enum" && !(p.options||[]).length) p.options = ["选项一","选项二"];
+      if (p.kind === "number" && typeof p.def !== "number") p.def = 0;
+    }
+    if (key === "type"){                       // 规则类型换了 → 换一套默认字段
+      const r = holder, T = targetsFor(a);
+      if (r.type === "compare" && !r.left){ r.left = {src:"const", value:""}; r.op = "=="; r.right = {src:"const", value:""}; }
+      if (r.type === "linkCount"){ r.target = r.target || (T[0]||{}).t; r.link = r.link || (schema.linkTypes[0]||{}).id;
+                                   r.dir = r.dir || "fwd"; r.op = r.op || "=="; r.n = r.n ?? 0; }
+      if (r.type === "linkExists"){ r.a = r.a || (T[0]||{}).t; r.b = r.b || (T[1]||T[0]||{}).t;
+                                    r.link = r.link || (schema.linkTypes[0]||{}).id; r.expect = r.expect ?? true; }
+    }
+    if (key === "op" && holder.uid && a.edits.includes(holder)){   // 编辑类型换了
+      const e = holder, T = targetsFor(a);
+      if (e.op === "create" && !e.objectType){ e.objectType = (schema.objectTypes[0]||{}).id; e.props = {}; }
+      if (e.op === "modify" && !e.target){ e.target = (T[0]||{}).t; e.mode = "set"; e.value = {src:"const", value:""};
+                                           const ty = targetType(e.target, a); e.prop = ty && OT(ty).props[0] ? OT(ty).props[0].id : ""; }
+      if ((e.op === "link" || e.op === "unlink") && !e.link){
+        e.a = e.a || (T[0]||{}).t; e.b = e.b || (T[1]||T[0]||{}).t; e.link = (schema.linkTypes[0]||{}).id; }
+      if (e.op === "delete" && !e.target) e.target = (T[0]||{}).t;
+    }
+    if (key === "src"){                        // 值来源换了 → 清掉上一种来源的残留字段
+      const r = holder;
+      for (const f of ["value","param","of","prop","a","b","op","plusDays","values"]) if (r.src !== "calc" || (f!=="a"&&f!=="b"&&f!=="op")) delete r[f];
+      if (r.src === "const") r.value = "";
+      if (r.src === "param") r.param = (a.params[0]||{}).id;
+      if (r.src === "prop"){ const T = targetsFor(a); r.of = (T[0]||{}).t;
+                             const ty = targetType(r.of, a); r.prop = ty && OT(ty).props[0] ? OT(ty).props[0].id : ""; }
+      if (r.src === "calc"){ r.a = {src:"const", value:1}; r.op = "*"; r.b = {src:"const", value:1}; }
+      if (r.src === "today") r.plusDays = 0;
+    }
+    if (key === "objectType" && holder.op === "create") holder.props = holder.props || {};
+    if (key === "target" || key === "of"){     // 目标换了 → 属性可能不属于新类型了
+      const ty = targetType(holder[key], a);
+      const props = ty && OT(ty) ? OT(ty).props : [];
+      if (holder.prop && !props.some(p => p.id === holder.prop)) holder.prop = props[0] ? props[0].id : "";
+    }
+  }
+}
+
+/* ============================================================
+   §13  本体规格 JSON
+   ============================================================ */
+function openDrawer(){
+  drawerOpen = true;
+  const box = document.createElement("div");
+  box.className = "drawer"; box.id = "drawer";
+  box.innerHTML = `
+    <div class="drawer-box">
+      <div class="drawer-head">
+        <h3>本体规格 JSON</h3>
+        <button class="ghost" id="drawer-close">关闭</button>
+      </div>
+      <textarea id="spec-text" spellcheck="false">${esc(JSON.stringify({schema, world}, null, 2))}</textarea>
+      <div class="drawer-foot">
+        <p class="note">本体就是一份可序列化的规格 —— 类型、链接、操作全在这里。改完贴回去就能生效。</p>
+        <button class="ghost" id="spec-apply">应用这份 JSON</button>
+      </div>
+    </div>`;
+  document.body.appendChild(box);
+}
+function closeDrawer(){
+  drawerOpen = false;
+  const d = document.getElementById("drawer");
+  if (d) d.remove();
+}
+function applySpec(){
+  const ta = document.getElementById("spec-text");
+  let parsed;
+  try { parsed = JSON.parse(ta.value); }
+  catch (e){ alert("JSON 解析失败：" + e.message); return; }
+  if (!parsed.schema || !parsed.schema.objectTypes){ alert("缺少 schema.objectTypes。"); return; }
+  schema = parsed.schema;
+  world = parsed.world || {objects:{}, links:[]};
+  logEntries = []; editCount = 0;
+  selected = null; editing = null; highlight = null; formState = {};
+  layouts.model.clear(); layouts.operate.clear();
+  noteSchema("从 JSON 导入了整份本体");
+  closeDrawer(); syncGraph(); renderAll();
+}
+
+/* ============================================================
+   §14  组装
+   ============================================================ */
+function renderAll(){
+  renderConcepts(); renderStats(); renderLeft();
+  if (mode === "model"){ renderModelMid(); renderModelRight(); }
+  else { renderDetail(); renderRunner(); }
+  measureNodes();
+}
 function select(key){
   selected = key;
-  // 参数里如果有匹配类型的对象槽，顺手切过去 —— 详情和操作面板保持同步
-  const action = AT[activeAction];
-  const slot = action.params.find(p => p.kind==="object" && p.objectType === get(key).type);
-  if (slot) formState[slot.id] = key;
-  renderDetail(); renderRunner(); renderModel();
-  kick();
+  const action = ATof(activeAction);
+  const o = get(key);
+  if (action && o){
+    const slot = action.params.find(p => p.kind === "object" && p.objectType === o.type);
+    if (slot) formState[slot.id] = key;
+  }
+  renderDetail(); renderRunner(); renderLeft(); renderStats(); kick();
+}
+function openEditor(kind, id){
+  if (mode !== "model"){ mode = "model"; syncGraph(); }
+  editing = {kind, id};
+  renderAll(); kick();
+}
+function setMode(m){
+  if (mode === m) return;
+  mode = m; highlight = null;
+  syncGraph(); renderAll(); kick();
 }
 
 document.addEventListener("click", ev => {
-  const hl = ev.target.closest("[data-hl]");
+  const t = ev.target;
+  const hit = s => t.closest(s);
+
+  if (hit("#drawer-close")) return closeDrawer();
+  if (hit("#spec-apply"))   return applySpec();
+  if (drawerOpen && t.id === "drawer") return closeDrawer();
+
+  const m = hit(".mode");                    if (m) return setMode(m.dataset.mode);
+  if (hit("#relayout")) return relayout();
+  if (hit("#spec"))     return openDrawer();
+  if (hit("#reset"))    { loadDemo(); syncGraph(); renderAll(); return; }
+  if (hit("#blank"))    { loadBlank(); mode = "model"; syncGraph(); renderAll(); return; }
+
+  const ed = hit("[data-edit]");              if (ed) return openEditor(ed.dataset.edit, ed.dataset.id);
+  const nw = hit("[data-new]");
+  if (nw) return nw.dataset.new === "ot" ? newObjectType()
+         : nw.dataset.new === "lt" ? newLinkType() : newActionType();
+
+  const add = hit("[data-add]");
+  if (add){
+    if (add.dataset.add === "prop")  return addProp(add.dataset.ot);
+    if (add.dataset.add === "param") return addParam(add.dataset.at);
+    if (add.dataset.add === "rule")  return addRule(add.dataset.at);
+    if (add.dataset.add === "edit")  return addEdit(add.dataset.at);
+  }
+  const del = hit("[data-del]");
+  if (del){
+    const i = Number(del.dataset.i), a = ATof(del.dataset.at);
+    if (del.dataset.del === "prop")  return delProp(del.dataset.ot, i);
+    if (del.dataset.del === "param" && a){ a.params.splice(i,1); return renderAll(); }
+    if (del.dataset.del === "rule"  && a){ a.rules.splice(i,1);  return renderAll(); }
+    if (del.dataset.del === "edit"  && a){ a.edits.splice(i,1);  return renderAll(); }
+  }
+  const dt = hit("[data-del-type]");
+  if (dt){
+    const id = dt.dataset.id, kind = dt.dataset.delType;
+    if (!confirm(`确定删除 ${id}？这会连同相关的实例数据一起移除。`)) return;
+    return kind === "ot" ? delObjectType(id) : kind === "lt" ? delLinkType(id) : delActionType(id);
+  }
+  const sc = hit("[data-scaffold]");
+  if (sc) return sc.dataset.scaffold === "ot" ? scaffoldCreate(sc.dataset.id) : scaffoldLink(sc.dataset.id);
+  const tryIt = hit("[data-try]");
+  if (tryIt){ activeAction = tryIt.dataset.try; formState = {}; mode = "operate"; syncGraph(); renderAll(); return; }
+
+  const hl = hit("[data-hl]");
   if (hl){
     const kind = hl.dataset.hl, id = hl.dataset.id;
     highlight = (highlight && highlight.kind===kind && highlight.id===id) ? null : {kind, id};
-    renderModel(); kick(); return;
+    renderLeft(); kick(); return;
   }
-  const tab = ev.target.closest("[data-action]");
+  const tab = hit("[data-action]");
   if (tab){ activeAction = tab.dataset.action; formState = {}; renderRunner();
-            document.getElementById("col-write").scrollTo({top:0, behavior:"smooth"}); return; }
-  const go = ev.target.closest("[data-goto]");
-  if (go){ select(go.dataset.goto); return; }
-  const run = ev.target.closest("[data-run]");
-  if (run){
-    activeAction = run.dataset.run; formState = {};
-    renderRunner();
-    document.getElementById("col-write").scrollTo({top:0, behavior:"smooth"});
-    return;
-  }
-  if (ev.target.closest("#apply")){
-    const action = AT[activeAction];
+            document.getElementById("col-right").scrollTo({top:0, behavior:"smooth"}); return; }
+  const go = hit("[data-goto]");               if (go) return select(go.dataset.goto);
+  const run = hit("[data-run]");
+  if (run){ activeAction = run.dataset.run; formState = {}; renderRunner();
+            document.getElementById("col-right").scrollTo({top:0, behavior:"smooth"}); return; }
+
+  if (hit("#apply")){
+    const action = ATof(activeAction); if (!action) return;
     const p = {...formState}; delete p.__action;
     if (evaluate(action, p).valid) runAction(action, p);
     return;
   }
-  if (ev.target.closest("#undo")){ undoLast(); return; }
-  if (ev.target.closest("#relayout")){ relayout(); return; }
-  if (ev.target.closest("#reset")){
-    world = seedWorld(); logEntries = []; editCount = 0;
-    selected = "Order:O-2003"; highlight = null; formState = {}; nodes.clear(); flashes.clear();
-    syncGraph(); renderAll(); return;
-  }
+  if (hit("#undo")) return undoLast();
 });
 
+/* 运行模式的参数输入：即时重算，并把焦点还回去 */
 document.addEventListener("input", ev => {
   const f = ev.target.closest("[data-p]");
-  if (!f) return;
-  const key = f.dataset.p;
-  formState[key] = f.type === "number" ? Number(f.value) : f.value;
-  renderRunner();
-  const el = document.querySelector(`[data-p="${key}"]`);
-  if (el) el.focus();
+  if (f){
+    const key = f.dataset.p;
+    formState[key] = f.type === "number" ? Number(f.value) : f.value;
+    renderRunner();
+    const el = document.querySelector(`[data-p="${key}"]`);
+    if (el) el.focus();
+    return;
+  }
+  // 建模表单的文本输入：只写值不重绘，避免打字时丢焦点
+  const s = ev.target.closest("[data-path]");
+  if (s && s.tagName === "INPUT")
+    setByPath(s.dataset.path, s.value, s.dataset.json === "1", s.dataset.num === "1");
 });
+
+/* 下拉改的是结构，重绘整个编辑器；文本框只刷新派生文字，
+   否则用户 Tab 到下一个输入框时，整张表单会在他手里被拆掉重建 */
+document.addEventListener("change", ev => {
+  const s = ev.target.closest("[data-path]");
+  if (!s) return;
+  setByPath(s.dataset.path, s.value, s.dataset.json === "1", s.dataset.num === "1");
+  if (s.tagName === "SELECT"){ syncGraph(); renderAll(); }
+  else refreshDerived();
+});
+
+/** 只更新读取自 schema 的展示文字，不碰任何正在编辑的控件 */
+function refreshDerived(){
+  renderStats(); renderLeft();
+  if (mode === "model") renderModelRight();
+  const a = editing && editing.kind === "at" ? ATof(editing.id) : null;
+  if (a){
+    document.querySelectorAll("#mid-body [data-gloss]").forEach(el => {
+      const [kind, i] = el.dataset.gloss.split(".");
+      const item = kind === "rule" ? a.rules[+i] : a.edits[+i];
+      if (item) el.textContent = kind === "rule" ? describeRule(item, a) : describeSpec(item, a).txt;
+    });
+  }
+  const h = document.querySelector("#mid-body .ed-head h3 .cn-live");
+  if (h) h.textContent = editing && editing.kind === "at" ? (ATof(editing.id)||{}).cn
+                       : editing && editing.kind === "ot" ? (OT(editing.id)||{}).cn : h.textContent;
+  syncGraph();
+}
 
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", refreshTheme);
 new MutationObserver(refreshTheme).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
 
+loadDemo();
 refreshTheme();
 syncGraph();
 renderAll();
