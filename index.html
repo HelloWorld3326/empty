@@ -1,0 +1,1348 @@
+<title>Ontology 演练场 · Object / Link / Action</title>
+
+<style>
+/* ============================================================
+   TOKENS
+   冷色 = 读（对象、链接）  ·  琥珀 = 写（Action 产生的编辑）
+   ============================================================ */
+:root{
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --bg:#EAEFF2;  --panel:#FFFFFF;  --panel-2:#F4F8FA;  --sunken:#E3EAEE;
+  --line:#D2DDE3; --line-soft:#E2EAEE;
+  --text:#131E25; --text-2:#3C5058; --muted:#697E88;
+
+  --write:#B96A12; --write-bg:#FBF1E3; --write-line:#E6C596; --write-fg:#FFFFFF;
+
+  --ok:#2C7A5B; --info:#2F6BA8; --bad:#AF4029; --neutral:#697E88;
+
+  --t-Customer:#3C74B8; --t-Order:#6E5FC0; --t-Product:#2E8A72;
+  --t-Warehouse:#5C7688; --t-Shipment:#AF4E68;
+
+  --r:4px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0D1317; --panel:#141C21; --panel-2:#19232A; --sunken:#101920;
+    --line:#26333A; --line-soft:#1E2930;
+    --text:#DCE6EA; --text-2:#A6B8C0; --muted:#7A8D98;
+    --write:#E5943F; --write-bg:#271D14; --write-line:#563F1E; --write-fg:#1B1207;
+    --ok:#57BC92; --info:#6BA3E0; --bad:#DF7259; --neutral:#7A8D98;
+    --t-Customer:#6BA3E0; --t-Order:#9B8CEA; --t-Product:#4FB99B;
+    --t-Warehouse:#8AA5B8; --t-Shipment:#DE7B94;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1317; --panel:#141C21; --panel-2:#19232A; --sunken:#101920;
+  --line:#26333A; --line-soft:#1E2930;
+  --text:#DCE6EA; --text-2:#A6B8C0; --muted:#7A8D98;
+  --write:#E5943F; --write-bg:#271D14; --write-line:#563F1E; --write-fg:#1B1207;
+  --ok:#57BC92; --info:#6BA3E0; --bad:#DF7259; --neutral:#7A8D98;
+  --t-Customer:#6BA3E0; --t-Order:#9B8CEA; --t-Product:#4FB99B;
+  --t-Warehouse:#8AA5B8; --t-Shipment:#DE7B94;
+  color-scheme: dark;
+}
+:root[data-theme="light"]{
+  --bg:#EAEFF2; --panel:#FFFFFF; --panel-2:#F4F8FA; --sunken:#E3EAEE;
+  --line:#D2DDE3; --line-soft:#E2EAEE;
+  --text:#131E25; --text-2:#3C5058; --muted:#697E88;
+  --write:#B96A12; --write-bg:#FBF1E3; --write-line:#E6C596; --write-fg:#FFFFFF;
+  --ok:#2C7A5B; --info:#2F6BA8; --bad:#AF4029; --neutral:#697E88;
+  --t-Customer:#3C74B8; --t-Order:#6E5FC0; --t-Product:#2E8A72;
+  --t-Warehouse:#5C7688; --t-Shipment:#AF4E68;
+  color-scheme: light;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--sans); font-size:14px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit; color:inherit; background:none; border:none; cursor:pointer}
+select,input{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--write); outline-offset:2px; border-radius:2px}
+
+.eyebrow{
+  font-family:var(--mono); font-size:10px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+}
+.mono{font-family:var(--mono)}
+.num{font-variant-numeric:tabular-nums}
+
+/* ============================================================
+   SHELL
+   ============================================================ */
+.app{display:flex; flex-direction:column; min-height:100dvh}
+
+.masthead{
+  display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+  padding:14px 20px; background:var(--panel); border-bottom:1px solid var(--line);
+}
+.brand{display:flex; align-items:baseline; gap:12px; margin-right:auto}
+.brand h1{
+  margin:0; font-family:var(--mono); font-size:15px; font-weight:600;
+  letter-spacing:.06em; text-transform:uppercase; white-space:nowrap;
+}
+.brand p{margin:0; font-size:12.5px; color:var(--muted)}
+
+.stats{display:flex; gap:18px}
+.stat{display:flex; flex-direction:column; align-items:flex-end; line-height:1.2}
+.stat b{font-family:var(--mono); font-size:16px; font-weight:600; font-variant-numeric:tabular-nums}
+.stat span{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-family:var(--mono)}
+
+.tools{display:flex; gap:8px}
+.ghost{
+  padding:5px 11px; border:1px solid var(--line); border-radius:var(--r);
+  font-size:12px; color:var(--text-2); background:var(--panel-2);
+}
+.ghost:hover{border-color:var(--muted); color:var(--text)}
+
+/* concept band -------------------------------------------------- */
+.concepts{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+  background:var(--line); border-bottom:1px solid var(--line);
+}
+.concept{padding:11px 20px; background:var(--panel-2); display:flex; gap:11px; align-items:flex-start}
+.concept .glyph{
+  flex:none; width:22px; height:22px; margin-top:1px;
+  display:grid; place-items:center; font-family:var(--mono); font-size:11px; font-weight:600;
+}
+.concept .glyph.o{border:1.5px solid var(--t-Customer); color:var(--t-Customer); border-radius:3px}
+.concept .glyph.l{color:var(--muted); font-size:15px}
+.concept .glyph.a{background:var(--write-bg); border:1.5px solid var(--write); color:var(--write); border-radius:11px}
+.concept h2{margin:0 0 1px; font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase}
+.concept p{margin:0; font-size:12.5px; color:var(--text-2); line-height:1.5}
+
+/* ============================================================
+   CONSOLE GRID
+   ============================================================ */
+.console{
+  flex:1; min-height:0; display:grid; gap:1px; background:var(--line);
+  grid-template-columns:270px minmax(0,1fr) 372px;
+}
+.col{background:var(--panel); min-width:0; display:flex; flex-direction:column; min-height:0}
+@media (min-width:1101px){ .col{overflow-y:auto} }
+
+.pane-head{
+  position:sticky; top:0; z-index:3; background:var(--panel);
+  padding:12px 16px 9px; border-bottom:1px solid var(--line-soft);
+  display:flex; align-items:center; gap:8px;
+}
+.pane-head .hint{margin-left:auto; font-size:11px; color:var(--muted)}
+.sub-head{padding:16px 16px 7px; display:flex; align-items:center; gap:8px}
+.sub-head .rule{flex:1; height:1px; background:var(--line-soft)}
+
+/* ============================================================
+   LEFT — 本体模型
+   ============================================================ */
+.type-list{display:flex; flex-direction:column; padding:0 8px 8px}
+.type-row{
+  display:flex; align-items:center; gap:9px; width:100%;
+  padding:7px 8px; border-radius:var(--r); text-align:left; border:1px solid transparent;
+}
+.type-row:hover{background:var(--panel-2)}
+.type-row[aria-pressed="true"]{background:var(--panel-2); border-color:var(--line)}
+.swatch{flex:none; width:10px; height:10px; border-radius:2px}
+.type-row .body{flex:1; min-width:0}   /* 没有 min-width:0，下面那行的 ellipsis 不会生效 */
+.type-row .name{font-family:var(--mono); font-size:12.5px}
+.type-row .cn{font-size:12px; color:var(--muted)}
+.type-row .count{
+  margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.type-row .props{
+  display:block; font-size:11px; color:var(--muted); font-family:var(--mono);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+.link-row{
+  display:block; width:100%; text-align:left; padding:7px 8px;
+  border-radius:var(--r); border:1px solid transparent;
+}
+.link-row:hover{background:var(--panel-2)}
+.link-row[aria-pressed="true"]{background:var(--panel-2); border-color:var(--line)}
+.link-sig{display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11.5px}
+.link-sig .arrow{color:var(--muted)}
+.link-meta{display:flex; gap:8px; font-size:11px; color:var(--muted); margin-top:1px}
+.card-badge{
+  font-family:var(--mono); font-size:10px; padding:0 4px; border:1px solid var(--line);
+  border-radius:2px; color:var(--muted); letter-spacing:.02em;
+}
+
+.act-row{
+  display:flex; align-items:center; gap:8px; width:100%; text-align:left;
+  padding:7px 8px; border-radius:var(--r); border:1px solid transparent;
+}
+.act-row:hover{background:var(--write-bg); border-color:var(--write-line)}
+.act-row .dot{flex:none; width:6px; height:6px; border-radius:50%; background:var(--write)}
+.act-row .name{font-family:var(--mono); font-size:12px; color:var(--write)}
+.act-row .cn{font-size:12px; color:var(--text-2)}
+
+/* ============================================================
+   CENTER — 图谱 + 详情
+   ============================================================ */
+.graph-wrap{position:relative; flex:none; height:clamp(320px, 46vh, 520px); border-bottom:1px solid var(--line)}
+#graph{display:block; width:100%; height:100%; touch-action:none; cursor:default}
+.graph-legend{
+  position:absolute; left:14px; bottom:12px; display:flex; flex-wrap:wrap; gap:4px 12px;
+  pointer-events:none;
+}
+.lg{display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted)}
+.lg i{width:8px; height:8px; border-radius:2px; display:block}
+.graph-tip{
+  position:absolute; right:14px; top:12px; font-size:11px; color:var(--muted);
+  background:color-mix(in srgb, var(--panel) 82%, transparent); padding:3px 8px; border-radius:var(--r);
+}
+
+.detail{padding:0 0 28px}
+.obj-head{padding:16px 20px 14px; border-bottom:1px solid var(--line-soft)}
+.obj-kicker{display:flex; align-items:center; gap:8px; margin-bottom:5px}
+.pill{
+  display:inline-flex; align-items:center; gap:5px; font-family:var(--mono); font-size:11px;
+  padding:1px 7px; border-radius:2px; border:1px solid;
+}
+.obj-head h3{margin:0; font-size:20px; letter-spacing:-.01em}
+.obj-head .rid{font-family:var(--mono); font-size:12px; color:var(--muted)}
+
+table.props{width:100%; border-collapse:collapse; font-size:13px}
+table.props th,table.props td{padding:7px 20px; text-align:left; border-bottom:1px solid var(--line-soft); vertical-align:top}
+table.props th{width:34%; font-weight:400; color:var(--muted); font-size:12.5px}
+table.props th small{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.06em; opacity:.75}
+table.props td{font-variant-numeric:tabular-nums}
+
+.link-group{padding:2px 20px 12px}
+.link-group-head{display:flex; align-items:center; gap:8px; padding:9px 0 6px; font-size:12px}
+.link-group-head .lt{font-family:var(--mono); font-size:11.5px; color:var(--text-2)}
+.link-group-head .dir{color:var(--muted); font-size:11.5px}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chip{
+  display:inline-flex; align-items:center; gap:7px; padding:4px 10px 4px 8px;
+  border:1px solid var(--line); border-radius:var(--r); background:var(--panel-2); font-size:12.5px;
+}
+.chip:hover{border-color:currentColor}
+.chip i{width:8px; height:8px; border-radius:2px; flex:none}
+.chip .rid{font-family:var(--mono); font-size:11px; color:var(--muted)}
+
+.empty{padding:28px 20px; color:var(--muted); font-size:13px; max-width:62ch}
+.empty b{color:var(--text-2); font-weight:600}
+
+/* ============================================================
+   RIGHT — Action runner + 日志
+   ============================================================ */
+.action-tabs{display:flex; flex-wrap:wrap; gap:6px; padding:0 16px 12px}
+.tab{
+  padding:4px 10px; border:1px solid var(--line); border-radius:var(--r);
+  font-family:var(--mono); font-size:11.5px; color:var(--text-2); background:var(--panel-2);
+}
+.tab:hover{border-color:var(--write-line); color:var(--write)}
+.tab[aria-pressed="true"]{background:var(--write-bg); border-color:var(--write); color:var(--write)}
+
+.runner{margin:0 16px; border:1px solid var(--line); border-radius:var(--r); background:var(--panel-2)}
+.runner-head{padding:12px 14px 11px; border-bottom:1px solid var(--line-soft)}
+.runner-head h3{margin:0 0 3px; font-size:14.5px}
+.runner-head p{margin:0; font-size:12px; color:var(--muted); line-height:1.5}
+.runner-sec{padding:11px 14px; border-bottom:1px solid var(--line-soft)}
+.runner-sec:last-child{border-bottom:none}
+.runner-sec > .eyebrow{display:block; margin-bottom:8px}
+
+.field{display:flex; flex-direction:column; gap:3px; margin-bottom:9px}
+.field:last-child{margin-bottom:0}
+.field label{font-size:12px; color:var(--text-2); display:flex; align-items:baseline; gap:6px}
+.field label code{font-family:var(--mono); font-size:10.5px; color:var(--muted)}
+.field select,.field input{
+  width:100%; padding:6px 8px; background:var(--panel); color:var(--text);
+  border:1px solid var(--line); border-radius:var(--r); font-size:13px;
+}
+.field select:hover,.field input:hover{border-color:var(--muted)}
+
+.check{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:2px 0; color:var(--text-2)}
+.check .mk{font-family:var(--mono); font-size:12px; flex:none; width:14px; text-align:center}
+.check.pass .mk{color:var(--ok)}
+.check.fail .mk{color:var(--bad)}
+.check.fail{color:var(--bad)}
+.check.idle{color:var(--muted)}
+
+.edit{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:3px 0}
+.op{
+  flex:none; font-family:var(--mono); font-size:10px; letter-spacing:.06em; padding:1px 5px;
+  border-radius:2px; border:1px solid var(--write-line); color:var(--write); background:var(--write-bg);
+  margin-top:1px; min-width:52px; text-align:center;
+}
+.edit .txt{color:var(--text-2)}
+.edit .txt b{color:var(--text); font-weight:600}
+.edit .txt code{font-family:var(--mono); font-size:11.5px}
+
+.apply{
+  width:100%; padding:9px; border-radius:var(--r); font-size:13px; font-weight:600;
+  background:var(--write); color:var(--write-fg); border:1px solid var(--write);
+}
+.apply:disabled{opacity:.4; cursor:not-allowed}
+.apply:not(:disabled):hover{filter:brightness(1.08)}
+.apply-note{margin:7px 0 0; font-size:11.5px; color:var(--muted); text-align:center}
+
+/* log ----------------------------------------------------------- */
+.log{padding:0 16px 24px; display:flex; flex-direction:column; gap:7px}
+.log-entry{border:1px solid var(--line); border-radius:var(--r); background:var(--panel-2); overflow:hidden}
+.log-entry > summary{
+  padding:8px 11px; cursor:pointer; display:flex; align-items:center; gap:8px;
+  font-size:12.5px; list-style:none;
+}
+.log-entry > summary::-webkit-details-marker{display:none}
+.log-entry > summary::before{content:"▸"; color:var(--muted); font-size:10px; transition:transform .15s}
+.log-entry[open] > summary::before{transform:rotate(90deg)}
+.log-entry .ts{font-family:var(--mono); font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums}
+.log-entry .who{font-family:var(--mono); font-size:11.5px; color:var(--write)}
+.log-entry .n{margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--muted)}
+.log-body{padding:2px 11px 11px; border-top:1px solid var(--line-soft)}
+.log-params{font-size:11.5px; color:var(--muted); font-family:var(--mono); padding:7px 0 4px; word-break:break-all}
+.undo{
+  margin-top:8px; padding:4px 10px; border:1px solid var(--line); border-radius:var(--r);
+  font-size:11.5px; color:var(--text-2);
+}
+.undo:hover{border-color:var(--bad); color:var(--bad)}
+
+@media (max-width:1100px){
+  .console{grid-template-columns:1fr}
+  .concepts{grid-template-columns:1fr}
+  .graph-wrap{height:340px}
+  .masthead{gap:12px}
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important; animation:none !important}
+}
+</style>
+
+<div class="app">
+
+  <header class="masthead">
+    <div class="brand">
+      <h1>Ontology 演练场</h1>
+      <p>Object · Link · Action —— 本体的三个基本件</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="s-obj">0</b><span>Objects</span></div>
+      <div class="stat"><b id="s-link">0</b><span>Links</span></div>
+      <div class="stat"><b id="s-act">0</b><span>Actions</span></div>
+      <div class="stat"><b id="s-edit">0</b><span>Edits</span></div>
+    </div>
+    <div class="tools">
+      <button class="ghost" id="relayout">重排图谱</button>
+      <button class="ghost" id="reset">重置数据</button>
+    </div>
+  </header>
+
+  <div class="concepts">
+    <div class="concept">
+      <span class="glyph o">▣</span>
+      <div>
+        <h2>Object 对象</h2>
+        <p>现实世界里的一个实体：一位客户、一张订单。属于某个<b>对象类型</b>，有固定的属性表和唯一主键。</p>
+      </div>
+    </div>
+    <div class="concept">
+      <span class="glyph l">⇄</span>
+      <div>
+        <h2>Link 链接</h2>
+        <p>对象之间的关系，有类型、有方向、有基数（1:N、N:N）。查询不写 JOIN —— 沿着链接走就行。</p>
+      </div>
+    </div>
+    <div class="concept">
+      <span class="glyph a">↯</span>
+      <div>
+        <h2>Action 操作</h2>
+        <p>唯一的写入口。接收参数 → 校验规则 → 生成一组编辑 → 原子写回，并留下可追溯、可撤销的记录。</p>
+      </div>
+    </div>
+  </div>
+
+  <main class="console">
+
+    <!-- ======== 左：本体模型 ======== -->
+    <div class="col" id="col-model">
+      <div class="pane-head">
+        <span class="eyebrow">本体模型 / Schema</span>
+        <span class="hint" id="filter-hint"></span>
+      </div>
+
+      <div class="sub-head"><span class="eyebrow">对象类型</span><span class="rule"></span></div>
+      <div class="type-list" id="ot-list"></div>
+
+      <div class="sub-head"><span class="eyebrow">链接类型</span><span class="rule"></span></div>
+      <div class="type-list" id="lt-list"></div>
+
+      <div class="sub-head"><span class="eyebrow">操作类型</span><span class="rule"></span></div>
+      <div class="type-list" id="at-list"></div>
+    </div>
+
+    <!-- ======== 中：图谱 + 详情 ======== -->
+    <div class="col" id="col-stage">
+      <div class="graph-wrap">
+        <canvas id="graph"></canvas>
+        <div class="graph-tip">点击节点查看对象 · 可拖拽</div>
+        <div class="graph-legend" id="legend"></div>
+      </div>
+      <div class="detail" id="detail"></div>
+    </div>
+
+    <!-- ======== 右：操作 + 日志 ======== -->
+    <div class="col" id="col-write">
+      <div class="pane-head"><span class="eyebrow">操作执行器 / Action</span></div>
+      <div class="action-tabs" id="action-tabs"></div>
+      <div class="runner" id="runner"></div>
+
+      <div class="sub-head"><span class="eyebrow">写入日志 / Audit</span><span class="rule"></span></div>
+      <div class="log" id="log"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   1. 本体定义 —— 对象类型 / 链接类型
+   ============================================================ */
+
+const OBJECT_TYPES = {
+  Customer: { id:"Customer", cn:"客户", title:"name", props:[
+    {id:"name",  cn:"姓名", type:"string"},
+    {id:"tier",  cn:"等级", type:"enum"},
+    {id:"city",  cn:"城市", type:"string"},
+  ]},
+  Order: { id:"Order", cn:"订单", title:"orderNo", props:[
+    {id:"orderNo",  cn:"订单号",   type:"string"},
+    {id:"status",   cn:"状态",     type:"enum"},
+    {id:"qty",      cn:"数量",     type:"integer"},
+    {id:"total",    cn:"金额",     type:"currency"},
+    {id:"placedAt", cn:"下单时间", type:"timestamp"},
+  ]},
+  Product: { id:"Product", cn:"商品", title:"name", props:[
+    {id:"sku",   cn:"SKU",  type:"string"},
+    {id:"name",  cn:"名称", type:"string"},
+    {id:"price", cn:"单价", type:"currency"},
+    {id:"stock", cn:"库存", type:"integer"},
+  ]},
+  Warehouse: { id:"Warehouse", cn:"仓库", title:"name", props:[
+    {id:"name", cn:"仓库名", type:"string"},
+    {id:"city", cn:"城市",   type:"string"},
+  ]},
+  Shipment: { id:"Shipment", cn:"运单", title:"trackingNo", props:[
+    {id:"trackingNo", cn:"运单号", type:"string"},
+    {id:"carrier",    cn:"承运商", type:"string"},
+    {id:"status",     cn:"状态",   type:"enum"},
+    {id:"eta",        cn:"预计送达", type:"date"},
+  ]},
+};
+
+const LINK_TYPES = [
+  {id:"placed",      from:"Customer", to:"Order",     card:"1 : N", fwd:"下的订单",   inv:"下单客户"},
+  {id:"contains",    from:"Order",    to:"Product",   card:"N : N", fwd:"包含商品",   inv:"相关订单"},
+  {id:"fulfilledBy", from:"Order",    to:"Shipment",  card:"1 : 1", fwd:"履约运单",   inv:"所属订单"},
+  {id:"shipsFrom",   from:"Shipment", to:"Warehouse", card:"N : 1", fwd:"发货仓库",   inv:"发出的运单"},
+  {id:"stockedAt",   from:"Product",  to:"Warehouse", card:"N : N", fwd:"存放仓库",   inv:"在库商品"},
+];
+const LT = Object.fromEntries(LINK_TYPES.map(l => [l.id, l]));
+
+const STATUS = {
+  PENDING:   {cn:"待审核", tone:"neutral"},
+  APPROVED:  {cn:"已审核", tone:"info"},
+  SHIPPED:   {cn:"已发货", tone:"info"},
+  DELIVERED: {cn:"已送达", tone:"ok"},
+  CANCELLED: {cn:"已取消", tone:"bad"},
+  IN_TRANSIT:{cn:"运输中", tone:"info"},
+  金牌:{cn:"金牌", tone:"info"}, 银牌:{cn:"银牌", tone:"neutral"}, 普通:{cn:"普通", tone:"neutral"},
+};
+
+/* ============================================================
+   2. 实例数据（世界的初始状态）
+   ============================================================ */
+
+function seedWorld(){
+  const o = {};
+  const put = (type, id, props) => { o[type+":"+id] = {type, id, props}; };
+
+  put("Customer","C-101",{name:"张昀", tier:"金牌", city:"上海"});
+  put("Customer","C-102",{name:"陆微", tier:"银牌", city:"杭州"});
+  put("Customer","C-103",{name:"何叙", tier:"金牌", city:"广州"});
+  put("Customer","C-104",{name:"苏亦", tier:"普通", city:"成都"});
+
+  put("Product","P-11",{sku:"GR-ARES", name:"磨豆机 Ares",  price:1280, stock:24});
+  put("Product","P-12",{sku:"KT-FOLD", name:"手冲壶 Fold",  price:420,  stock:60});
+  put("Product","P-13",{sku:"EM-KITE", name:"意式机 Kite",  price:5600, stock:6});
+  put("Product","P-14",{sku:"FP-100",  name:"滤纸 100 张",  price:38,   stock:400});
+
+  put("Warehouse","W-1",{name:"华东中心仓", city:"上海"});
+  put("Warehouse","W-2",{name:"华南分仓",   city:"广州"});
+
+  put("Order","O-2001",{orderNo:"O-2001", status:"APPROVED",  qty:1, total:1280, placedAt:"2026-07-24 10:12"});
+  put("Order","O-2002",{orderNo:"O-2002", status:"PENDING",   qty:2, total:840,  placedAt:"2026-07-25 16:40"});
+  put("Order","O-2003",{orderNo:"O-2003", status:"SHIPPED",   qty:1, total:5600, placedAt:"2026-07-22 09:05"});
+  put("Order","O-2004",{orderNo:"O-2004", status:"DELIVERED", qty:5, total:190,  placedAt:"2026-07-18 11:30"});
+
+  put("Shipment","S-9001",{trackingNo:"SF-7788-2103", carrier:"顺丰",     status:"IN_TRANSIT", eta:"2026-07-28"});
+  put("Shipment","S-9002",{trackingNo:"JD-1122-5540", carrier:"京东物流", status:"DELIVERED",  eta:"2026-07-20"});
+
+  const l = [];
+  const link = (t,a,b) => l.push({t, a, b});
+  link("placed","Customer:C-101","Order:O-2001");
+  link("placed","Customer:C-102","Order:O-2002");
+  link("placed","Customer:C-103","Order:O-2003");
+  link("placed","Customer:C-101","Order:O-2004");
+  link("contains","Order:O-2001","Product:P-11");
+  link("contains","Order:O-2002","Product:P-12");
+  link("contains","Order:O-2003","Product:P-13");
+  link("contains","Order:O-2004","Product:P-14");
+  link("fulfilledBy","Order:O-2003","Shipment:S-9001");
+  link("fulfilledBy","Order:O-2004","Shipment:S-9002");
+  link("shipsFrom","Shipment:S-9001","Warehouse:W-1");
+  link("shipsFrom","Shipment:S-9002","Warehouse:W-1");
+  link("stockedAt","Product:P-11","Warehouse:W-1");
+  link("stockedAt","Product:P-12","Warehouse:W-1");
+  link("stockedAt","Product:P-12","Warehouse:W-2");
+  link("stockedAt","Product:P-13","Warehouse:W-1");
+  link("stockedAt","Product:P-14","Warehouse:W-1");
+  link("stockedAt","Product:P-14","Warehouse:W-2");
+
+  return {objects:o, links:l, seq:{Order:2005, Shipment:9003}};
+}
+
+let world = seedWorld();
+let logEntries = [];
+let editCount = 0;
+
+/* --- 世界查询工具 ------------------------------------------------ */
+const get = k => world.objects[k];
+const keysOf = type => Object.keys(world.objects).filter(k => world.objects[k].type === type);
+// 编辑预览里的对象可能还没被创建 —— 退回主键，不要把 "Order:O-2005" 这种内部 key 露出来
+const titleOf = k => { const o = get(k); return o ? String(o.props[OBJECT_TYPES[o.type].title]) : String(k).split(":").pop(); };
+const hasLink = (t,a,b) => world.links.some(x => x.t===t && x.a===a && x.b===b);
+/** 沿链接走一步；dir="fwd" 表示 a→b，"inv" 表示 b→a */
+function traverse(key, ltId, dir="fwd"){
+  return world.links
+    .filter(x => x.t===ltId && (dir==="fwd" ? x.a===key : x.b===key))
+    .map(x => dir==="fwd" ? x.b : x.a);
+}
+const one = (key, ltId, dir) => traverse(key, ltId, dir)[0] || null;
+
+/* ============================================================
+   3. Action 定义
+   每个 Action = 参数 + 校验规则 + 一组编辑（edits）
+   ============================================================ */
+
+const E = {
+  create: (objectType, id, props) => ({op:"create", key:objectType+":"+id, objectType, id, props}),
+  modify: (key, changes)          => ({op:"modify", key, changes}),
+  link:   (t, a, b)               => ({op:"link", t, a, b}),
+  unlink: (t, a, b)               => ({op:"unlink", t, a, b}),
+  del:    (key)                   => ({op:"delete", key}),
+};
+
+const ACTIONS = [
+  {
+    id:"createOrder", cn:"下单",
+    desc:"从零创建一个订单对象，把它连到客户和商品上，同时扣减商品库存 —— 一个 Action 写多个对象。",
+    params:[
+      {id:"customer", cn:"客户", kind:"object", objectType:"Customer"},
+      {id:"product",  cn:"商品", kind:"object", objectType:"Product"},
+      {id:"qty",      cn:"数量", kind:"number", min:1, def:1},
+    ],
+    rules:[
+      {cn:"数量必须 ≥ 1", check:p => p.qty >= 1},
+      {cn:"商品库存充足", check:p => get(p.product).props.stock >= p.qty,
+       why:p => `当前库存 ${get(p.product).props.stock}`},
+    ],
+    edits(p){
+      const prod = get(p.product), id = "O-" + world.seq.Order;
+      const total = prod.props.price * p.qty;
+      return [
+        E.create("Order", id, {orderNo:id, status:"PENDING", qty:p.qty, total,
+                               placedAt:new Date().toISOString().slice(0,16).replace("T"," ")}),
+        E.link("placed", p.customer, "Order:"+id),
+        E.link("contains", "Order:"+id, p.product),
+        E.modify(p.product, {stock: prod.props.stock - p.qty}),
+      ];
+    },
+    after(){ world.seq.Order++; },
+  },
+
+  {
+    id:"approveOrder", cn:"审核订单",
+    desc:"最小的 Action：只改一个属性。状态机由校验规则守住 —— 只有待审核的订单能被审核。",
+    params:[{id:"order", cn:"订单", kind:"object", objectType:"Order"}],
+    rules:[{cn:"订单状态为「待审核」", check:p => get(p.order).props.status === "PENDING",
+            why:p => `当前 ${STATUS[get(p.order).props.status].cn}`}],
+    edits:p => [E.modify(p.order, {status:"APPROVED"})],
+  },
+
+  {
+    id:"shipOrder", cn:"发货",
+    desc:"创建运单并挂到订单上。校验会沿着 订单 → 商品 → 存放仓库 走一遍，确认这个仓库真的有货。",
+    params:[
+      {id:"order",     cn:"订单",   kind:"object", objectType:"Order"},
+      {id:"warehouse", cn:"发货仓", kind:"object", objectType:"Warehouse"},
+      {id:"carrier",   cn:"承运商", kind:"enum", options:["顺丰","京东物流","中通"], def:"顺丰"},
+    ],
+    rules:[
+      {cn:"订单状态为「已审核」", check:p => get(p.order).props.status === "APPROVED",
+       why:p => `当前 ${STATUS[get(p.order).props.status].cn}`},
+      {cn:"订单尚未关联运单", check:p => traverse(p.order,"fulfilledBy").length === 0},
+      {cn:"该仓库有此订单的商品", check:p => {
+        const prod = one(p.order, "contains");
+        return !!prod && hasLink("stockedAt", prod, p.warehouse);
+      }, why:p => {
+        const prod = one(p.order,"contains");
+        return prod ? `${titleOf(prod)} 不在该仓库` : "订单未关联商品";
+      }},
+    ],
+    edits(p){
+      const id = "S-" + world.seq.Shipment;
+      const eta = new Date(Date.now() + 3*864e5).toISOString().slice(0,10);
+      const no = (p.carrier==="顺丰"?"SF":p.carrier==="京东物流"?"JD":"ZT") + "-" +
+                 Math.floor(1000+Math.random()*8999) + "-" + Math.floor(1000+Math.random()*8999);
+      return [
+        E.create("Shipment", id, {trackingNo:no, carrier:p.carrier, status:"IN_TRANSIT", eta}),
+        E.link("fulfilledBy", p.order, "Shipment:"+id),
+        E.link("shipsFrom", "Shipment:"+id, p.warehouse),
+        E.modify(p.order, {status:"SHIPPED"}),
+      ];
+    },
+    after(){ world.seq.Shipment++; },
+  },
+
+  {
+    id:"deliverShipment", cn:"确认送达",
+    desc:"参数里只给了运单，但编辑会顺着 fulfilledBy 的反向链接找到订单，把两个对象一起改掉。",
+    params:[{id:"shipment", cn:"运单", kind:"object", objectType:"Shipment"}],
+    rules:[{cn:"运单处于「运输中」", check:p => get(p.shipment).props.status === "IN_TRANSIT",
+            why:p => `当前 ${STATUS[get(p.shipment).props.status].cn}`}],
+    edits(p){
+      const es = [E.modify(p.shipment, {status:"DELIVERED"})];
+      const order = one(p.shipment, "fulfilledBy", "inv");
+      if (order) es.push(E.modify(order, {status:"DELIVERED"}));
+      return es;
+    },
+  },
+
+  {
+    id:"cancelOrder", cn:"取消订单",
+    desc:"撤销类操作也是 Action：改订单状态之余，还要沿链接找回商品，把占用的库存还回去。",
+    params:[
+      {id:"order",  cn:"订单", kind:"object", objectType:"Order"},
+      {id:"reason", cn:"原因", kind:"enum", options:["客户取消","缺货","地址有误"], def:"客户取消"},
+    ],
+    rules:[{cn:"订单尚未发货", check:p => ["PENDING","APPROVED"].includes(get(p.order).props.status),
+            why:p => `当前 ${STATUS[get(p.order).props.status].cn}，已不可取消`}],
+    edits(p){
+      const es = [E.modify(p.order, {status:"CANCELLED"})];
+      const prod = one(p.order, "contains");
+      if (prod) es.push(E.modify(prod, {stock: get(prod).props.stock + get(p.order).props.qty}));
+      return es;
+    },
+  },
+
+  {
+    id:"restockProduct", cn:"补货入仓",
+    desc:"编辑可以是有条件的：商品和仓库之间如果还没有链接，这次就顺手建一条。",
+    params:[
+      {id:"product",   cn:"商品", kind:"object", objectType:"Product"},
+      {id:"warehouse", cn:"仓库", kind:"object", objectType:"Warehouse"},
+      {id:"qty",       cn:"数量", kind:"number", min:1, def:10},
+    ],
+    rules:[{cn:"数量必须 ≥ 1", check:p => p.qty >= 1}],
+    edits(p){
+      const es = [E.modify(p.product, {stock: get(p.product).props.stock + p.qty})];
+      if (!hasLink("stockedAt", p.product, p.warehouse)) es.push(E.link("stockedAt", p.product, p.warehouse));
+      return es;
+    },
+  },
+];
+const AT = Object.fromEntries(ACTIONS.map(a => [a.id, a]));
+
+/* ============================================================
+   4. 编辑引擎 —— 应用一组 edits，并返回其逆操作（供撤销）
+   ============================================================ */
+
+function applyEdits(edits){
+  const inverse = [];
+  for (const e of edits){
+    if (e.op === "create"){
+      world.objects[e.key] = {type:e.objectType, id:e.id, props:{...e.props}};
+      inverse.unshift({op:"delete", key:e.key});
+      flash(e.key);
+    } else if (e.op === "modify"){
+      const o = get(e.key); if (!o) continue;
+      const before = {};
+      for (const k in e.changes){ before[k] = o.props[k]; o.props[k] = e.changes[k]; }
+      inverse.unshift({op:"modify", key:e.key, changes:before});
+      flash(e.key);
+    } else if (e.op === "delete"){
+      const o = get(e.key); if (!o) continue;
+      inverse.unshift({op:"create", key:e.key, objectType:o.type, id:o.id, props:{...o.props}});
+      world.links = world.links.filter(x => x.a !== e.key && x.b !== e.key);
+      delete world.objects[e.key];
+    } else if (e.op === "link"){
+      if (!hasLink(e.t, e.a, e.b)) world.links.push({t:e.t, a:e.a, b:e.b});
+      inverse.unshift({op:"unlink", t:e.t, a:e.a, b:e.b});
+    } else if (e.op === "unlink"){
+      world.links = world.links.filter(x => !(x.t===e.t && x.a===e.a && x.b===e.b));
+      inverse.unshift({op:"link", t:e.t, a:e.a, b:e.b});
+    }
+  }
+  return inverse;
+}
+
+function runAction(action, params){
+  const edits = action.edits(params);
+  const inverse = applyEdits(edits);
+  if (action.after) action.after();
+  editCount += edits.length;
+  logEntries.unshift({
+    ts: new Date().toTimeString().slice(0,8),
+    actionId: action.id, actionCn: action.cn,
+    params: describeParams(action, params),
+    edits: edits.map(describeEdit),
+    inverse,
+    editN: edits.length,
+  });
+  // 选中这次操作创建的对象，否则选中第一个参数对象
+  const created = edits.find(e => e.op === "create");
+  selected = created ? created.key : (Object.values(params).find(v => typeof v === "string" && world.objects[v]) || selected);
+  syncGraph(); renderAll();
+}
+
+function undoLast(){
+  const entry = logEntries.shift();
+  if (!entry) return;
+  applyEdits(entry.inverse);
+  editCount -= entry.editN;
+  if (!world.objects[selected]) selected = null;
+  syncGraph(); renderAll();
+}
+
+/* --- 编辑的人话描述 --------------------------------------------- */
+function describeParams(action, p){
+  return action.params.map(pr => {
+    const v = p[pr.id];
+    return pr.kind === "object" ? `${pr.id}=${titleOf(v)}` : `${pr.id}=${v}`;
+  }).join("  ");
+}
+function describeEdit(e){
+  if (e.op === "create")
+    return {op:"CREATE", html:`新建 <b>${OBJECT_TYPES[e.objectType].cn}</b> <code>${e.id}</code>`};
+  if (e.op === "modify"){
+    const o = get(e.key);
+    const parts = Object.entries(e.changes).map(([k,v]) => {
+      const def = o ? OBJECT_TYPES[o.type].props.find(x => x.id===k) : null;
+      return `${def ? def.cn : k} → <code>${fmtRaw(v)}</code>`;
+    }).join("，");
+    return {op:"MODIFY", html:`<b>${titleOf(e.key)}</b> ${parts}`};
+  }
+  if (e.op === "link")
+    return {op:"LINK", html:`<b>${titleOf(e.a)}</b> <code>${e.t}</code> <b>${titleOf(e.b)}</b>`};
+  if (e.op === "unlink")
+    return {op:"UNLINK", html:`断开 <b>${titleOf(e.a)}</b> <code>${e.t}</code> <b>${titleOf(e.b)}</b>`};
+  return {op:"DELETE", html:`删除 <b>${titleOf(e.key)}</b>`};
+}
+
+/* ============================================================
+   5. 格式化
+   ============================================================ */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtRaw = v => (STATUS[v] ? STATUS[v].cn : v);
+function fmtValue(v, type){
+  if (type === "currency") return "¥" + Number(v).toLocaleString("zh-CN");
+  if (type === "integer")  return Number(v).toLocaleString("zh-CN");
+  if (type === "enum" && STATUS[v]) return statusPill(v);
+  return esc(v);
+}
+function statusPill(v){
+  const s = STATUS[v] || {cn:v, tone:"neutral"};
+  return `<span class="pill" style="color:var(--${s.tone});border-color:currentColor">${esc(s.cn)}</span>`;
+}
+
+/* ============================================================
+   6. UI 状态
+   ============================================================ */
+let selected  = "Order:O-2003";
+let highlight = null;              // {kind:"objectType"|"linkType", id}
+let activeAction = ACTIONS[0].id;
+let formState = {};
+
+/* ============================================================
+   7. 图谱 —— canvas 力导向布局
+   ============================================================ */
+const canvas = document.getElementById("graph");
+const ctx = canvas.getContext("2d");
+let nodes = new Map();             // key -> {x,y,vx,vy,w,h,pinned}
+let flashes = new Map();           // key -> timestamp
+let alpha = 1, raf = null, dragging = null, hovered = null;
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function flash(key){ flashes.set(key, performance.now()); }
+
+let theme = {};
+function refreshTheme(){
+  const cs = getComputedStyle(document.documentElement);
+  theme = {
+    line: cs.getPropertyValue("--line").trim(),
+    muted: cs.getPropertyValue("--muted").trim(),
+    text: cs.getPropertyValue("--text").trim(),
+    panel: cs.getPropertyValue("--panel").trim(),
+    write: cs.getPropertyValue("--write").trim(),
+  };
+  for (const t in OBJECT_TYPES) theme[t] = cs.getPropertyValue("--t-"+t).trim();
+  kick();
+}
+
+function syncGraph(){
+  const cx = canvas.clientWidth/2 || 300, cy = canvas.clientHeight/2 || 200;
+  const keys = Object.keys(world.objects);
+  keys.forEach((k,i) => {
+    if (!nodes.has(k)){
+      const a = (i / Math.max(keys.length,1)) * Math.PI*2;
+      nodes.set(k, {x:cx + Math.cos(a)*140 + Math.random()*8, y:cy + Math.sin(a)*110 + Math.random()*8,
+                    vx:0, vy:0, w:80, h:26, pinned:false});
+    }
+  });
+  for (const k of [...nodes.keys()]) if (!world.objects[k]) nodes.delete(k);
+  measureNodes();
+  kick();
+}
+function measureNodes(){
+  ctx.font = '600 11.5px ' + getComputedStyle(document.body).getPropertyValue("--mono");
+  for (const [k,n] of nodes){
+    n.w = Math.min(160, ctx.measureText(titleOf(k)).width + 30);
+    n.h = 26;
+  }
+}
+function relayout(){
+  const cx = canvas.clientWidth/2, cy = canvas.clientHeight/2;
+  const keys = [...nodes.keys()];
+  keys.forEach((k,i) => {
+    const n = nodes.get(k), a = (i/keys.length)*Math.PI*2;
+    n.x = cx + Math.cos(a)*150; n.y = cy + Math.sin(a)*120; n.vx = n.vy = 0; n.pinned = false;
+  });
+  kick();
+}
+
+function step(){
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  const arr = [...nodes.values()];
+  for (const n of arr){ n.fx = 0; n.fy = 0; }
+  const GAP = 14;
+  for (let i=0;i<arr.length;i++) for (let j=i+1;j<arr.length;j++){
+    const a = arr[i], b = arr[j];
+    let dx = b.x-a.x, dy = b.y-a.y, d2 = dx*dx+dy*dy;
+    if (d2 < 1) { dx = Math.random()-0.5; dy = Math.random()-0.5; d2 = 1; }
+    const d = Math.sqrt(d2), ux = dx/d, uy = dy/d;
+    // 远场斥力
+    const f = Math.min(13000/d2, 45);
+    a.fx -= ux*f; a.fy -= uy*f; b.fx += ux*f; b.fy += uy*f;
+    // 近场矩形分离：节点是有宽高的框，重叠了就沿重叠最浅的轴推开
+    const ox = (a.w+b.w)/2 + GAP - Math.abs(dx);
+    const oy = (a.h+b.h)/2 + GAP - Math.abs(dy);
+    if (ox > 0 && oy > 0){
+      if (ox < oy){ const p = Math.sign(dx||1) * ox * 0.5;  a.fx -= p; b.fx += p; }
+      else        { const p = Math.sign(dy||1) * oy * 0.55; a.fy -= p; b.fy += p; }
+    }
+  }
+  // 弹簧
+  for (const l of world.links){
+    const a = nodes.get(l.a), b = nodes.get(l.b);
+    if (!a || !b) continue;
+    const dx = b.x-a.x, dy = b.y-a.y, d = Math.hypot(dx,dy) || 1;
+    const rest = (a.w+b.w)/2 + 74;
+    const f = (d - rest) * 0.04, ux = dx/d, uy = dy/d;
+    a.fx += ux*f; a.fy += uy*f; b.fx -= ux*f; b.fy -= uy*f;
+  }
+  // 向心 + 积分
+  const cx = W/2, cy = H/2;
+  for (const n of arr){
+    n.fx += (cx-n.x)*0.009; n.fy += (cy-n.y)*0.016;
+    if (n.pinned) { n.vx = n.vy = 0; continue; }
+    n.vx = (n.vx + n.fx*alpha) * 0.84;
+    n.vy = (n.vy + n.fy*alpha) * 0.84;
+    n.x += n.vx; n.y += n.vy;
+    n.x = Math.max(n.w/2+8, Math.min(W-n.w/2-8, n.x));
+    n.y = Math.max(n.h/2+8, Math.min(H-n.h/2-8, n.y));
+  }
+  alpha *= 0.985;
+}
+
+function dimOf(key){
+  const o = get(key); if (!o) return 1;
+  if (highlight){
+    if (highlight.kind === "objectType") return o.type === highlight.id ? 1 : 0.16;
+    const lt = LT[highlight.id];
+    return (o.type === lt.from || o.type === lt.to) ? 1 : 0.16;
+  }
+  if (selected){
+    if (key === selected) return 1;
+    const nb = world.links.some(l => (l.a===selected && l.b===key) || (l.b===selected && l.a===key));
+    return nb ? 1 : 0.3;
+  }
+  return 1;
+}
+
+function rectEdge(n, dx, dy){
+  const hw = n.w/2+3, hh = n.h/2+3;
+  const s = Math.min(hw/Math.abs(dx||1e-6), hh/Math.abs(dy||1e-6));
+  return [n.x + dx*s, n.y + dy*s];
+}
+
+function draw(){
+  const dpr = Math.min(devicePixelRatio||1, 2);
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  if (canvas.width !== W*dpr || canvas.height !== H*dpr){
+    canvas.width = W*dpr; canvas.height = H*dpr;
+  }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+
+  const monoFace = getComputedStyle(document.body).getPropertyValue("--mono");
+
+  // ---- 边
+  for (const l of world.links){
+    const a = nodes.get(l.a), b = nodes.get(l.b);
+    if (!a || !b) continue;
+    const touches = selected && (l.a===selected || l.b===selected);
+    let op = Math.min(dimOf(l.a), dimOf(l.b));
+    if (highlight && highlight.kind === "linkType") op = l.t === highlight.id ? 1 : 0.1;
+    const dx = b.x-a.x, dy = b.y-a.y;
+    const [x1,y1] = rectEdge(a, dx, dy);
+    const [x2,y2] = rectEdge(b, -dx, -dy);
+
+    ctx.globalAlpha = op * (touches ? 0.95 : 0.5);
+    ctx.strokeStyle = touches ? theme.text : theme.line;
+    ctx.lineWidth = touches ? 1.4 : 1;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+
+    // 箭头（链接是有方向的）
+    const ang = Math.atan2(y2-y1, x2-x1);
+    ctx.fillStyle = touches ? theme.text : theme.line;
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2 - 7*Math.cos(ang-0.4), y2 - 7*Math.sin(ang-0.4));
+    ctx.lineTo(x2 - 7*Math.cos(ang+0.4), y2 - 7*Math.sin(ang+0.4));
+    ctx.closePath(); ctx.fill();
+
+    // 选中对象的边上标出链接类型名
+    if (touches || (highlight && highlight.kind==="linkType" && l.t===highlight.id)){
+      const mx = (x1+x2)/2, my = (y1+y2)/2;
+      ctx.font = '500 10px ' + monoFace;
+      const tw = ctx.measureText(l.t).width;
+      ctx.globalAlpha = op * 0.95;
+      ctx.fillStyle = theme.panel;
+      ctx.fillRect(mx-tw/2-3, my-7, tw+6, 13);
+      ctx.fillStyle = theme.muted;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(l.t, mx, my);
+    }
+  }
+
+  // ---- 节点
+  ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  for (const [k,n] of nodes){
+    const o = get(k); if (!o) continue;
+    const col = theme[o.type] || theme.text;
+    const op = dimOf(k);
+    const isSel = k === selected;
+    const x = n.x - n.w/2, y = n.y - n.h/2;
+
+    ctx.globalAlpha = op;
+    roundRect(x, y, n.w, n.h, 4);
+    ctx.fillStyle = theme.panel; ctx.fill();
+    ctx.globalAlpha = op * 0.1;
+    ctx.fillStyle = col; ctx.fill();
+    ctx.globalAlpha = op;
+    ctx.strokeStyle = col; ctx.lineWidth = isSel ? 2 : 1; ctx.stroke();
+
+    if (isSel){
+      ctx.globalAlpha = op * 0.35;
+      roundRect(x-3.5, y-3.5, n.w+7, n.h+7, 6);
+      ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.stroke();
+    }
+    const f = flashes.get(k);
+    if (f !== undefined){
+      const t = (performance.now() - f) / 2200;
+      if (t >= 1) flashes.delete(k);
+      else {
+        ctx.globalAlpha = (1-t) * 0.9;
+        roundRect(x-3-t*7, y-3-t*7, n.w+6+t*14, n.h+6+t*14, 6+t*6);
+        ctx.strokeStyle = theme.write; ctx.lineWidth = 1.5; ctx.stroke();
+      }
+    }
+
+    ctx.globalAlpha = op;
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(x+11, n.y, 3.2, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = theme.text;
+    ctx.font = '500 11.5px ' + monoFace;
+    ctx.fillText(clip(titleOf(k), n.w-26), x+19, n.y+0.5);
+  }
+  ctx.globalAlpha = 1;
+}
+function clip(s, max){
+  if (ctx.measureText(s).width <= max) return s;
+  let t = s;
+  while (t.length > 1 && ctx.measureText(t+"…").width > max) t = t.slice(0,-1);
+  return t + "…";
+}
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+function loop(){
+  step(); draw();
+  if (alpha > 0.008 || dragging || flashes.size) raf = requestAnimationFrame(loop);
+  else { raf = null; draw(); }
+}
+function kick(){
+  alpha = Math.max(alpha, 0.55);
+  if (REDUCED){ for (let i=0;i<220;i++) step(); alpha = 0; draw(); return; }
+  if (!raf) raf = requestAnimationFrame(loop);
+}
+
+function nodeAt(px, py){
+  for (const [k,n] of [...nodes].reverse())
+    if (Math.abs(px-n.x) <= n.w/2 && Math.abs(py-n.y) <= n.h/2) return k;
+  return null;
+}
+canvas.addEventListener("pointerdown", ev => {
+  const r = canvas.getBoundingClientRect();
+  const k = nodeAt(ev.clientX-r.left, ev.clientY-r.top);
+  if (!k) return;
+  dragging = k; nodes.get(k).pinned = true;
+  canvas.setPointerCapture(ev.pointerId);
+  select(k);
+});
+canvas.addEventListener("pointermove", ev => {
+  const r = canvas.getBoundingClientRect();
+  const px = ev.clientX-r.left, py = ev.clientY-r.top;
+  if (dragging){
+    const n = nodes.get(dragging);
+    if (n){ n.x = px; n.y = py; }
+    kick();
+    return;
+  }
+  const k = nodeAt(px, py);
+  if (k !== hovered){ hovered = k; canvas.style.cursor = k ? "pointer" : "default"; }
+});
+function endDrag(){
+  if (dragging){ const n = nodes.get(dragging); if (n) n.pinned = false; dragging = null; kick(); }
+}
+canvas.addEventListener("pointerup", endDrag);
+canvas.addEventListener("pointercancel", endDrag);
+new ResizeObserver(() => kick()).observe(canvas);
+
+/* ============================================================
+   8. 渲染 —— 左栏（本体模型）
+   ============================================================ */
+function renderModel(){
+  const otList = document.getElementById("ot-list");
+  otList.innerHTML = Object.values(OBJECT_TYPES).map(t => `
+    <button class="type-row" data-hl="objectType" data-id="${t.id}"
+            aria-pressed="${highlight && highlight.kind==='objectType' && highlight.id===t.id}">
+      <span class="swatch" style="background:var(--t-${t.id})"></span>
+      <span class="body">
+        <span class="name">${t.id}</span> <span class="cn">${t.cn}</span>
+        <span class="props">${t.props.map(p => p.id).join(" · ")}</span>
+      </span>
+      <span class="count">${keysOf(t.id).length}</span>
+    </button>`).join("");
+
+  document.getElementById("lt-list").innerHTML = LINK_TYPES.map(l => `
+    <button class="link-row" data-hl="linkType" data-id="${l.id}"
+            aria-pressed="${highlight && highlight.kind==='linkType' && highlight.id===l.id}">
+      <span class="link-sig">
+        <span style="color:var(--t-${l.from})">${l.from}</span>
+        <span class="arrow">──▸</span>
+        <span style="color:var(--t-${l.to})">${l.to}</span>
+      </span>
+      <span class="link-meta">
+        <span class="card-badge">${l.card}</span>
+        <span>${l.id} · ${l.fwd} / ${l.inv}</span>
+      </span>
+    </button>`).join("");
+
+  document.getElementById("at-list").innerHTML = ACTIONS.map(a => `
+    <button class="act-row" data-action="${a.id}">
+      <span class="dot"></span>
+      <span class="name">${a.id}</span>
+      <span class="cn">${a.cn}</span>
+    </button>`).join("");
+
+  document.getElementById("filter-hint").textContent = highlight ? "点同一项取消筛选" : "";
+  document.getElementById("legend").innerHTML = Object.values(OBJECT_TYPES).map(t =>
+    `<span class="lg"><i style="background:var(--t-${t.id})"></i>${t.cn}</span>`).join("");
+}
+
+/* ============================================================
+   9. 渲染 —— 中栏（对象详情）
+   ============================================================ */
+function renderDetail(){
+  const el = document.getElementById("detail");
+  const o = selected ? get(selected) : null;
+  if (!o){
+    el.innerHTML = `<div class="empty">
+      在图谱里点一个节点，或从左边的<b>对象类型</b>里挑一类看看。<br><br>
+      每个节点都是一个 <b>Object</b>；节点之间的连线是 <b>Link</b>，箭头方向就是链接类型的正向；
+      右边所有的写入都必须经过一个 <b>Action</b>。</div>`;
+    return;
+  }
+  const t = OBJECT_TYPES[o.type];
+
+  const propRows = t.props.map(p => `
+    <tr><th>${p.cn}<small>${p.id} : ${p.type}</small></th>
+        <td>${fmtValue(o.props[p.id], p.type)}</td></tr>`).join("");
+
+  // 关联对象：正向 + 反向都要能走
+  const groups = [];
+  for (const l of LINK_TYPES){
+    if (l.from === o.type){
+      const t2 = traverse(selected, l.id, "fwd");
+      if (t2.length) groups.push({lt:l, dir:"fwd", label:l.fwd, targets:t2});
+    }
+    if (l.to === o.type){
+      const t2 = traverse(selected, l.id, "inv");
+      if (t2.length) groups.push({lt:l, dir:"inv", label:l.inv, targets:t2});
+    }
+  }
+  const linkHtml = groups.length ? groups.map(g => `
+    <div class="link-group-head">
+      <span class="card-badge">${g.lt.card}</span>
+      <span class="lt">${g.dir==="fwd" ? "" : "◂── "}${g.lt.id}${g.dir==="fwd" ? " ──▸" : ""}</span>
+      <span class="dir">${g.label}</span>
+    </div>
+    <div class="chips">${g.targets.map(k => {
+      const to = get(k);
+      const rid = titleOf(k) === to.id ? "" : `<span class="rid">${to.id}</span>`;
+      return `<button class="chip" data-goto="${k}" style="color:var(--t-${to.type})">
+        <i style="background:var(--t-${to.type})"></i>
+        <span style="color:var(--text)">${esc(titleOf(k))}</span>${rid}</button>`;
+    }).join("")}</div>`).join("")
+    : `<p style="color:var(--muted);font-size:12.5px;margin:8px 0 0">这个对象目前没有任何链接。</p>`;
+
+  const usable = ACTIONS.filter(a => a.params.some(p => p.kind==="object" && p.objectType===o.type));
+  const actHtml = usable.map(a =>
+    `<button class="chip" data-run="${a.id}" style="color:var(--write)">
+       <span style="color:var(--write)">↯ ${a.cn}</span>
+       <span class="rid">${a.id}</span></button>`).join("");
+
+  el.innerHTML = `
+    <div class="obj-head">
+      <div class="obj-kicker">
+        <span class="pill" style="color:var(--t-${o.type});border-color:currentColor">▣ ${o.type}</span>
+        <span class="rid">${t.cn} · 主键 ${o.id}</span>
+      </div>
+      <h3>${esc(titleOf(selected))}</h3>
+    </div>
+    <table class="props">${propRows}</table>
+    <div class="link-group">
+      <div class="sub-head" style="padding-left:0"><span class="eyebrow">关联对象 / Links</span><span class="rule"></span></div>
+      ${linkHtml}
+      <div class="sub-head" style="padding-left:0"><span class="eyebrow">可用操作 / Actions</span><span class="rule"></span></div>
+      <div class="chips">${actHtml || '<span style="color:var(--muted);font-size:12.5px">没有以该类型为参数的操作。</span>'}</div>
+    </div>`;
+}
+
+/* ============================================================
+   10. 渲染 —— 右栏（Action runner）
+   ============================================================ */
+function defaultParams(action){
+  const p = {};
+  for (const pr of action.params){
+    if (pr.kind === "object"){
+      const opts = keysOf(pr.objectType);
+      p[pr.id] = (selected && get(selected) && get(selected).type === pr.objectType && opts.includes(selected))
+                 ? selected : (opts[0] || "");
+    } else p[pr.id] = pr.def;
+  }
+  return p;
+}
+function evaluate(action, p){
+  const complete = action.params.every(pr => p[pr.id] !== "" && p[pr.id] !== undefined && p[pr.id] !== null);
+  const results = action.rules.map(r => {
+    if (!complete) return {cn:r.cn, state:"idle"};
+    let ok = false, why = "";
+    try { ok = !!r.check(p); if (!ok && r.why) why = r.why(p); }
+    catch { ok = false; why = "参数不完整"; }
+    return {cn:r.cn, state: ok ? "pass" : "fail", why};
+  });
+  const valid = complete && results.every(r => r.state === "pass");
+  let edits = [];
+  if (valid){ try { edits = action.edits(p).map(describeEdit); } catch { edits = []; } }
+  return {complete, results, valid, edits};
+}
+
+function renderRunner(){
+  document.getElementById("action-tabs").innerHTML = ACTIONS.map(a =>
+    `<button class="tab" data-action="${a.id}" aria-pressed="${a.id===activeAction}">${a.cn}</button>`).join("");
+
+  const action = AT[activeAction];
+  if (!formState.__action || formState.__action !== activeAction){
+    formState = {__action: activeAction, ...defaultParams(action)};
+  }
+  // 撤销可能删掉了表单里引用的对象 —— 让参数回到一个合法值
+  for (const pr of action.params){
+    if (pr.kind !== "object") continue;
+    const opts = keysOf(pr.objectType);
+    if (!opts.includes(formState[pr.id])) formState[pr.id] = opts[0] || "";
+  }
+  const p = {...formState}; delete p.__action;
+  const ev = evaluate(action, p);
+
+  const fields = action.params.map(pr => {
+    let input;
+    if (pr.kind === "object"){
+      const opts = keysOf(pr.objectType);
+      input = `<select data-p="${pr.id}">
+        ${opts.length ? "" : '<option value="">（无可选对象）</option>'}
+        ${opts.map(k => {
+          const label = titleOf(k) === get(k).id ? titleOf(k) : `${titleOf(k)} · ${get(k).id}`;
+          return `<option value="${k}" ${k===p[pr.id]?"selected":""}>${esc(label)}</option>`;
+        }).join("")}
+      </select>`;
+    } else if (pr.kind === "enum"){
+      input = `<select data-p="${pr.id}">${pr.options.map(o =>
+        `<option ${o===p[pr.id]?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
+    } else {
+      input = `<input type="number" data-p="${pr.id}" min="${pr.min ?? 0}" value="${p[pr.id]}">`;
+    }
+    const typeHint = pr.kind === "object" ? pr.objectType : (pr.kind === "number" ? "integer" : "enum");
+    return `<div class="field"><label>${pr.cn} <code>${pr.id} : ${typeHint}</code></label>${input}</div>`;
+  }).join("");
+
+  const rules = ev.results.map(r => `
+    <div class="check ${r.state}">
+      <span class="mk">${r.state==="pass" ? "✓" : r.state==="fail" ? "✕" : "·"}</span>
+      <span>${r.cn}${r.why ? ` <span style="opacity:.8">— ${esc(r.why)}</span>` : ""}</span>
+    </div>`).join("");
+
+  const edits = ev.valid && ev.edits.length
+    ? ev.edits.map(e => `<div class="edit"><span class="op">${e.op}</span><span class="txt">${e.html}</span></div>`).join("")
+    : `<p style="margin:0;font-size:12.5px;color:var(--muted)">${ev.complete ? "校验未通过，暂无编辑可提交。" : "填完参数后这里会列出将要写入的编辑。"}</p>`;
+
+  document.getElementById("runner").innerHTML = `
+    <div class="runner-head">
+      <h3>${action.cn} <span class="mono" style="font-size:11.5px;color:var(--muted)">${action.id}</span></h3>
+      <p>${action.desc}</p>
+    </div>
+    <div class="runner-sec"><span class="eyebrow">① 参数 Parameters</span>${fields}</div>
+    <div class="runner-sec"><span class="eyebrow">② 校验 Validation</span>${rules}</div>
+    <div class="runner-sec"><span class="eyebrow">③ 编辑预览 Edits <span style="color:var(--write)">${ev.valid ? ev.edits.length : 0}</span></span>${edits}</div>
+    <div class="runner-sec">
+      <button class="apply" id="apply" ${ev.valid ? "" : "disabled"}>应用操作 · 写回本体</button>
+      <p class="apply-note">${ev.valid ? "全部编辑将作为一个事务原子提交" : "校验未通过时无法提交"}</p>
+    </div>`;
+}
+
+/* ============================================================
+   11. 渲染 —— 日志
+   ============================================================ */
+function renderLog(){
+  const el = document.getElementById("log");
+  if (!logEntries.length){
+    el.innerHTML = `<p style="color:var(--muted);font-size:12.5px;margin:2px 0 0">
+      还没有写入。每应用一次操作，这里就会留下它产生的全部编辑 —— 本体里的每一次改动都有出处。</p>`;
+    return;
+  }
+  el.innerHTML = logEntries.map((e,i) => `
+    <details class="log-entry" ${i===0?"open":""}>
+      <summary>
+        <span class="ts">${e.ts}</span>
+        <span class="who">${e.actionId}</span>
+        <span style="color:var(--text-2)">${e.actionCn}</span>
+        <span class="n">${e.editN} edits</span>
+      </summary>
+      <div class="log-body">
+        <div class="log-params">${esc(e.params)}</div>
+        ${e.edits.map(x => `<div class="edit"><span class="op">${x.op}</span><span class="txt">${x.html}</span></div>`).join("")}
+        ${i===0 ? '<button class="undo" id="undo">↩ 撤销这次操作</button>' : ""}
+      </div>
+    </details>`).join("");
+}
+
+/* ============================================================
+   12. 组装
+   ============================================================ */
+function renderStats(){
+  document.getElementById("s-obj").textContent  = Object.keys(world.objects).length;
+  document.getElementById("s-link").textContent = world.links.length;
+  document.getElementById("s-act").textContent  = logEntries.length;
+  document.getElementById("s-edit").textContent = editCount;
+}
+function renderAll(){ renderModel(); renderDetail(); renderRunner(); renderLog(); renderStats(); measureNodes(); }
+
+function select(key){
+  selected = key;
+  // 参数里如果有匹配类型的对象槽，顺手切过去 —— 详情和操作面板保持同步
+  const action = AT[activeAction];
+  const slot = action.params.find(p => p.kind==="object" && p.objectType === get(key).type);
+  if (slot) formState[slot.id] = key;
+  renderDetail(); renderRunner(); renderModel();
+  kick();
+}
+
+document.addEventListener("click", ev => {
+  const hl = ev.target.closest("[data-hl]");
+  if (hl){
+    const kind = hl.dataset.hl, id = hl.dataset.id;
+    highlight = (highlight && highlight.kind===kind && highlight.id===id) ? null : {kind, id};
+    renderModel(); kick(); return;
+  }
+  const tab = ev.target.closest("[data-action]");
+  if (tab){ activeAction = tab.dataset.action; formState = {}; renderRunner();
+            document.getElementById("col-write").scrollTo({top:0, behavior:"smooth"}); return; }
+  const go = ev.target.closest("[data-goto]");
+  if (go){ select(go.dataset.goto); return; }
+  const run = ev.target.closest("[data-run]");
+  if (run){
+    activeAction = run.dataset.run; formState = {};
+    renderRunner();
+    document.getElementById("col-write").scrollTo({top:0, behavior:"smooth"});
+    return;
+  }
+  if (ev.target.closest("#apply")){
+    const action = AT[activeAction];
+    const p = {...formState}; delete p.__action;
+    if (evaluate(action, p).valid) runAction(action, p);
+    return;
+  }
+  if (ev.target.closest("#undo")){ undoLast(); return; }
+  if (ev.target.closest("#relayout")){ relayout(); return; }
+  if (ev.target.closest("#reset")){
+    world = seedWorld(); logEntries = []; editCount = 0;
+    selected = "Order:O-2003"; highlight = null; formState = {}; nodes.clear(); flashes.clear();
+    syncGraph(); renderAll(); return;
+  }
+});
+
+document.addEventListener("input", ev => {
+  const f = ev.target.closest("[data-p]");
+  if (!f) return;
+  const key = f.dataset.p;
+  formState[key] = f.type === "number" ? Number(f.value) : f.value;
+  renderRunner();
+  const el = document.querySelector(`[data-p="${key}"]`);
+  if (el) el.focus();
+});
+
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", refreshTheme);
+new MutationObserver(refreshTheme).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+
+refreshTheme();
+syncGraph();
+renderAll();
+kick();
+</script>
