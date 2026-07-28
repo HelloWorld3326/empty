@@ -496,12 +496,14 @@ function renderLeft() {
       <span class="eyebrow">本体模型 / Schema</span>
       <span class="hint">${modelling ? "点类型看映射" : (state.highlight ? "点同一项取消筛选" : "")}</span>
     </div>
-    <div class="sub-head"><span class="eyebrow">对象类型</span><span class="hair"></span></div>
+    <div class="sub-head"><span class="eyebrow">对象类型</span><span class="hair"></span>
+      ${modelling && isAdmin() ? `<button class="plus" data-new="ot">+ 绑定表</button>` : ""}</div>
     <div class="type-list">${ots}</div>
     <div class="sub-head"><span class="eyebrow">链接类型</span><span class="hair"></span>
       ${modelling && isAdmin() ? `<button class="plus" data-new="lt">+ 新建</button>` : ""}</div>
     <div class="type-list">${lts}</div>
-    <div class="sub-head"><span class="eyebrow">操作类型</span><span class="hair"></span></div>
+    <div class="sub-head"><span class="eyebrow">操作类型</span><span class="hair"></span>
+      ${modelling && isAdmin() ? `<button class="plus" data-new="at">+ 新建</button>` : ""}</div>
     <div class="type-list">${ats}</div>`;
 
   document.getElementById("legend").innerHTML = state.onto.objectTypes.map(t =>
@@ -745,9 +747,192 @@ function renderModelMid() {
     return;
   }
   const { kind, id } = state.editing;
-  if (kind === "ot") el.innerHTML = objectTypeEditor(OT(id));
+  if (kind === "new-ot") el.innerHTML = newObjectTypeForm();
+  else if (kind === "new-lt") el.innerHTML = newLinkTypeForm();
+  else if (kind === "new-at") el.innerHTML = newActionTypeForm();
+  else if (kind === "ot") el.innerHTML = objectTypeEditor(OT(id));
   else if (kind === "lt") el.innerHTML = linkTypeEditor(LT(id));
   else el.innerHTML = actionTypeEditor(AT(id));
+}
+
+/* --- 新建：三种类型的创建成本是递增的 -------------------------------
+   操作类型  纯元数据，随时能加
+   链接类型  要有一个真实外键（没有就得先在管道里造出关联）
+   对象类型  要有一张真实的表 —— 最贵，往往牵动数据工程
+   ------------------------------------------------------------------ */
+
+const camel = s => s.split("_").map((w, i) => i ? w.charAt(0).toUpperCase() + w.slice(1) : w).join("");
+const pascal = s => s.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join("");
+
+function newObjectTypeForm() {
+  const boundTables = new Set(state.onto.objectTypes.map(t => t.sourceTable));
+  const free = state.tables.filter(t => !boundTables.has(t.name));
+  if (!free.length) {
+    return `<div class="ed"><div class="ed-head"><h3>绑定一张表</h3></div>
+      <div class="ed-sec"><p class="warn">数据库里所有的表都已经绑定过了。
+      想加一个新的对象类型，得先在 <code>db/schema.sql</code> 里建一张新表、灌上数据、
+      重新 <code>python -m server.initdb</code>。<br><br>
+      <b>这就是真实顺序：数据先到，本体后到。</b></p></div></div>`;
+  }
+  const t = free.find(x => x.name === state.draftTable) || free[0];
+  const fks = new Set(t.foreignKeys.map(f => f.column));
+
+  return `
+    <div class="ed">
+      <div class="ed-head">
+        <div class="obj-kicker"><span class="pill" style="color:var(--p0);border-color:currentColor">▣ 新建对象类型</span></div>
+        <h3>把一张已有的表变成对象类型</h3>
+      </div>
+      <div class="ed-sec">
+        <span class="eyebrow">① 选一张还没绑定的表</span>
+        <div class="f-grid">
+          <div class="field"><label>数据源表 <code>source_table</code></label>
+            <select id="nt-table">${free.map(x =>
+              `<option value="${esc(x.name)}" ${x.name === t.name ? "selected" : ""}>${esc(x.name)}（${x.columns.length} 列）</option>`).join("")}</select></div>
+          <div class="field"><label>主键列 <code>pk_column</code></label>
+            <select id="nt-pk">${t.columns.map(c =>
+              `<option value="${esc(c.name)}" ${c.pk ? "selected" : ""}>${esc(c.name)}${c.pk ? "（表主键）" : ""}</option>`).join("")}</select></div>
+          <div class="field"><label>API 名</label>
+            <input type="text" id="nt-api" value="${esc(pascal(t.name))}"></div>
+          <div class="field"><label>中文名</label>
+            <input type="text" id="nt-cn" value="${esc(pascal(t.name))}"></div>
+          <div class="field"><label>主键前缀 <code>Action 建新对象时用</code></label>
+            <input type="text" id="nt-prefix" value="${esc(pascal(t.name).slice(0, 1))}"></div>
+        </div>
+      </div>
+      <div class="ed-sec">
+        <span class="eyebrow">② 绑定后会自动映射这些列</span>
+        ${t.columns.map(c => {
+          const isFk = fks.has(c.name);
+          const skip = isFk || c.name === "row_version";
+          return `<div class="spec" style="${skip ? "opacity:.7" : ""}">
+            <span class="map"><b>${esc(c.name)}</b></span>
+            <span class="card-badge">${esc(c.type || "?")}</span>
+            ${isFk
+              ? `<span class="txt" style="color:var(--p2)">→ 跳过：这是指向 ${esc(t.foreignKeys.find(f => f.column === c.name).refTable)} 的外键，应该建成<b>链接类型</b></span>`
+              : c.name === "row_version"
+                ? `<span class="txt" style="color:var(--muted)">→ 跳过：乐观锁用</span>`
+                : `<span class="txt">→ 属性 <b>${esc(camel(c.name))}</b></span>`}
+          </div>`;
+        }).join("")}
+        <p class="note">
+          外键列不会变成属性 —— 这是关系模型到本体最核心的一次转换。
+          绑定完记得去建对应的链接类型。
+        </p>
+      </div>
+      <div class="ed-sec">
+        <button class="apply" id="nt-create">绑定并创建对象类型</button>
+      </div>
+    </div>`;
+}
+
+function newLinkTypeForm() {
+  // 只列真实存在、且还没被映射成链接的外键
+  const used = new Set(state.onto.linkTypes.map(l => `${l.fkTable}.${l.fkColumn}`));
+  const byTable = new Map(state.onto.objectTypes.map(t => [t.sourceTable, t]));
+  const cands = [];
+  for (const t of state.tables) {
+    for (const fk of t.foreignKeys) {
+      const key = `${t.name}.${fk.column}`;
+      if (used.has(key)) continue;
+      const holder = byTable.get(t.name), target = byTable.get(fk.refTable);
+      if (!holder || !target) continue;      // 两端都得先有对象类型
+      cands.push({ key, fkTable: t.name, fkColumn: fk.column, holder, target });
+    }
+  }
+  if (!cands.length) {
+    return `<div class="ed"><div class="ed-head"><h3>新建链接类型</h3></div>
+      <div class="ed-sec"><p class="warn">没有可用的外键了。<br><br>
+      链接必须由**真实存在的外键**实现。要么这些外键都已经映射成链接了，
+      要么外键两端的表还没有被绑定成对象类型。<br><br>
+      真实系统里如果两张表之间本来就没有外键（比如来自两个不同的源系统），
+      得先在数据管道里做实体匹配、把关联关系算出来落成一列，才谈得上建链接。</p></div></div>`;
+  }
+  const c = cands.find(x => x.key === state.draftFk) || cands[0];
+  // 外键落在哪一端，决定默认方向：持有外键的那张表通常是"多"的一端
+  const defFrom = c.target.id, defTo = c.holder.id;
+
+  return `
+    <div class="ed">
+      <div class="ed-head">
+        <div class="obj-kicker"><span class="pill" style="color:var(--p2);border-color:currentColor">⇄ 新建链接类型</span></div>
+        <h3>把一个真实外键变成链接</h3>
+      </div>
+      <div class="ed-sec">
+        <span class="eyebrow">① 挑一个还没映射的外键</span>
+        <div class="field"><label>真实外键 <code>来自 PRAGMA foreign_key_list</code></label>
+          <select id="nl-fk">${cands.map(x =>
+            `<option value="${esc(x.key)}" ${x.key === c.key ? "selected" : ""}>${esc(x.key)} → ${esc(x.target.sourceTable)}</option>`).join("")}</select></div>
+        <p class="note">下拉里只有数据库里**真实存在**的外键。凭空写一个列名会被服务端拒绝。</p>
+      </div>
+      <div class="ed-sec">
+        <span class="eyebrow">② 命名与方向</span>
+        <div class="f-grid">
+          <div class="field"><label>API 名</label>
+            <input type="text" id="nl-api" value="${esc(camel(c.fkColumn.replace(/_id$|_no$/, "")) || "newLink")}"></div>
+          <div class="field"><label>起点 from</label>
+            <select id="nl-from">${state.onto.objectTypes.map(t =>
+              `<option value="${esc(t.id)}" ${t.id === defFrom ? "selected" : ""}>${esc(t.id)} ${esc(t.cn)}</option>`).join("")}</select></div>
+          <div class="field"><label>终点 to</label>
+            <select id="nl-to">${state.onto.objectTypes.map(t =>
+              `<option value="${esc(t.id)}" ${t.id === defTo ? "selected" : ""}>${esc(t.id)} ${esc(t.cn)}</option>`).join("")}</select></div>
+          <div class="field"><label>基数</label>
+            <select id="nl-card">${["1 : 1", "1 : N", "N : 1", "N : N"].map(x =>
+              `<option ${x === "1 : N" ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+          <div class="field"><label>正向名</label><input type="text" id="nl-fwd" value="关联对象"></div>
+          <div class="field"><label>反向名</label><input type="text" id="nl-inv" value="来源对象"></div>
+        </div>
+        <p class="note">
+          外键在 <b>${esc(c.fkTable)}</b> 上。把持有外键的那一端设成 <b>to</b>，
+          从 from 出发就是一次单表过滤；反过来就得 JOIN。两种都对，只是 SQL 不同。
+        </p>
+      </div>
+      <div class="ed-sec"><button class="apply" id="nl-create">创建链接类型</button></div>
+    </div>`;
+}
+
+const ACTION_TEMPLATE = {
+  params: [{ id: "target", cn: "目标对象", kind: "object", objectType: "Order" }],
+  rules: [],
+  edits: [{
+    uid: "e1", op: "modify", target: { kind: "param", param: "target" },
+    prop: "status", mode: "set", value: { src: "const", value: "已取消" },
+  }],
+  requiredRole: null,
+};
+
+function newActionTypeForm() {
+  return `
+    <div class="ed">
+      <div class="ed-head">
+        <div class="obj-kicker"><span class="pill" style="color:var(--write);border-color:currentColor">↯ 新建操作类型</span></div>
+        <h3>加一个写入口</h3>
+      </div>
+      <div class="ed-sec">
+        <div class="f-grid">
+          <div class="field"><label>API 名</label><input type="text" id="na-api" value="newAction"></div>
+          <div class="field"><label>中文名</label><input type="text" id="na-cn" value="新操作"></div>
+          <div class="field"><label>需要的角色 <code>留空 = 谁都能跑</code></label>
+            <select id="na-role"><option value="">（不限）</option>
+              ${["客服", "仓管", "管理员"].map(r => `<option>${r}</option>`).join("")}</select></div>
+        </div>
+        <div class="field" style="margin-top:10px"><label>一句话说明</label>
+          <input type="text" id="na-desc" value=""></div>
+      </div>
+      <div class="ed-sec">
+        <span class="eyebrow">声明式定义</span>
+        <div class="field">
+          <textarea id="na-json" rows="16" style="font-family:var(--mono);font-size:11.5px">${
+            esc(JSON.stringify(ACTION_TEMPLATE, null, 2))}</textarea>
+        </div>
+        <p class="note">
+          这是操作类型最便宜的一点：它是**纯元数据**，不依赖任何表结构改动，
+          存进 <code>action_type</code> 表就能立刻执行。
+          可视化的规则/编辑构建器在离线演练场里。
+        </p>
+      </div>
+      <div class="ed-sec"><button class="apply" id="na-create">创建操作类型</button></div>
+    </div>`;
 }
 
 function objectTypeEditor(t) {
@@ -825,6 +1010,15 @@ function objectTypeEditor(t) {
           <span class="map"><b>${esc(t.sourceTable)}.row_version</b></span>
           <span class="txt" style="color:var(--muted)">→ 乐观锁用，不暴露给本体</span></div>` : ""}
       </div>
+
+      ${admin ? `<div class="ed-sec">
+        <span class="eyebrow">解除绑定</span>
+        <button class="ghost danger" data-del-ot="${esc(t.id)}">解除 ${esc(t.id)} 的绑定</button>
+        <p class="note" style="margin-top:7px">
+          只删本体里的映射，<b style="color:var(--text-2)">业务表 ${esc(t.sourceTable)} 和里面的数据一动不动</b>。
+          被链接类型或操作类型引用时会拒绝 —— 真实系统也不会让你抽掉底下的砖。
+        </p>
+      </div>` : ""}
     </div>`;
 }
 
@@ -1013,6 +1207,85 @@ document.addEventListener("click", async ev => {
 
   const ed = hit("[data-edit]"); if (ed) return openEditor(ed.dataset.edit, ed.dataset.id);
 
+  const nw = hit("[data-new]");
+  if (nw) {
+    state.draftTable = null; state.draftFk = null;
+    return openEditor("new-" + nw.dataset.new, null);
+  }
+
+  if (hit("#nt-create")) {
+    const body = {
+      apiName: document.getElementById("nt-api").value.trim(),
+      displayName: document.getElementById("nt-cn").value.trim(),
+      sourceTable: document.getElementById("nt-table").value,
+      pkColumn: document.getElementById("nt-pk").value,
+      idPrefix: document.getElementById("nt-prefix").value.trim(),
+    };
+    try {
+      const r = await api("/ontology/object-types", { method: "POST", body });
+      invalidate(); state.tables = (await api("/tables")).tables;
+      await loadOntology(); await loadGraph();
+      toast(`已创建 ${r.added}：映射 ${r.mapped.length} 列。${r.hint}`, "ok");
+      await openEditor("ot", r.added);
+    } catch (e) { toast(e.message); }
+    return;
+  }
+
+  if (hit("#nl-create")) {
+    const [fkTable, fkColumn] = document.getElementById("nl-fk").value.split(".");
+    const body = {
+      apiName: document.getElementById("nl-api").value.trim(),
+      fromType: document.getElementById("nl-from").value,
+      toType: document.getElementById("nl-to").value,
+      cardinality: document.getElementById("nl-card").value,
+      fwdLabel: document.getElementById("nl-fwd").value.trim(),
+      invLabel: document.getElementById("nl-inv").value.trim(),
+      fkTable, fkColumn,
+    };
+    try {
+      const r = await api("/ontology/link-types", { method: "POST", body });
+      await loadOntology(); await loadGraph();
+      toast(`已创建链接 ${r.added}`, "ok");
+      await openEditor("lt", r.added);
+    } catch (e) { toast(e.message); }
+    return;
+  }
+
+  if (hit("#na-create")) {
+    let spec;
+    try { spec = JSON.parse(document.getElementById("na-json").value); }
+    catch (e) { return toast("JSON 解析失败：" + e.message); }
+    const id = document.getElementById("na-api").value.trim();
+    if (!id) return toast("API 名不能空");
+    if (AT(id)) return toast(`已经有一个叫 ${id} 的操作类型了`);
+    try {
+      await api(`/ontology/action-types/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        body: {
+          ...spec,
+          displayName: document.getElementById("na-cn").value.trim() || id,
+          description: document.getElementById("na-desc").value.trim(),
+          requiredRole: document.getElementById("na-role").value || null,
+        },
+      });
+      await loadOntology(); await loadActions();
+      toast(`已创建操作 ${id}`, "ok");
+      await openEditor("at", id);
+    } catch (e) { toast(e.message); }
+    return;
+  }
+
+  const delOt = hit("[data-del-ot]");
+  if (delOt) {
+    try {
+      const r = await api(`/ontology/object-types/${encodeURIComponent(delOt.dataset.delOt)}`, { method: "DELETE" });
+      invalidate(); await loadOntology(); await loadGraph();
+      state.editing = null; renderAll();
+      toast(`已解除绑定，表 ${r.sourceTableKept} 和数据都没动`, "ok");
+    } catch (e) { toast(e.message); }
+    return;
+  }
+
   const hl = hit("[data-hl]");
   if (hl) {
     const { hl: kind, id } = hl.dataset;
@@ -1117,6 +1390,13 @@ document.addEventListener("input", ev => {
 });
 
 document.addEventListener("change", async ev => {
+  // 换了表 / 换了外键，表单要跟着重画（列清单和默认值都变了）
+  if (ev.target.id === "nt-table") {
+    state.draftTable = ev.target.value; renderModelMid(); return;
+  }
+  if (ev.target.id === "nl-fk") {
+    state.draftFk = ev.target.value; renderModelMid(); return;
+  }
   const cn = ev.target.closest("[data-prop-cn]");
   if (cn && state.editing) {
     try {

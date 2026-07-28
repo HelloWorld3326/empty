@@ -256,3 +256,110 @@ def test_schema_changes_are_logged(client):
                                json={"displayName": "销售订单"})
     entries = client.get("/api/schema-log").json()["entries"]
     assert entries and "销售订单" in entries[0]["summary"]
+
+
+# --- 新建三种类型 ----------------------------------------------------
+
+def test_bind_table_as_object_type_skips_foreign_keys(client):
+    """绑定 shipment 表：order_no 是外键，不该变成属性。"""
+    as_(client, "admin")
+    r = client.post("/api/ontology/object-types",
+                    json={"apiName": "Shipment", "displayName": "运单",
+                          "sourceTable": "shipment", "pkColumn": "tracking_no", "idPrefix": "S"})
+    assert r.status_code == 200
+    data = r.json()
+    assert "trackingNo" in data["mapped"]
+    assert "orderNo" not in data["mapped"]                      # 外键被跳过
+    assert [s["column"] for s in data["skippedForeignKeys"]] == ["order_no"]
+    assert "row_version" in data["skippedOther"]
+    assert data["titleProp"] == "trackingNo"                    # 挑了运单号而不是承运商
+
+    obj = client.get("/api/objects/Shipment/SF-7788-2103").json()["object"]
+    assert obj["title"] == "SF-7788-2103"
+    assert "orderNo" not in obj["props"]
+
+
+def test_cannot_bind_nonexistent_or_taken_table(client):
+    as_(client, "admin")
+    r = client.post("/api/ontology/object-types",
+                    json={"apiName": "Ghost", "sourceTable": "no_such_table", "pkColumn": "id"})
+    assert r.status_code == 422 and "没有 no_such_table 这张表" in r.json()["error"]
+
+    r = client.post("/api/ontology/object-types",
+                    json={"apiName": "Order2", "sourceTable": "orders", "pkColumn": "order_no"})
+    assert r.status_code == 409 and "已经绑定给对象类型 Order" in r.json()["error"]
+
+
+def test_link_must_be_backed_by_real_foreign_key(client):
+    as_(client, "admin")
+    client.post("/api/ontology/object-types",
+                json={"apiName": "Shipment", "sourceTable": "shipment", "pkColumn": "tracking_no"})
+
+    r = client.post("/api/ontology/link-types",
+                    json={"apiName": "bogus", "fromType": "Order", "toType": "Shipment",
+                          "fkTable": "shipment", "fkColumn": "made_up_col"})
+    assert r.status_code == 422 and "不是一个外键" in r.json()["error"]
+
+    r = client.post("/api/ontology/link-types",
+                    json={"apiName": "fulfilledBy", "fromType": "Order", "toType": "Shipment",
+                          "cardinality": "1 : N", "fwdLabel": "履约运单", "invLabel": "所属订单",
+                          "fkTable": "shipment", "fkColumn": "order_no"})
+    assert r.status_code == 200
+
+    links = client.get("/api/objects/Order/O-1001").json()["links"]
+    group = next(g for g in links if g["link"] == "fulfilledBy")
+    assert {t["pk"] for t in group["targets"]} == {"SF-7788-2103", "JD-1122-5540"}
+
+
+def test_new_action_type_is_runnable_immediately(client):
+    """操作类型是纯元数据，存进去就能跑 —— 不依赖任何表结构改动。"""
+    as_(client, "admin")
+    client.post("/api/ontology/object-types",
+                json={"apiName": "Shipment", "sourceTable": "shipment", "pkColumn": "tracking_no"})
+    r = client.put("/api/ontology/action-types/markDelivered", json={
+        "displayName": "标记签收", "requiredRole": "仓管",
+        "params": [{"id": "shipment", "cn": "运单", "kind": "object", "objectType": "Shipment"}],
+        "rules": [{"type": "compare",
+                   "left": {"src": "prop", "of": {"kind": "param", "param": "shipment"}, "prop": "shipStatus"},
+                   "op": "==", "right": {"src": "const", "value": "运输中"}}],
+        "edits": [{"uid": "e1", "op": "modify", "target": {"kind": "param", "param": "shipment"},
+                   "prop": "shipStatus", "mode": "set", "value": {"src": "const", "value": "已签收"}}],
+    })
+    assert r.status_code == 200
+
+    r = as_(client, "xiaozhang").post("/api/actions/markDelivered/apply",
+                                      json={"params": {"shipment": "JD-1122-5540"}})
+    assert r.status_code == 403                                  # 客服不行
+
+    r = as_(client, "laowang").post("/api/actions/markDelivered/apply",
+                                    json={"params": {"shipment": "JD-1122-5540"}})
+    assert r.status_code == 200
+    obj = client.get("/api/objects/Shipment/JD-1122-5540").json()["object"]
+    assert obj["props"]["shipStatus"] == "已签收"
+
+    # 已签收的不能再签收一次
+    r = client.post("/api/actions/markDelivered/apply",
+                    json={"params": {"shipment": "JD-1122-5540"}})
+    assert r.status_code == 422
+
+
+def test_unbinding_is_blocked_while_referenced(client):
+    as_(client, "admin")
+    client.post("/api/ontology/object-types",
+                json={"apiName": "Shipment", "sourceTable": "shipment", "pkColumn": "tracking_no"})
+    client.post("/api/ontology/link-types",
+                json={"apiName": "fulfilledBy", "fromType": "Order", "toType": "Shipment",
+                      "fkTable": "shipment", "fkColumn": "order_no"})
+
+    r = client.delete("/api/ontology/object-types/Shipment")
+    assert r.status_code == 409 and "fulfilledBy" in r.json()["error"]
+
+    client.delete("/api/ontology/link-types/fulfilledBy")
+    r = client.delete("/api/ontology/object-types/Shipment")
+    assert r.status_code == 200
+    assert r.json()["sourceTableKept"] == "shipment"
+
+    # 解除绑定不删数据：表还在，行也还在
+    tables = {t["name"] for t in client.get("/api/tables").json()["tables"]}
+    assert "shipment" in tables
+    assert client.get("/api/objects/Shipment/SF-7788-2103").status_code == 404

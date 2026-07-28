@@ -37,6 +37,13 @@ INSERT INTO order_line (line_no, order_no, sku, qty, unit_price, subtotal, row_v
   ('L-2', 'O-1001', 'HUB-C8',  1, 19900,  19900, 1),
   ('L-3', 'O-1002', 'KBD-K7',  1, 45900,  45900, 1);
 
+-- 运单：表里有数据，但初始本体**没有**绑定它。
+-- 这正好演示一件事：数据先到，本体后到。库里躺着的表，在你建对象类型之前
+-- 对本体是不可见的。
+INSERT INTO shipment (tracking_no, order_no, carrier_cd, ship_status, eta, row_version) VALUES
+  ('SF-7788-2103', 'O-1001', '顺丰',     '已签收', '2026-07-22', 1),
+  ('JD-1122-5540', 'O-1001', '京东物流', '运输中', '2026-07-29', 1);
+
 -- 上面两张订单已经占用过库存，这里把账做平：
 --   AUD-Q30 40-2=38   HUB-C8 120-1=119   KBD-K7 25-1=24
 UPDATE product SET stock_qty = 38  WHERE sku = 'AUD-Q30';

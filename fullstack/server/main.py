@@ -242,6 +242,143 @@ def patch_object_type(type_name: str, body: dict[str, Any] = Body(...), ctx=Depe
     return ok(conn, {"updated": type_name})
 
 
+TYPE_GUESS = {"INTEGER": "integer", "REAL": "integer", "NUMERIC": "integer"}
+
+
+@app.post("/api/ontology/object-types")
+def add_object_type(body: dict[str, Any] = Body(...), ctx=Depends(get_ctx)):
+    """新建对象类型 = 绑定一张**已经存在**的表。
+
+    这是全栈版和内存演练场最根本的区别：对象类型凭空造不出来。
+    在真实系统里，这一步之前还有一整段数据工程 —— 把源系统的数据接进来、
+    洗干净、落成一张表。本体只是给那张表戴上业务语义。
+
+    绑定时会自动把列映射成属性，但**跳过外键列** —— 它们该被建成链接类型，
+    不是属性。跳过了哪些会在返回里告诉你。
+    """
+    conn, onto, actor = ctx
+    perm.require_admin(actor)
+
+    api_name = (body.get("apiName") or "").strip()
+    table = (body.get("sourceTable") or "").strip()
+    pk = (body.get("pkColumn") or "").strip()
+    if not api_name or not table or not pk:
+        raise HTTPException(400, "apiName / sourceTable / pkColumn 都不能空")
+    if onto.ot(api_name):
+        raise HTTPException(409, f"已经有一个叫 {api_name} 的对象类型了")
+
+    tables = {t["name"]: t for t in onto_mod.list_tables(conn)}
+    if table not in tables:
+        raise HTTPException(
+            422,
+            f"数据库里没有 {table} 这张表。对象类型必须绑定真实存在的表 —— "
+            f"想接一份新数据，得先在 db/schema.sql 里建表并灌数据。",
+        )
+    bound = next((t for t in onto.object_types if t.source_table == table), None)
+    if bound:
+        raise HTTPException(409, f"表 {table} 已经绑定给对象类型 {bound.api_name} 了")
+
+    meta = tables[table]
+    cols = {c["name"]: c for c in meta["columns"]}
+    if pk not in cols:
+        raise HTTPException(422, f"表 {table} 上没有 {pk} 这一列")
+
+    fk_cols = {fk["column"]: fk["refTable"] for fk in meta["foreignKeys"]}
+
+    conn.execute(
+        "INSERT INTO object_type (api_name, display_name, source_table, pk_column, "
+        "title_prop, color, id_prefix, next_seq, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)",
+        (api_name, body.get("displayName") or api_name, table, pk,
+         None, int(body.get("color") or len(onto.object_types) % 8),
+         (body.get("idPrefix") or api_name[:1].upper()), len(onto.object_types) + 1),
+    )
+
+    mapped, skipped_fk, skipped_other = [], [], []
+    order = 0
+    for name, c in cols.items():
+        if name in fk_cols:
+            skipped_fk.append({"column": name, "refTable": fk_cols[name]})
+            continue
+        if name == "row_version":
+            skipped_other.append(name)
+            continue
+        order += 1
+        conn.execute(
+            "INSERT INTO object_property (object_type, api_name, display_name, data_type, "
+            "source_column, editable, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (api_name, _camel(name), name,
+             TYPE_GUESS.get((c["type"] or "").upper(), "string"),
+             name, 0 if name == pk else 1, order),
+        )
+        mapped.append(_camel(name))
+
+    # 标题属性：优先挑名字里带 name/title 的列，否则退回主键。
+    # 主键总是有意义的（运单号、SKU），比随便挑第二列可靠。
+    title = _camel(body.get("titleProp") or "")
+    if not title:
+        named = next((m for m in mapped if any(k in m.lower() for k in ("name", "title", "no"))), None)
+        title = named or (mapped[0] if mapped else None)
+    if title:
+        conn.execute("UPDATE object_type SET title_prop = ? WHERE api_name = ?", (title, api_name))
+
+    _note(conn, actor,
+          f"新建对象类型 {api_name} ← 表 {table}，自动映射 {len(mapped)} 列"
+          + (f"，跳过 {len(skipped_fk)} 个外键列" if skipped_fk else ""))
+
+    hints = []
+    if skipped_fk:
+        hints.append(
+            "这些外键列没有变成属性："
+            + "、".join(f"{s['column']}→{s['refTable']}" for s in skipped_fk)
+            + "，它们应该被建成链接类型。"
+        )
+    else:
+        hints.append("这张表上没有外键列。")
+    hints.append("属性的中文名先用了列名，去「属性映射」区改成业务叫法。")
+
+    return ok(conn, {
+        "added": api_name,
+        "mapped": mapped,
+        "titleProp": title,
+        "skippedForeignKeys": skipped_fk,
+        "skippedOther": skipped_other,
+        "hint": "".join(hints),
+    })
+
+
+@app.delete("/api/ontology/object-types/{type_name}")
+def delete_object_type(type_name: str, ctx=Depends(get_ctx)):
+    """解除绑定。业务表和数据一动不动 —— 只是本体不再暴露它。
+
+    被链接类型或操作类型引用时会拒绝：真实系统里也不会让你抽掉底下的砖。
+    """
+    conn, onto, actor = ctx
+    perm.require_admin(actor)
+    ot = onto.ot(type_name)
+    if not ot:
+        raise HTTPException(404, f"没有叫 {type_name} 的对象类型")
+
+    used_by_links = [l.api_name for l in onto.link_types
+                     if l.from_type == type_name or l.to_type == type_name]
+    used_by_actions = [
+        a.api_name for a in onto.action_types
+        if any(p.get("objectType") == type_name for p in a.params)
+        or any(e.get("objectType") == type_name for e in a.edits)
+    ]
+    if used_by_links or used_by_actions:
+        raise HTTPException(409, (
+            f"{type_name} 还被引用着，不能解除绑定。"
+            + (f"链接类型：{'、'.join(used_by_links)}。" if used_by_links else "")
+            + (f"操作类型：{'、'.join(used_by_actions)}。" if used_by_actions else "")
+            + "先处理掉这些引用。"
+        ))
+
+    conn.execute("DELETE FROM object_property WHERE object_type = ?", (type_name,))
+    conn.execute("DELETE FROM object_type WHERE api_name = ?", (type_name,))
+    _note(conn, actor, f"解除对象类型 {type_name} 的绑定（表 {ot.source_table} 及数据未改动）")
+    return ok(conn, {"removed": type_name, "sourceTableKept": ot.source_table})
+
+
 @app.patch("/api/ontology/properties/{type_name}/{prop_name}")
 def patch_property(type_name: str, prop_name: str, body: dict[str, Any] = Body(...), ctx=Depends(get_ctx)):
     conn, onto, actor = ctx

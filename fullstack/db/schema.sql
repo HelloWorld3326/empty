@@ -56,9 +56,22 @@ CREATE TABLE order_line (
   row_version  INTEGER NOT NULL DEFAULT 1
 );
 
+-- 这张表**故意不在初始本体里**。
+-- 它是留给你练手的：把它绑成一个对象类型，看外键列怎么被自动跳过，
+-- 再把那个外键建成链接类型。三种类型的创建路径走一遍就全懂了。
+CREATE TABLE shipment (
+  tracking_no  TEXT PRIMARY KEY,
+  order_no     TEXT REFERENCES orders(order_no),   -- 外键：该被建成链接，不是属性
+  carrier_cd   TEXT,
+  ship_status  TEXT,
+  eta          TEXT,
+  row_version  INTEGER NOT NULL DEFAULT 1
+);
+
 CREATE INDEX idx_orders_buyer     ON orders(buyer_id);
 CREATE INDEX idx_line_order       ON order_line(order_no);
 CREATE INDEX idx_line_sku         ON order_line(sku);
+CREATE INDEX idx_shipment_order   ON shipment(order_no);
 
 -- ---------------------------------------------------------------------
 --  第 2 层：本体元数据（含到业务表的映射）
