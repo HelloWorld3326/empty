@@ -228,11 +228,15 @@ GET    /api/actions                           操作类型 + 当前用户能否�
 POST   /api/actions/{id}/preview              校验 + 编辑预览（只读）
 POST   /api/actions/{id}/apply                事务执行 → 200/403/409/422
 GET    /api/audit                             审计日志
-PATCH  /api/ontology/object-types/{name}      改本体（仅管理员）
+POST   /api/ontology/object-types             绑定一张已存在的表（仅管理员）
+PATCH  /api/ontology/object-types/{name}      改显示名/标题属性/配色
+DELETE /api/ontology/object-types/{name}      解除绑定（不删数据，被引用时 409）
 POST   /api/ontology/properties/{type}        映射一个已存在的列
 DELETE /api/ontology/properties/{type}/{prop} 解除映射（不删数据）
 POST   /api/ontology/link-types               新建链接（必须指向真实外键）
-PUT    /api/ontology/action-types/{id}        保存操作类型
+DELETE /api/ontology/link-types/{id}          解除链接映射
+PUT    /api/ontology/action-types/{id}        新建或保存操作类型
+DELETE /api/ontology/action-types/{id}        删除操作类型
 ```
 
 每个响应都带 `_sql` 字段，就是右下角面板的数据来源。
@@ -243,8 +247,9 @@ PUT    /api/ontology/action-types/{id}        保存操作类型
 python -m pytest tests -q
 ```
 
-51 个用例，覆盖映射与值转换、链接遍历生成的 SQL、校验拦截、事务原子性、
-乐观锁冲突、权限 403、真线程并发。
+56 个用例，覆盖映射与值转换、链接遍历生成的 SQL、校验拦截、事务原子性、
+乐观锁冲突、权限 403、真线程并发，以及三种类型的创建路径（绑定表时外键被跳过、
+链接必须有真外键、新建的操作类型立刻可执行、被引用时不许解除绑定）。
 
 ---
 
