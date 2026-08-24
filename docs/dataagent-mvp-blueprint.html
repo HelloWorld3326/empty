@@ -1,0 +1,778 @@
+<title>DataAgent MVP 蓝图</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F6F7F8; --surface:#FFFFFF; --surface-2:#EEF1F2; --line:#DCE1E4; --line-strong:#C3CBD0;
+  --ink:#14181B; --ink-2:#3D474E; --muted:#68757E;
+  --accent:#0E6C68; --accent-soft:#DCEDEB; --accent-ink:#0A4B48;
+  --warm:#A5511C; --warm-soft:#F6E7DC;
+  --warn:#8A6100; --danger:#9E2B2B; --ok:#2C6E49;
+  --shadow:0 1px 2px rgba(20,24,27,.05),0 8px 24px -12px rgba(20,24,27,.18);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1113; --surface:#161A1D; --surface-2:#1D2226; --line:#2A3237; --line-strong:#3A444A;
+    --ink:#E7ECEE; --ink-2:#C0C9CE; --muted:#8D9AA2;
+    --accent:#54C6BE; --accent-soft:#12312F; --accent-ink:#8FDDD6;
+    --warm:#E1935C; --warm-soft:#33241A;
+    --warn:#D3A43C; --danger:#E07272; --ok:#6FBF8E;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1113; --surface:#161A1D; --surface-2:#1D2226; --line:#2A3237; --line-strong:#3A444A;
+  --ink:#E7ECEE; --ink-2:#C0C9CE; --muted:#8D9AA2;
+  --accent:#54C6BE; --accent-soft:#12312F; --accent-ink:#8FDDD6;
+  --warm:#E1935C; --warm-soft:#33241A;
+  --warn:#D3A43C; --danger:#E07272; --ok:#6FBF8E;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans","Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  font-size:16px; line-height:1.72; margin:0; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:0 24px 96px}
+.prose{max-width:74ch}
+
+/* ---- masthead ---- */
+.masthead{border-bottom:1px solid var(--line); background:var(--surface); margin-bottom:48px}
+.masthead .wrap{padding-top:56px; padding-bottom:40px; display:flex; flex-direction:column; gap:20px}
+.kicker{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:600}
+h1{font-family:"Spectral",Georgia,serif; font-weight:600; font-size:clamp(32px,4.4vw,50px); line-height:1.14; margin:0; text-wrap:balance; letter-spacing:-.01em}
+.dek{color:var(--ink-2); font-size:18px; max-width:66ch; margin:0}
+.metabar{display:flex; flex-wrap:wrap; gap:8px 10px; margin-top:4px}
+.meta{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); border:1px solid var(--line); border-radius:2px; padding:4px 9px; background:var(--bg)}
+.meta b{color:var(--ink-2); font-weight:600}
+
+/* ---- toc ---- */
+nav.toc{position:sticky; top:0; z-index:20; background:color-mix(in srgb,var(--bg) 92%,transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); margin-bottom:56px}
+nav.toc ol{display:flex; gap:0; list-style:none; margin:0; padding:0; overflow-x:auto; max-width:1180px; margin:0 auto}
+nav.toc a{display:block; white-space:nowrap; font-size:13px; font-family:"IBM Plex Mono",monospace; color:var(--muted); text-decoration:none; padding:11px 14px; border-bottom:2px solid transparent}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent); border-bottom-color:var(--accent); outline:none}
+nav.toc li:first-child a{padding-left:24px}
+
+/* ---- sections ---- */
+section{margin-bottom:76px; scroll-margin-top:64px}
+h2{font-family:"Spectral",Georgia,serif; font-weight:600; font-size:clamp(24px,2.8vw,32px); line-height:1.24; margin:0 0 6px; text-wrap:balance; letter-spacing:-.005em}
+.h2num{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.14em; color:var(--accent); font-weight:600; display:block; margin-bottom:10px}
+h3{font-family:"IBM Plex Sans",sans-serif; font-weight:600; font-size:18px; margin:38px 0 12px; color:var(--ink)}
+h4{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:26px 0 10px}
+p{margin:0 0 16px}
+.lede{font-size:17px; color:var(--ink-2); margin-bottom:26px; max-width:70ch}
+ul,ol{margin:0 0 18px; padding-left:22px} li{margin-bottom:7px}
+code{font-family:"IBM Plex Mono",monospace; font-size:.88em; background:var(--surface-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px}
+a{color:var(--accent)}
+strong{font-weight:600}
+hr{border:0; border-top:1px solid var(--line); margin:44px 0}
+
+/* ---- tables ---- */
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:4px; background:var(--surface); box-shadow:var(--shadow); margin-bottom:22px}
+table{border-collapse:collapse; width:100%; min-width:640px; font-size:14.5px}
+th{text-align:left; font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600; padding:12px 14px; border-bottom:1px solid var(--line-strong); background:var(--surface-2); position:sticky; top:0}
+td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink-2)}
+tr:last-child td{border-bottom:0}
+tr.hl td{background:var(--accent-soft)}
+tr.hl td:first-child{color:var(--accent-ink)}
+td:first-child{color:var(--ink); font-weight:500}
+.num{font-variant-numeric:tabular-nums; font-family:"IBM Plex Mono",monospace}
+
+/* ---- chips ---- */
+.chip{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; padding:2px 7px; border-radius:2px; border:1px solid; white-space:nowrap}
+.chip.yes{color:var(--ok); border-color:color-mix(in srgb,var(--ok) 40%,transparent); background:color-mix(in srgb,var(--ok) 10%,transparent)}
+.chip.part{color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,transparent); background:color-mix(in srgb,var(--warn) 10%,transparent)}
+.chip.no{color:var(--muted); border-color:var(--line-strong); background:var(--surface-2)}
+.chip.new{color:var(--accent); border-color:color-mix(in srgb,var(--accent) 45%,transparent); background:var(--accent-soft)}
+
+/* ---- callouts ---- */
+.note{border:1px solid var(--line); border-left:3px solid var(--accent); background:var(--surface); border-radius:0 4px 4px 0; padding:16px 20px; margin:24px 0}
+.note.warn{border-left-color:var(--warm); background:var(--surface)}
+.note.danger{border-left-color:var(--danger)}
+.note p:last-child{margin-bottom:0}
+.note .lbl{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:600; color:var(--accent); display:block; margin-bottom:6px}
+.note.warn .lbl{color:var(--warm)} .note.danger .lbl{color:var(--danger)}
+
+/* ---- layer diagram ---- */
+.stack{display:flex; flex-direction:column; gap:10px; margin:26px 0}
+.layer{border:1px solid var(--line); border-radius:4px; background:var(--surface); padding:14px 16px; box-shadow:var(--shadow)}
+.layer > .lname{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:10px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.layer > .lname em{font-style:normal; color:var(--accent); text-transform:none; letter-spacing:0; font-size:11.5px}
+.boxes{display:flex; flex-wrap:wrap; gap:8px}
+.box{font-size:13px; border:1px solid var(--line-strong); border-radius:3px; padding:6px 11px; background:var(--bg); color:var(--ink-2); line-height:1.4}
+.box b{display:block; color:var(--ink); font-weight:600; font-size:13px}
+.box small{color:var(--muted); font-size:11.5px; font-family:"IBM Plex Mono",monospace}
+.box.core{border-color:var(--accent); background:var(--accent-soft)}
+.box.core b{color:var(--accent-ink)}
+.box.cut{border-style:dashed; color:var(--muted); background:transparent}
+.box.cut b{color:var(--muted); font-weight:500}
+.flowdown{text-align:center; color:var(--line-strong); font-size:14px; line-height:1; margin:-2px 0}
+
+/* ---- tree ---- */
+pre.tree,pre.code{font-family:"IBM Plex Mono",monospace; font-size:13px; line-height:1.62; background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:18px 20px; overflow-x:auto; margin:0 0 22px; color:var(--ink-2); box-shadow:var(--shadow)}
+pre .c{color:var(--muted)}
+pre .k{color:var(--accent); font-weight:600}
+
+/* ---- plan grid ---- */
+.week{border:1px solid var(--line); border-radius:4px; background:var(--surface); margin-bottom:18px; overflow:hidden; box-shadow:var(--shadow)}
+.week > header{display:flex; justify-content:space-between; align-items:baseline; gap:14px; flex-wrap:wrap; padding:13px 18px; background:var(--surface-2); border-bottom:1px solid var(--line)}
+.week h3{margin:0; font-size:16px}
+.week .dates{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums}
+.week .goal{font-size:13.5px; color:var(--accent-ink); background:var(--accent-soft); border:1px solid color-mix(in srgb,var(--accent) 30%,transparent); border-radius:2px; padding:2px 9px}
+.lanes{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.lane{padding:15px 18px; border-right:1px solid var(--line)}
+.lane:last-child{border-right:0}
+.lane .who{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; font-weight:600; color:var(--ink); margin-bottom:9px; display:flex; align-items:center; gap:7px}
+.lane .who i{width:7px; height:7px; border-radius:50%; background:var(--accent); font-style:normal; flex:none}
+.lane.you .who i{background:var(--warm)}
+.lane ul{margin:0; padding-left:16px; font-size:13.5px}
+.lane li{margin-bottom:6px; color:var(--ink-2)}
+.lane .d{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums}
+
+/* ---- milestones ---- */
+.ms{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:12px; margin:24px 0}
+.msc{border:1px solid var(--line); border-top:3px solid var(--accent); border-radius:0 0 4px 4px; background:var(--surface); padding:14px 16px; box-shadow:var(--shadow)}
+.msc .tag{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.08em; color:var(--accent); display:block; margin-bottom:5px}
+.msc b{display:block; font-size:14.5px; margin-bottom:5px}
+.msc p{font-size:13px; color:var(--muted); margin:0; line-height:1.55}
+.msc.freeze{border-top-color:var(--warm)} .msc.freeze .tag{color:var(--warm)}
+
+@media (max-width:720px){
+  .wrap{padding:0 18px 72px}
+  .lane{border-right:0; border-bottom:1px solid var(--line)}
+  .lane:last-child{border-bottom:0}
+}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <span class="kicker">架构方案 · 功能对比 · 20 工作日排期</span>
+    <h1>DataAgent：对标 DeerFlow 2.0 的数据智能体</h1>
+    <p class="dek">给数据部门用的取数问答与元数据问答智能体。本文给出 DeerFlow 2.0 的完整架构、一个 4 人 20 工作日可交付的精简架构、两者的逐项功能对比、逐日任务规划与风险清单。</p>
+    <div class="metabar">
+      <span class="meta"><b>基准</b> bytedance/deer-flow @ main · 2026-08-24</span>
+      <span class="meta"><b>周期</b> D1 2026-08-25 → D20 2026-09-21</span>
+      <span class="meta"><b>团队</b> 4 人基线（+1 浮动）</span>
+      <span class="meta"><b>冻结日</b> D16 2026-09-15</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <ol>
+    <li><a href="#decisions">决策记录</a></li>
+    <li><a href="#full">方案一 · DeerFlow 2.0</a></li>
+    <li><a href="#mvp">方案二 · MVP</a></li>
+    <li><a href="#contract">数据模型与协议</a></li>
+    <li><a href="#compare">功能对比表</a></li>
+    <li><a href="#plan">20 天规划</a></li>
+    <li><a href="#mine">我的核心模块</a></li>
+    <li><a href="#risk">风险</a></li>
+    <li><a href="#road">演进路线</a></li>
+  </ol>
+</nav>
+
+<div class="wrap">
+
+<section id="decisions">
+  <span class="h2num">01</span>
+  <h2>决策记录：这份方案建立在什么之上</h2>
+  <p class="lede">五轮澄清后确定的前提。任何一条被推翻，后面的架构与排期都要重算。</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:22%">决策项</th><th>结论</th></tr></thead>
+    <tbody>
+      <tr><td>对标对象</td><td>DeerFlow <b>2.0</b>（Super-Agent Harness）。官方 <code>docs/ARCHITECTURE.md</code> 明确：2.0 是彻底重写，与 v1 Deep Research 不共享任何代码</td></tr>
+      <tr><td>实现方式</td><td><b>自建仓库 + 架构同构 + 直接依赖 LangGraph</b>。不 fork，不追求 merge 上游</td></tr>
+      <tr><td>业务主线</td><td>(a) 取数问答 Text-to-SQL ＋ (c) 元数据/资产盘点问答。排除：分析报告生成、数据质量规则、ETL 助手</td></tr>
+      <tr><td>数据源</td><td>MVP 打通 PostgreSQL + MySQL；StarRocks 排到完整版，但 <code>SqlDialect</code> 抽象第一天就写</td></tr>
+      <tr><td>数据安全</td><td>只读账号 · 表白名单 50–200 张 · SELECT-only 语法校验 · 强制 LIMIT + 超时 + 行数上限 · 敏感字段排除在白名单外</td></tr>
+      <tr><td>执行策略</td><td>默认直接执行 + 危险语句拦截，保留「人工确认」开关</td></tr>
+      <tr><td>元数据</td><td>无现成元数据平台，注释覆盖 ~80% → 自建<b>表卡片</b>，LLM 半自动生成 + 人工校对</td></tr>
+      <tr><td>知识库</td><td>调用公司现成向量库 API，<b>不自建 RAG</b></td></tr>
+      <tr><td>编排</td><td>单 Agent + Tools 循环（ReAct），按支持多 agent 的骨架写，subagent 接口预留不实现</td></tr>
+      <tr><td>代码执行</td><td><b>MVP 零沙箱</b>。图表由前端 ECharts 渲染，LLM 只输出 chart spec (JSON)</td></tr>
+      <tr><td>模型</td><td>阿里云百炼，统一 OpenAI 兼容 <code>ModelProvider</code>，默认 qwen-max，配置可切，不做多模型路由</td></tr>
+      <tr><td>合规</td><td>表结构与查询结果<b>均可</b>进 prompt，<code>llm.allow_result_in_prompt = true</code></td></tr>
+      <tr><td>前端</td><td>Vue 自研；后端 API 契约刻意对齐 DeerFlow 的 thread / run / message / tool_call / artifact 语义</td></tr>
+      <tr><td>认证授权</td><td>内部账号密码；全平台统一数据权限，<code>role</code> 与 <code>allowed_roles</code> 占位；<b>全量 SQL 审计日志必做</b></td></tr>
+      <tr><td>存储</td><td>Postgres 单库 + S3 存产物；不用 Redis、不用 MQ</td></tr>
+      <tr><td>部署</td><td>内部 K8s，<code>replicas=1</code>，<code>Recreate</code>；Pod 重启后 running 运行标记为 interrupted 并允许重试</td></tr>
+      <tr><td>扩展点</td><td>只做工具注册表抽象。Skills、MCP Client、IM 渠道全部排到完整版</td></tr>
+      <tr><td>记忆</td><td>MVP 只有会话内上下文；每次成功问答落一条 <code>qa_sample</code>，只存不用，为完整版 few-shot 铺路</td></tr>
+      <tr><td>验收基线</td><td>30–50 题黄金测试集，D1 周内建立，每日自动回归</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note warn">
+    <span class="lbl">未经确认的四个假设</span>
+    <p><b>A1</b> 没有干系人明确要求「跑 Python 分析」→ 零沙箱写死，预留 3 人天的进程内 pandas 后处理预案。<br>
+    <b>A2</b> 能拿到历史 SQL 日志 + 业务方派 1 人配合 2–3 天 → 黄金测试集成立。<br>
+    <b>A3</b> 你每周能写 3 天代码（合计 12 个编码日）。<br>
+    <b>A4</b> 团队按 4 人排基线，第 5 人当加速器不当依赖。</p>
+    <p style="margin-top:10px">这四条任一不成立，受影响最大的是<b>第 6 节的排期</b>与<b>第 8 节的风险等级</b>。</p>
+  </div>
+</section>
+
+<section id="full">
+  <span class="h2num">02</span>
+  <h2>方案一 · DeerFlow 2.0 完整架构</h2>
+  <p class="lede">以下是 clone 官方仓库后实测的结构与规模，不是从文档臆测的。它是「完整版」的目标形态，也是衡量 MVP 该砍到什么程度的标尺。</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>实测指标</th><th style="width:20%">数值</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>后端 Python 文件</td><td class="num">1,207 个</td><td>含测试</td></tr>
+      <tr><td>后端总行数</td><td class="num">402,152 行</td><td>其中非测试代码 <b class="num">150,958 行</b></td></tr>
+      <tr><td>前端 TS/TSX</td><td class="num">419 个 / 60,481 行</td><td>Next.js 16 / React 19 / Tailwind v4</td></tr>
+      <tr><td>Gateway REST Router</td><td class="num">24 个</td><td>agents / threads / runs / skills / mcp / channels / scheduled_tasks …</td></tr>
+      <tr><td>IM 渠道适配</td><td class="num">12 个</td><td>飞书 / Slack / Telegram / Discord / 钉钉 / 企微 / 微信 / GitHub …</td></tr>
+      <tr><td>前端业务域</td><td class="num">30+ 个</td><td><code>frontend/src/core/*</code></td></tr>
+      <tr><td>部署形态</td><td class="num">Helm + 4 套 compose</td><td>nginx / gateway / frontend / provisioner 四服务</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>分层拓扑</h3>
+  <div class="stack">
+    <div class="layer">
+      <div class="lname"><span>接入层</span><em>nginx :2026 是唯一公开入口，Gateway :8001 永不暴露</em></div>
+      <div class="boxes">
+        <span class="box"><b>Nginx</b><small>/api/langgraph/* · /api/* · /*</small></span>
+        <span class="box"><b>Next.js 前端</b><small>:3000 · LangGraph SDK</small></span>
+        <span class="box"><b>IM 渠道</b><small>12 个平台桥接同一 agent</small></span>
+        <span class="box"><b>LangGraph SDK 客户端</b><small>协议兼容层</small></span>
+      </div>
+    </div>
+    <div class="flowdown">↓</div>
+    <div class="layer">
+      <div class="lname"><span>App 层 · <code>backend/app/</code></span><em>可 import harness，反向禁止（CI 强制）</em></div>
+      <div class="boxes">
+        <span class="box"><b>Gateway (FastAPI)</b><small>24 routers · SSE</small></span>
+        <span class="box"><b>Auth</b><small>本地密码 + OIDC + session cookie</small></span>
+        <span class="box"><b>Channels</b><small>message_bus · run_policy · dedupe</small></span>
+        <span class="box"><b>Scheduler</b><small>定时任务复用同一 run 生命周期</small></span>
+        <span class="box"><b>MCP Tasks</b><small>长跑任务租约表</small></span>
+      </div>
+    </div>
+    <div class="flowdown">↓</div>
+    <div class="layer">
+      <div class="lname"><span>Harness 层 · <code>backend/packages/harness/deerflow/</code></span><em>可独立发布的 Agent 框架</em></div>
+      <div class="boxes">
+        <span class="box core"><b>Runtime</b><small>RunManager · run_agent · StreamBridge</small></span>
+        <span class="box core"><b>Agents</b><small>make_lead_agent + 8 段 middleware chain</small></span>
+        <span class="box core"><b>Tools</b><small>builtins + configured + MCP 三源合并</small></span>
+        <span class="box"><b>Subagents</b><small>SubagentExecutor · 命名空间 SSE</small></span>
+        <span class="box"><b>Sandbox</b><small>Local / AioSandbox Provider</small></span>
+        <span class="box"><b>Skills</b><small>public / custom / integrations</small></span>
+        <span class="box"><b>MCP</b><small>每 server 独立进程</small></span>
+        <span class="box"><b>Memory</b><small>跨会话长期记忆</small></span>
+        <span class="box"><b>Authz</b><small>RBAC · principal · tool_filter</small></span>
+        <span class="box"><b>Models</b><small>多 provider 抽象</small></span>
+        <span class="box"><b>Persistence</b><small>Postgres · migrations</small></span>
+        <span class="box"><b>Tracing</b><small>Langfuse · monocle</small></span>
+        <span class="box"><b>Extensions</b><small>extension-api 插件契约</small></span>
+        <span class="box"><b>Guardrails</b><small>·</small></span>
+        <span class="box"><b>Reflection</b><small>·</small></span>
+        <span class="box"><b>TUI</b><small>·</small></span>
+      </div>
+    </div>
+    <div class="flowdown">↓</div>
+    <div class="layer">
+      <div class="lname"><span>基础设施</span></div>
+      <div class="boxes">
+        <span class="box"><b>LangGraph</b><small>状态图 · checkpoint · 流式</small></span>
+        <span class="box"><b>PostgreSQL</b><small>线程 / 运行 / 用户 / 任务</small></span>
+        <span class="box"><b>Provisioner</b><small>:8002 · K8s 沙箱供给</small></span>
+        <span class="box"><b>对象存储 / 线程目录</b><small>.deer-flow/threads/{id}</small></span>
+      </div>
+    </div>
+  </div>
+
+  <h4>值得照抄的架构决策</h4>
+  <ul>
+    <li><b>Harness / App 两层单向依赖</b>，用 CI 测试强制（<code>test_harness_boundary.py</code>）。这是让「框架」不被业务代码腐蚀的唯一有效手段。</li>
+    <li><b>ThreadState 作为唯一状态载体</b>，扩展自 LangGraph 的 <code>AgentState</code>，承载 sandbox / artifacts / todos / title 等。所有中间件读写同一个对象。</li>
+    <li><b>Middleware chain</b>：把「模型调用前要做的事」拆成可插拔的有序段，而不是塞进一个巨型函数。</li>
+    <li><b>工具三源合并</b>：内置、配置化、MCP 三类工具由 <code>get_available_tools()</code> 统一装配。</li>
+    <li><b>SSE 双通道</b>：既发 per-chunk 增量，也发有界的 <code>values</code> 快照——增量丢了还能靠快照对齐。</li>
+    <li><b>配置分权</b>：会导致代码 import 的 <code>plugins:</code> 只能写在运维掌管的 <code>config.yaml</code>，绝不放进 API 可写的 <code>extensions_config.json</code>。</li>
+    <li><b>回环默认绑定</b>：只有 nginx 对外，且 CI 校验所有 compose 端口都带显式 bind 地址。</li>
+  </ul>
+
+  <div class="note danger">
+    <span class="lbl">为什么不 fork</span>
+    <p>15 万行非测试后端代码，团队栈熟悉度「一般」，LangGraph 无人接触过，有效人力约 2.5 人月。fork 后要先读懂再删——而它的 authz / middleware / persistence 互相咬合，删一块塌一片。更关键的是：<b>换 Vue 已经废掉它 6 万行前端</b>，保留后端的唯一理由只剩「以后 merge 上游」，而你们必然要改核心（加 SQL 执行器、数据工具），这个理由随即失效。<b>真正值得复用的是上面这七条架构决策，读文档和关键文件就能拿到，不需要背 15 万行代码。</b></p>
+  </div>
+</section>
+
+<section id="mvp">
+  <span class="h2num">03</span>
+  <h2>方案二 · MVP 精简架构</h2>
+  <p class="lede">同构于 DeerFlow 2.0 的骨架，但只填最小可用的肉。目标：4 人 20 工作日交付，且每个被砍掉的子系统未来都是「往里填」而不是「推倒重来」。</p>
+
+  <div class="stack">
+    <div class="layer">
+      <div class="lname"><span>接入层</span><em>K8s Ingress → 单副本 Pod</em></div>
+      <div class="boxes">
+        <span class="box core"><b>Vue 3 前端</b><small>Vite · Pinia · ECharts · SSE</small></span>
+        <span class="box cut"><b>IM 渠道</b><small>完整版</small></span>
+        <span class="box cut"><b>LangGraph SDK 兼容层</b><small>完整版</small></span>
+      </div>
+    </div>
+    <div class="flowdown">↓</div>
+    <div class="layer">
+      <div class="lname"><span>App 层 · <code>backend/app/</code></span><em>同样禁止被 harness 反向 import，同样用 CI 测试锁住</em></div>
+      <div class="boxes">
+        <span class="box core"><b>Gateway (FastAPI)</b><small>7 routers</small></span>
+        <span class="box core"><b>Auth</b><small>账号密码 + session cookie</small></span>
+        <span class="box core"><b>Audit</b><small>全量 SQL 审计</small></span>
+        <span class="box cut"><b>Channels</b></span>
+        <span class="box cut"><b>Scheduler</b></span>
+        <span class="box cut"><b>MCP Tasks</b></span>
+      </div>
+    </div>
+    <div class="flowdown">↓</div>
+    <div class="layer">
+      <div class="lname"><span>Harness 层 · <code>backend/packages/harness/dataagent/</code></span><em>框架层，业务无关，未来可整体升级</em></div>
+      <div class="boxes">
+        <span class="box core"><b>Runtime</b><small>RunManager · agent_loop · StreamBridge · ThreadState</small></span>
+        <span class="box core"><b>Tools</b><small>Tool 基类 + 注册表 + 6 个内置工具</small></span>
+        <span class="box core"><b>SQL</b><small>SqlDialect · Validator · Executor · Limiter</small></span>
+        <span class="box core"><b>Metadata</b><small>Extractor · TableCard · 检索索引</small></span>
+        <span class="box core"><b>Retrieval</b><small>公司向量库 API 客户端</small></span>
+        <span class="box core"><b>Models</b><small>OpenAI 兼容 Provider</small></span>
+        <span class="box core"><b>Persistence</b><small>SQLAlchemy + Alembic</small></span>
+        <span class="box core"><b>Config</b><small>config.yaml 单一来源</small></span>
+        <span class="box cut"><b>Subagents</b><small>留接口不实现</small></span>
+        <span class="box cut"><b>Sandbox</b><small>留 ToolExecutor 抽象</small></span>
+        <span class="box cut"><b>Skills / MCP</b></span>
+        <span class="box cut"><b>Memory</b><small>只落 qa_sample</small></span>
+        <span class="box cut"><b>Authz RBAC</b><small>留 role 字段</small></span>
+        <span class="box cut"><b>Tracing</b><small>结构化日志代替</small></span>
+      </div>
+    </div>
+    <div class="flowdown">↓</div>
+    <div class="layer">
+      <div class="lname"><span>基础设施</span><em>不引入 Redis、不引入 MQ</em></div>
+      <div class="boxes">
+        <span class="box"><b>LangGraph</b><small>create_agent · checkpointer</small></span>
+        <span class="box"><b>PostgreSQL 单库</b><small>应用状态 + 表卡片 + 审计</small></span>
+        <span class="box"><b>S3</b><small>导出的 CSV / 产物</small></span>
+        <span class="box"><b>阿里云百炼</b><small>qwen-max，OpenAI 兼容</small></span>
+        <span class="box"><b>公司向量库 API</b><small>知识库检索</small></span>
+        <span class="box"><b>数仓只读账号</b><small>PostgreSQL · MySQL</small></span>
+      </div>
+    </div>
+  </div>
+
+  <h3>目录结构</h3>
+<pre class="tree"><span class="c"># 与 DeerFlow 2.0 同构：harness 可独立发布，app 永不被 harness import</span>
+dataagent/
+├─ backend/
+│  ├─ packages/harness/dataagent/     <span class="c"># 框架层 · import 前缀 dataagent.*</span>
+│  │  ├─ runtime/     <span class="k">run_manager.py  agent_loop.py  stream_bridge.py  state.py</span>
+│  │  ├─ tools/       <span class="k">base.py  registry.py</span>
+│  │  │  └─ builtins/ search_tables.py  describe_table.py  search_knowledge.py
+│  │  │                run_sql.py  make_chart.py  ask_clarification.py
+│  │  ├─ sql/         <span class="k">dialect/{base,postgres,mysql}.py  validator.py  executor.py  limiter.py</span>
+│  │  ├─ metadata/    extractor.py  table_card.py  indexer.py
+│  │  ├─ retrieval/   kb_client.py            <span class="c"># 调公司向量库，不自建 RAG</span>
+│  │  ├─ models/      <span class="k">provider.py  registry.py</span>   <span class="c"># OpenAI 兼容，配置可切</span>
+│  │  ├─ persistence/ engine.py  models/  migrations/
+│  │  └─ config/      schema.py  loader.py    <span class="c"># config.yaml 单一来源</span>
+│  ├─ app/                              <span class="c"># 应用层 · import 前缀 app.*</span>
+│  │  ├─ gateway/  app.py  routers/{auth,threads,runs,messages,tables,admin,health}.py
+│  │  ├─ auth/     password.py  session.py  deps.py
+│  │  └─ audit/    logger.py
+│  └─ tests/       test_harness_boundary.py   <span class="c"># 单向依赖的 CI 锁</span>
+├─ frontend/       <span class="c"># Vue 3 + Vite + Pinia + ECharts</span>
+├─ evals/          golden_set.yaml  run_eval.py  report.py
+├─ deploy/         k8s/{deployment,service,ingress,configmap,secret}.yaml
+└─ config.example.yaml
+</pre>
+
+  <h3>Agent 的六个工具</h3>
+  <p>MVP 只有一个 lead agent，它能调用的工具就是产品能力的全集。工具越少、边界越清楚，ReAct 循环越稳。</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:20%">工具</th><th style="width:30%">签名</th><th>职责与约束</th></tr></thead>
+    <tbody>
+      <tr><td><code>search_tables</code></td><td><code>(query: str, top_k=8)</code></td><td>在表卡片上做检索，返回候选表的<b>摘要卡片</b>（表名/中文名/业务域/一句话用途）。只在白名单内检索</td></tr>
+      <tr><td><code>describe_table</code></td><td><code>(table: str)</code></td><td>返回完整 schema：字段名、类型、中文注释、示例值、常用口径、关联表提示</td></tr>
+      <tr><td><code>search_knowledge</code></td><td><code>(query: str, top_k=5)</code></td><td>转发到公司向量库 API，返回口径文档片段 + 出处，供引用</td></tr>
+      <tr><td><code>run_sql</code></td><td><code>(sql: str, datasource: str)</code></td><td>校验 → 限流 → 执行 → 返回结果集。<b>SELECT-only、白名单表校验、强制 LIMIT、语句超时、行数上限</b>，全程审计</td></tr>
+      <tr><td><code>make_chart</code></td><td><code>(spec: ChartSpec)</code></td><td>只产出图表配置 JSON（类型 + x/y 字段 + 标题），<b>不渲染、不跑代码</b>，前端 ECharts 负责画</td></tr>
+      <tr><td><code>ask_clarification</code></td><td><code>(question: str)</code></td><td>口径歧义或缺少时间范围时反问用户，中断本轮等待输入</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note">
+    <span class="lbl">这一节最容易被忽略的设计</span>
+    <p><code>search_tables</code> 与 <code>describe_table</code> <b>必须分成两个工具</b>，不能合并成一个「给我所有表结构」。白名单 200 张表的完整 schema 塞进 prompt 会是几万 token，成本高且准确率反而下降。正确的形状是：先检索出 5–8 张候选表的摘要，agent 判断后只对 1–3 张展开完整结构。这是 Text-to-SQL 准确率和成本的关键分水岭。</p>
+  </div>
+
+  <h3>部署形态</h3>
+  <ul>
+    <li>K8s <code>Deployment replicas=1</code> + <code>strategy: Recreate</code>。单 Pod 内 uvicorn 多 worker 关闭（agent 状态在进程内），并发靠 asyncio。</li>
+    <li>启动时把上次遗留的 <code>running</code> 运行标记为 <code>interrupted</code>，前端展示「已中断，可重试」。<b>不做 checkpoint 续跑</b>——取数问答是短任务，重试成本低于实现成本。</li>
+    <li>配置：<code>config.yaml</code> 走 ConfigMap，数据源凭证与模型 API Key 走 Secret。</li>
+    <li>前端静态产物由同一个 Pod 的 nginx sidecar 托管，或直接打进镜像——<b>不为 MVP 单独开一个前端服务</b>。</li>
+  </ul>
+</section>
+
+<section id="contract">
+  <span class="h2num">04</span>
+  <h2>核心数据模型与 SSE 协议</h2>
+  <p class="lede">这两样东西必须在 D4 之前冻结。它们是前后端并行开发的唯一前提，也是未来「换回官方前端」这条退路能否保留的关键。</p>
+
+  <h3>数据模型</h3>
+  <p>前五张表的语义<b>刻意对齐 DeerFlow</b>；后五张是本项目独有的数据侧资产。</p>
+<pre class="code"><span class="c">-- 对齐 DeerFlow 语义的五张核心表 --------------------------------</span>
+<span class="k">users</span>        (id, username UNIQUE, password_hash, display_name, role, is_active, created_at)
+<span class="k">threads</span>      (id, user_id, title, created_at, updated_at, archived_at)
+<span class="k">messages</span>     (id, thread_id, role, content, created_at, seq)
+             <span class="c">-- role: user | assistant | tool | system</span>
+<span class="k">runs</span>         (id, thread_id, status, model, started_at, finished_at, error,
+              input_tokens, output_tokens)
+             <span class="c">-- status: queued | running | succeeded | failed | interrupted | cancelled</span>
+<span class="k">tool_calls</span>   (id, run_id, message_id, tool_name, args JSONB, result JSONB,
+              status, started_at, finished_at, error)
+<span class="k">artifacts</span>    (id, thread_id, run_id, kind, uri, meta JSONB, created_at)
+             <span class="c">-- kind: table | chart | csv</span>
+
+<span class="c">-- 数据侧资产 --------------------------------------------------</span>
+<span class="k">datasources</span>  (id, name, engine, dsn_secret_ref, is_active)
+             <span class="c">-- engine: postgres | mysql   (starrocks 留给完整版)</span>
+<span class="k">table_cards</span>  (id, datasource_id, schema_name, table_name, display_name_cn,
+              business_domain, purpose, columns JSONB, sample_values JSONB,
+              metrics_note, embedding_ref, reviewed_by, reviewed_at,
+              allowed_roles TEXT[] DEFAULT '{*}')
+             <span class="c">-- columns: [{name,type,comment_cn,nullable,is_sensitive}]</span>
+<span class="k">sql_audit</span>    (id, user_id, thread_id, run_id, datasource_id, question,
+              generated_sql, validated BOOL, reject_reason, executed BOOL,
+              row_count, elapsed_ms, created_at)
+<span class="k">qa_samples</span>   (id, thread_id, question, final_sql, tables_used TEXT[],
+              user_feedback, created_at)
+             <span class="c">-- MVP 只写不读；完整版接成 few-shot 检索</span>
+</pre>
+
+  <div class="note">
+    <span class="lbl">为什么 sql_audit 单独成表</span>
+    <p>它不是 <code>tool_calls</code> 的冗余。<code>tool_calls</code> 服务于会话回放，字段随工具协议演化；<code>sql_audit</code> 服务于安全合规，字段必须稳定、必须能被 DBA 和安全团队直接查询、必须记录<b>被拒绝的 SQL</b>（那些根本没进 tool_calls）。这张表是你面对合规质疑时唯一的挡箭牌，成本极低。</p>
+  </div>
+
+  <h3>SSE 事件协议</h3>
+  <p>单一 <code>GET /api/threads/{tid}/runs/{rid}/stream</code>，<code>text/event-stream</code>。事件名与 DeerFlow 的语义对齐，字段收敛到最小集。</p>
+<pre class="code"><span class="k">run.started</span>        { run_id, thread_id, model }
+<span class="k">message.delta</span>      { message_id, delta }              <span class="c"># 助手文本增量</span>
+<span class="k">tool_call.started</span>  { tool_call_id, tool_name, args }
+<span class="k">tool_call.delta</span>    { tool_call_id, stage, detail }     <span class="c"># 如 stage=validating|executing</span>
+<span class="k">tool_call.finished</span> { tool_call_id, status, result_ref }
+<span class="k">artifact.created</span>   { artifact_id, kind, uri, meta }
+<span class="k">state.snapshot</span>     { messages_tail, tool_calls_open }  <span class="c"># 有界快照，每 N 秒一次</span>
+<span class="k">run.finished</span>       { run_id, status, usage }
+<span class="k">run.error</span>          { run_id, code, message }
+<span class="k">ping</span>               { ts }                             <span class="c"># 15s 心跳，防中间层断流</span>
+</pre>
+  <ul>
+    <li><b>快照 + 增量双通道</b>照抄 DeerFlow：增量丢包时前端可用 <code>state.snapshot</code> 对齐，不必重连整轮。</li>
+    <li><code>result_ref</code> 而非内联结果：大结果集走 <code>GET /api/artifacts/{id}</code> 分页取，避免把上万行塞进 SSE。</li>
+    <li>断线重连带 <code>Last-Event-ID</code>，服务端从 <code>messages.seq</code> 续发。</li>
+  </ul>
+
+  <div class="note warn">
+    <span class="lbl">D3 必须交付</span>
+    <p>这份协议 + 上面的 DDL + 一个能吐假事件的 <code>/mock/stream</code> 端点。<b>前端从 D4 起就靠 mock 流开发，不等后端。</b>这是整个排期里最重要的一次解耦——没有它，前端会空转到第二周。</p>
+  </div>
+</section>
+
+<section id="compare">
+  <span class="h2num">05</span>
+  <h2>功能对比表</h2>
+  <p class="lede">DeerFlow 2.0 与本 MVP 的逐项对照。「演进路径」一列说明未来补齐时是<b>填空</b>还是<b>重写</b>——这是判断 MVP 架构是否合格的真正标准。</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:15%">能力域</th><th style="width:26%">DeerFlow 2.0</th><th style="width:11%">MVP</th><th>MVP 做法与演进路径</th></tr></thead>
+    <tbody>
+      <tr><td>Agent 编排</td><td>Lead agent + 8 段 middleware chain</td><td><span class="chip part">简化</span></td><td>LangGraph <code>create_agent</code> 单 agent ReAct。中间件收敛到 2 段（上下文装配、标题生成）。<b>填空</b></td></tr>
+      <tr><td>子智能体</td><td>SubagentExecutor + 命名空间 SSE + 生命周期持久化</td><td><span class="chip no">无</span></td><td>预留 <code>AgentSpec</code> 与注册表，只注册一个。<b>填空</b></td></tr>
+      <tr><td>工具体系</td><td>内置 + 配置化 + MCP 三源合并</td><td><span class="chip part">简化</span></td><td>Tool 基类 + 注册表，6 个内置工具，配置可开关。<b>填空</b></td></tr>
+      <tr><td>Skills 系统</td><td>public / custom / 集成包，懒加载 + 质量审查工具</td><td><span class="chip no">无</span></td><td>完整版补。工具注册表是其共同地基。<b>填空</b></td></tr>
+      <tr><td>MCP</td><td>每 server 独立进程 + 长跑任务租约表</td><td><span class="chip no">无</span></td><td>MVP 无 server 可接，做了是死代码。<b>填空</b></td></tr>
+      <tr><td>代码沙箱</td><td>Local / AioSandbox 双 Provider + K8s Provisioner</td><td><span class="chip no">无</span></td><td>零沙箱。预留 <code>ToolExecutor</code> 抽象。<b>填空</b>（但需安全审批）</td></tr>
+      <tr><td>模型接入</td><td>多 provider、多模型、视觉模型</td><td><span class="chip part">简化</span></td><td>OpenAI 兼容单 provider，配置可切模型。<b>填空</b></td></tr>
+      <tr><td>上下文压缩</td><td>SummarizationMiddleware</td><td><span class="chip no">无</span></td><td>靠工具粒度控制上下文；超长直接截断并提示。<b>填空</b></td></tr>
+      <tr><td>记忆</td><td>独立 memory 子系统，跨会话</td><td><span class="chip no">无</span></td><td>仅会话内上下文；落 <code>qa_samples</code> 只写不读。<b>填空</b></td></tr>
+      <tr><td>持久化</td><td>Postgres + 分域 repository + migrations</td><td><span class="chip yes">有</span></td><td>同构，表更少。<b>填空</b></td></tr>
+      <tr><td>认证</td><td>本地密码 + OIDC + session cookie + 凭证文件</td><td><span class="chip part">简化</span></td><td>账号密码 + session cookie，Provider 接口预留。<b>填空</b></td></tr>
+      <tr><td>授权</td><td>RBAC + principal + 工具级过滤 + sandbox:execute</td><td><span class="chip part">占位</span></td><td>全平台统一权限，<code>role</code> / <code>allowed_roles</code> 字段先建。<b>填空</b></td></tr>
+      <tr><td>审计</td><td>分散在 tracing / persistence</td><td><span class="chip new">强化</span></td><td><b>MVP 更强</b>：独立 <code>sql_audit</code> 表，含被拒绝的 SQL</td></tr>
+      <tr><td>前端</td><td>Next.js 16 / React 19 / LangGraph SDK / 60k 行</td><td><span class="chip part">自研</span></td><td>Vue 3 + Vite + Pinia + ECharts。<b>重写</b>（已知代价）</td></tr>
+      <tr><td>流式</td><td>增量 + values 快照 + 子图命名空间</td><td><span class="chip part">简化</span></td><td>增量 + 有界快照，无子图。<b>填空</b></td></tr>
+      <tr><td>产物</td><td>artifacts + 线程目录 + 上传</td><td><span class="chip part">简化</span></td><td>结果表 / 图表 spec / CSV 导出，存 S3。<b>填空</b></td></tr>
+      <tr><td>IM 渠道</td><td>12 个平台 + message_bus + 去重 + 运行策略</td><td><span class="chip no">无</span></td><td>完整版补；Gateway 的 run 生命周期是其接入点。<b>填空</b></td></tr>
+      <tr><td>定时任务</td><td>调度器复用同一 run 生命周期</td><td><span class="chip no">无</span></td><td>同上。<b>填空</b></td></tr>
+      <tr><td>可观测</td><td>Langfuse / monocle tracing</td><td><span class="chip part">简化</span></td><td>结构化 JSON 日志 + run 表统计。<b>填空</b></td></tr>
+      <tr><td>插件扩展</td><td>extension-api 独立契约包</td><td><span class="chip no">无</span></td><td>完整版补。<b>填空</b></td></tr>
+      <tr><td>部署</td><td>Helm + 4 套 compose + nginx + provisioner 四服务</td><td><span class="chip part">简化</span></td><td>单 Deployment replicas=1 + Ingress。<b>填空</b></td></tr>
+      <tr class="hl"><td>数据源接入</td><td><span class="chip no">无</span>（通用框架，不含）</td><td><span class="chip new">新增</span></td><td><b>MVP 独有</b>：PG + MySQL 只读接入，<code>SqlDialect</code> 抽象</td></tr>
+      <tr><td>元数据 / 表卡片</td><td><span class="chip no">无</span></td><td><span class="chip new">新增</span></td><td><b>MVP 独有</b>：抽取器 + LLM 半自动生成 + 人工校对</td></tr>
+      <tr><td>Text-to-SQL</td><td><span class="chip no">无</span></td><td><span class="chip new">新增</span></td><td><b>MVP 独有</b>：检索 → 生成 → 校验 → 执行 → 解读</td></tr>
+      <tr><td>SQL 安全</td><td><span class="chip no">无</span></td><td><span class="chip new">新增</span></td><td><b>MVP 独有</b>：AST 级 SELECT-only、白名单、LIMIT、超时、行数上限</td></tr>
+      <tr><td>图表</td><td><span class="chip no">无</span></td><td><span class="chip new">新增</span></td><td><b>MVP 独有</b>：LLM 出 spec，前端 ECharts 渲染</td></tr>
+      <tr><td>效果评测</td><td><span class="chip part">benchmark 脚本</span></td><td><span class="chip new">强化</span></td><td><b>MVP 更强</b>：黄金测试集 + 每日自动回归 + 准确率报表</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>统计口径：MVP 相对 DeerFlow 2.0，<b>完全砍掉 9 个子系统</b>、<b>简化 10 个</b>、<b>保持 1 个</b>，同时<b>新增 6 个数据侧能力</b>。演进路径一列里只有「前端」是重写，其余全是填空——这就是选择「架构同构」而不是「fork」换来的东西。</p>
+</section>
+
+<section id="plan">
+  <span class="h2num">06</span>
+  <h2>20 个工作日任务规划</h2>
+  <p class="lede">4 人基线：你（架构，按 3 天/周计＝12 个编码日）、后端 A（数据侧）、后端 B / 浮动（检索·评测·平台）、前端 1 人。第 5 人到位后优先接管「平台与部署」整条泳道。</p>
+
+  <div class="ms">
+    <div class="msc"><span class="tag">M1 · D4 · 08-28</span><b>契约冻结</b><p>DDL + REST + SSE 协议 + mock 流端点定稿，前端解除阻塞独立开发</p></div>
+    <div class="msc"><span class="tag">M2 · D9 · 09-04</span><b>Hello Agent 端到端</b><p>前端提问 → agent 调用真实工具 → 流式返回 → 落库，链路全通</p></div>
+    <div class="msc"><span class="tag">M3 · D12 · 09-09</span><b>主线打通</b><p>自然语言 → 检索表 → 生成 SQL → 校验执行 → 结果表 + 图表 + 解读</p></div>
+    <div class="msc"><span class="tag">M4 · D15 · 09-14</span><b>准确率评估</b><p>黄金测试集完整跑通，得出首个可信基线，决定是否收窄白名单</p></div>
+    <div class="msc freeze"><span class="tag">M5 · D16 · 09-15</span><b>功能冻结</b><p>此后只修 bug、调 prompt、补文档、演练。<b>不接受任何新功能</b></p></div>
+    <div class="msc freeze"><span class="tag">M6 · D20 · 09-21</span><b>演示与验收</b><p>演示环境稳定运行 3 天，验收会 + 准确率报表 + 完整版路线</p></div>
+  </div>
+
+  <div class="week">
+    <header><h3>第 1 周 · 契约周</h3><span class="dates">D1–D4 · 08-25 → 08-28</span><span class="goal">目标：所有人在 D5 之后都能独立推进，不互相等</span></header>
+    <div class="lanes">
+      <div class="lane you"><div class="who"><i></i>你 · 架构</div><ul>
+        <li><span class="d">D1–D2</span> 仓库骨架、harness/app 两层边界 + <code>test_harness_boundary</code>、<code>config.yaml</code> 加载器、CI（lint/type/test）</li>
+        <li><span class="d">D2–D3</span> <b>冻结数据模型 DDL + REST 契约 + SSE 事件协议</b>，交付 <code>/mock/stream</code></li>
+        <li><span class="d">D4</span> MVP 范围文档定稿，<b>找验收方签字</b>（含「零沙箱」一条）</li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>后端 A · 数据侧</div><ul>
+        <li><span class="d">D1</span> 申请两个数仓只读账号，打通连通性</li>
+        <li><span class="d">D1–D3</span> 元数据抽取器：PG / MySQL <code>information_schema</code> → 统一中间结构</li>
+        <li><span class="d">D3–D4</span> <code>table_cards</code> 建表 + 首批白名单圈定（目标 80–120 张）</li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>后端 B · 检索评测</div><ul>
+        <li><span class="d">D1–D2</span> 挖历史 SQL 日志，反向构造问题，<b>黄金测试集 v0（≥20 题）</b></li>
+        <li><span class="d">D3–D4</span> 评测脚本骨架 <code>evals/run_eval.py</code>（此刻准确率必然是 0%，正常）</li>
+        <li><span class="d">D4</span> 约业务方，敲定补 20 题的时间</li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>前端</div><ul>
+        <li><span class="d">D1–D2</span> Vue 3 + Vite + Pinia 骨架、登录页、路由与布局</li>
+        <li><span class="d">D3–D4</span> <b>接 mock 流跑通流式渲染</b>：文本增量 + tool_call 中间态骨架</li>
+      </ul></div>
+    </div>
+  </div>
+
+  <div class="week">
+    <header><h3>第 2 周 · 主线打通</h3><span class="dates">D5–D9 · 08-31 → 09-04</span><span class="goal">目标：D9 端到端跑通一次真实问答</span></header>
+    <div class="lanes">
+      <div class="lane you"><div class="who"><i></i>你 · 架构</div><ul>
+        <li><span class="d">D5–D7</span> <b>编排引擎</b>：<code>ThreadState</code>、LangGraph agent 循环、工具注册表、<code>StreamBridge</code></li>
+        <li><span class="d">D8</span> <code>ModelProvider</code> 抽象 + qwen-max 接入 + token 计量</li>
+        <li><span class="d">D9</span> run 生命周期落库、启动时 interrupted 回收、<b>M2 联调</b></li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>后端 A · 数据侧</div><ul>
+        <li><span class="d">D5–D6</span> 表卡片 LLM 半自动生成（采样值 + 字段释义）+ 极简校对页</li>
+        <li><span class="d">D7–D9</span> <b>SQL 校验器</b>：sqlglot AST → SELECT-only、白名单校验、强制 LIMIT 注入</li>
+        <li><span class="d">D9</span> 执行器：连接池、语句超时、行数上限、取消</li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>后端 B · 检索评测</div><ul>
+        <li><span class="d">D5–D6</span> <code>search_knowledge</code> 封装公司向量库 API</li>
+        <li><span class="d">D7–D8</span> 账号密码认证 + session cookie + 登录接口</li>
+        <li><span class="d">D9</span> <code>sql_audit</code> / <code>qa_samples</code> 落库打点</li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>前端</div><ul>
+        <li><span class="d">D5–D8</span> 会话页主体：消息流、Markdown/代码块流式渲染、工具调用折叠卡</li>
+        <li><span class="d">D9</span> 切到真实后端联调，<b>M2 验证</b></li>
+      </ul></div>
+    </div>
+  </div>
+
+  <div class="week">
+    <header><h3>第 3 周 · 准确率攻坚</h3><span class="dates">D10–D14 · 09-07 → 09-11</span><span class="goal">目标：D12 主线可演示，之后全力提准确率</span></header>
+    <div class="lanes">
+      <div class="lane you"><div class="who"><i></i>你 · 架构</div><ul>
+        <li><span class="d">D10–D11</span> <code>SqlDialect</code> 抽象 + <code>run_sql</code> / <code>make_chart</code> 接入编排</li>
+        <li><span class="d">D12</span> 端到端串联，<b>M3</b></li>
+        <li><span class="d">D13–D14</span> <b>主导 prompt 工程</b>：系统提示词、工具描述、口径消歧、失败重试策略</li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>后端 A · 数据侧</div><ul>
+        <li><span class="d">D10–D12</span> <code>search_tables</code> / <code>describe_table</code> 工具 + 表检索调优</li>
+        <li><span class="d">D13–D14</span> 按评测归因补表卡片：把答错最多的表的口径写清楚</li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>后端 B · 检索评测</div><ul>
+        <li><span class="d">D10–D11</span> <b>每日自动回归跑起来</b>，准确率日报进群</li>
+        <li><span class="d">D12–D14</span> 错误归因分类：找错表 / 口径错 / 语法错 / 超时，输出 Top 失败模式</li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>前端</div><ul>
+        <li><span class="d">D10–D12</span> 结果表格（虚拟滚动）、ECharts 图表、SQL 展开查看、CSV 导出</li>
+        <li><span class="d">D13–D14</span> 表卡片浏览页、历史会话、错误态与重试</li>
+      </ul></div>
+    </div>
+  </div>
+
+  <div class="week">
+    <header><h3>第 4 周 · 收敛与演示</h3><span class="dates">D15–D20 · 09-14 → 09-21</span><span class="goal">目标：D16 功能冻结，D20 稳定演示</span></header>
+    <div class="lanes">
+      <div class="lane you"><div class="who"><i></i>你 · 架构</div><ul>
+        <li><span class="d">D15</span> 准确率评估会，<b>决定是否收窄白名单换准确率</b>（该收就收）</li>
+        <li><span class="d">D16</span> <b>宣布功能冻结</b></li>
+        <li><span class="d">D17–D18</span> 只调 prompt 与修 bug；写完整版演进文档</li>
+        <li><span class="d">D19–D20</span> 演示脚本 + 两次完整演练 + 验收会</li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>后端 A · 数据侧</div><ul>
+        <li><span class="d">D15–D16</span> 边界用例加固：空结果、超时、大结果集、方言差异</li>
+        <li><span class="d">D17–D20</span> bug 修复；演示用表卡片精修</li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>后端 B · 检索评测</div><ul>
+        <li><span class="d">D15–D16</span> 最终准确率报表（分维度：找表 / 口径 / 语法）</li>
+        <li><span class="d">D17–D18</span> <b>K8s 部署 + CI/CD + 演示环境</b></li>
+        <li><span class="d">D19–D20</span> 演示环境值守，冒烟脚本</li>
+      </ul></div>
+      <div class="lane"><div class="who"><i></i>前端</div><ul>
+        <li><span class="d">D15–D16</span> 联调收尾、空态与加载态、响应式</li>
+        <li><span class="d">D17–D20</span> 体验打磨、演示路径优化</li>
+      </ul></div>
+    </div>
+  </div>
+
+  <h3>关键路径</h3>
+  <p>下面这条链上任何一环延期，演示日直接顺延——它上面没有缓冲：</p>
+  <pre class="code"><span class="k">D3</span> SSE 协议冻结 ─→ <span class="k">D7</span> 编排引擎可跑 ─→ <span class="k">D9</span> 端到端贯通 ─→ <span class="k">D12</span> 主线可演示 ─→ <span class="k">D16</span> 功能冻结 ─→ <span class="k">D20</span> 演示
+     ↑ 你                ↑ 你               ↑ 全员            ↑ 你+A           ↑ 你</pre>
+  <p><b>五个环节里四个在你手上。</b>这是「核心你来写」的必然结果，也是这份排期最大的单点风险——见第 8 节 R4。</p>
+
+  <div class="note warn">
+    <span class="lbl">排期里刻意留出的三个缓冲</span>
+    <p><b>①</b> 第 4 周有 4 天不排新功能，这是唯一的总缓冲，<b>不要提前花掉</b>。<b>②</b> 后端 B 的泳道全部是可独立交付的模块，人力不足时整条延后不影响主线。<b>③</b> 白名单表数量是准确率的调节旋钮——D15 一旦评估不达标，从 120 张收到 40 张核心表，准确率通常能立刻上一个台阶。</p>
+  </div>
+</section>
+
+<section id="mine">
+  <span class="h2num">07</span>
+  <h2>我的核心模块：拆解与交接点</h2>
+  <p class="lede">作为架构负责人，你要写的是「切开就会烂」的那几块——它们内部耦合紧、接口决定全局、返工成本最高。其余一切都应该交出去。</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:22%">模块</th><th style="width:10%">工期</th><th style="width:34%">为什么必须你写</th><th>交接点</th></tr></thead>
+    <tbody>
+      <tr><td>仓库骨架与两层边界</td><td class="num">D1–D2</td><td>harness/app 的单向依赖一旦第一周没立住，第三周就再也拆不开了</td><td>D2 起所有人在此骨架上提交</td></tr>
+      <tr><td><b>协议与数据模型</b></td><td class="num">D2–D3</td><td>它同时约束前端、后端、未来能否换回官方前端。改一次全员返工</td><td>D3 交付 mock 流后<b>完全交给前端</b>，你不再碰前端</td></tr>
+      <tr><td><b>编排引擎</b></td><td class="num">D5–D7</td><td>ThreadState + agent 循环 + 工具注册表 + StreamBridge 四者高度耦合，两个人写必然打架</td><td>D7 后工具作者只需实现 Tool 基类，不碰引擎</td></tr>
+      <tr><td>ModelProvider 与 run 生命周期</td><td class="num">D8–D9</td><td>紧贴编排引擎，且决定 token 计量与失败重试语义</td><td>D9 后配置化，换模型不改代码</td></tr>
+      <tr><td>SqlDialect 抽象</td><td class="num">D10–D11</td><td>决定未来接 StarRocks 是填空还是重写，是「架构同构」承诺的兑现点</td><td>D11 后方言实现交给后端 A 扩展</td></tr>
+      <tr><td><b>Prompt 工程</b></td><td class="num">D13–D18</td><td>准确率的最终责任人；它需要同时懂编排、懂工具、懂业务口径——只有你三样都有</td><td>不交接，持续到冻结日</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note danger">
+    <span class="lbl">你最该警惕的三件事</span>
+    <p><b>① 不要去写工具实现。</b><code>search_tables</code>、<code>run_sql</code> 这些看着最有意思，但它们是可并行、可替换的叶子节点，交给后端 A。你一旦下沉去写工具，编排引擎就会晚，全队跟着堵在 D7。</p>
+    <p><b>② 不要碰前端。</b>你「全栈都懂」是这个项目最危险的属性。协议交付后前端就是黑盒，你的时间不该花在那里。</p>
+    <p><b>③ 不要自己做部署。</b>K8s + CI/CD 明确指给后端 B 或第 5 人。这块延期只影响 D17–D18，不在关键路径上；而你延期，整个项目延期。</p>
+  </div>
+</section>
+
+<section id="risk">
+  <span class="h2num">08</span>
+  <h2>风险清单</h2>
+  <p class="lede">按「杀死项目的能力」排序，不按发生概率排序。前三条都不是技术问题。</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:5%">#</th><th style="width:22%">风险</th><th style="width:8%">等级</th><th style="width:32%">触发信号</th><th>应对</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="num">R1</td><td><b>准确率不达标</b></td><td><span class="chip part">最高</span></td>
+        <td>D12 首次评测低于 40%；错误集中在「找错表」而非「语法错」</td>
+        <td>收窄白名单（120→40 张核心表）；补表卡片口径；把 <code>qa_samples</code> 里已验证的问答手工筛一批塞进 prompt 当 few-shot 救场。<b>D15 是决策日，不要拖到 D18</b></td>
+      </tr>
+      <tr>
+        <td class="num">R2</td><td><b>验收期待错配</b></td><td><span class="chip part">最高</span></td>
+        <td>有人问「能不能传个 Excel 让它自己分析」；有人期待自动生成分析报告</td>
+        <td>假设 A1 的直接后果。<b>D4 让验收方在范围文档上签字</b>，明确写「零沙箱、不生成报告」。若坚持要，启用 3 人天预案：进程内 pandas 做透视/排序/同环比，不接受任意代码执行</td>
+      </tr>
+      <tr>
+        <td class="num">R3</td><td><b>拿不到黄金测试集</b></td><td><span class="chip part">高</span></td>
+        <td>D2 挖不到历史 SQL 日志；D4 约不到业务方</td>
+        <td>假设 A2 的直接后果。降级方案：每周一次业务方试用会替代自动回归，但<b>必须同时告知验收方「本项目将没有客观准确率指标」</b>——这是必须上报的决策，不能默默承受</td>
+      </tr>
+      <tr>
+        <td class="num">R4</td><td><b>架构负责人单点</b></td><td><span class="chip part">高</span></td>
+        <td>关键路径 5 个环节中 4 个在你手上；你的周投入低于 3 天</td>
+        <td>若实际只有 2 天/周：把 D8–D9 的「run 生命周期落库」整块切给后端 A，编排引擎顺延至 D8，M2 推到 D10。<b>宁可砍功能，不要砍你在编排引擎上的时间</b></td>
+      </tr>
+      <tr>
+        <td class="num">R5</td><td>前端流式状态管理</td><td><span class="chip part">中高</span></td>
+        <td>D8 仍无法稳定渲染 tool_call 中间态；断线重连丢消息</td>
+        <td>Vue 自研且无参考实现。缓解已排进计划：D3 冻结协议 + mock 流先行。兜底：降级为「非流式，整轮返回」，体验变差但功能完整，改动约 1 天</td>
+      </tr>
+      <tr>
+        <td class="num">R6</td><td>元数据质量不均</td><td><span class="chip part">中</span></td>
+        <td>注释覆盖 80% 但存在同名不同义的表、口径分歧</td>
+        <td>覆盖率不等于口径清楚。表卡片的 <code>metrics_note</code> 字段就是为此存在。D13–D14 按评测归因定向补，不追求全量补齐</td>
+      </tr>
+      <tr>
+        <td class="num">R7</td><td>只读账号与白名单审批</td><td><span class="chip part">中</span></td>
+        <td>D1 申请账号，一周还没批下来</td>
+        <td>这是<b>第一天就要做的事</b>，因为它是纯等待。兜底：先用测试库脱敏副本开发，D9 之前切生产只读账号即可</td>
+      </tr>
+      <tr>
+        <td class="num">R8</td><td>模型 token 成本失控</td><td><span class="chip no">低</span></td>
+        <td>单次问答超过 3 万 token</td>
+        <td>架构上已规避：<code>search_tables</code> 只返回摘要，<code>describe_table</code> 按需展开。加一条 run 级 token 上限告警即可</td>
+      </tr>
+      <tr>
+        <td class="num">R9</td><td>单副本可用性</td><td><span class="chip no">低</span></td>
+        <td>Pod 重启导致正在跑的问答丢失</td>
+        <td>已接受。启动回收 interrupted + 前端「重试」按钮。取数问答是短任务，重试成本远低于 checkpoint 续跑的实现成本</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="road">
+  <span class="h2num">09</span>
+  <h2>从 MVP 到完整版</h2>
+  <p class="lede">五个增量，每个都是在既有骨架上填空。顺序按「投入产出比」排，不按 DeerFlow 的模块顺序排。</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:6%">增量</th><th style="width:22%">内容</th><th style="width:12%">预估</th><th>为什么排在这个位置</th></tr></thead>
+    <tbody>
+      <tr><td class="num">I1</td><td><b>qa_samples 接成 few-shot 检索</b> + 用户反馈闭环</td><td class="num">2–3 周</td><td>MVP 已经在攒数据，接上就见效。<b>准确率提升通常大于换更大的模型</b>——这是第一优先级，没有之一</td></tr>
+      <tr><td class="num">I2</td><td>StarRocks 方言 + 多数据源路由</td><td class="num">1–2 周</td><td><code>SqlDialect</code> 抽象已在，是纯填空。覆盖用户面最广</td></tr>
+      <tr><td class="num">I3</td><td>RBAC + 行级/表级数据权限 + 复用数仓自身权限</td><td class="num">3–4 周</td><td><code>role</code> / <code>allowed_roles</code> 字段已埋。用户规模一扩大，这条立刻从「可选」变成「阻塞」</td></tr>
+      <tr><td class="num">I4</td><td>沙箱 + Python 分析 + 分析报告生成</td><td class="num">4–6 周</td><td>需要安全审批，周期不可控，所以放后面。<code>ToolExecutor</code> 抽象已在。这一步做完才能吃下 MVP 砍掉的场景 (b)</td></tr>
+      <tr><td class="num">I5</td><td>Skills / MCP / 子智能体 / IM 渠道 / 定时任务</td><td class="num">按需</td><td>DeerFlow 2.0 的通用能力。它们让平台更「像 DeerFlow」，但对数据部门的<b>直接业务价值最低</b>，所以排最后。有明确需求再做，不要为了对标而做</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note">
+    <span class="lbl">对「后续演进到完整版」这句承诺的诚实说明</span>
+    <p>DeerFlow 2.0 是 15 万行非测试后端代码的体量，那是几十人年的积累。<b>你们不会、也不需要「追平」它。</b>这份 MVP 的骨架与它同构，意味着 I1–I5 每一步都是在既有分层里填空、而不是推倒重来——这已经是一个月的预算能买到的最好结果。真正决定这个产品价值的，是 I1 那条准确率飞轮，而不是 I5 里那些看起来更像「超级智能体」的功能。</p>
+  </div>
+</section>
+
+<footer style="border-top:1px solid var(--line); padding-top:22px; color:var(--muted); font-size:13px; font-family:'IBM Plex Mono',monospace">
+  <p style="margin:0">基准：bytedance/deer-flow @ main（末次提交 2026-08-24），规模数据为本地 clone 实测 · 排期基于 D1 = 2026-08-25，20 个工作日，未计临时假期<br>
+  待确认假设：A1 沙箱期待 · A2 测试集可得性 · A3 你的周投入 · A4 第 5 人到位时间</p>
+</footer>
+
+</div>
