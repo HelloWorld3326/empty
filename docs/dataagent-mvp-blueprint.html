@@ -1,4 +1,4 @@
-<title>DataAgent MVP 蓝图</title>
+<title>数据 Agent 平台蓝图</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
@@ -149,10 +149,9 @@ pre .k{color:var(--accent); font-weight:600}
 <header class="masthead">
   <div class="wrap">
     <span class="kicker">架构方案 · 功能对比 · 20 工作日排期</span>
-    <h1>DataAgent：对标 DeerFlow 2.0 的数据智能体</h1>
-    <p class="dek">给数据部门用的取数问答与元数据问答智能体。本文给出 DeerFlow 2.0 的完整架构、一个 4 人 20 工作日可交付的精简架构、两者的逐项功能对比、逐日任务规划与风险清单。</p>
+    <h1>数据 Agent 平台：架构蓝图与 MVP 交付计划</h1>
+    <p class="dek">面向公司数据部门的智能体平台：自然语言取数与元数据问答。本文给出平台的完整目标架构、一个 4 人 20 工作日可交付的 MVP 精简架构、两者的逐项功能对比、逐日任务规划与风险清单。</p>
     <div class="metabar">
-      <span class="meta"><b>基准</b> bytedance/deer-flow @ main · 2026-08-24</span>
       <span class="meta"><b>周期</b> D1 2026-08-25 → D20 2026-09-21</span>
       <span class="meta"><b>团队</b> 4 人基线（+1 浮动）</span>
       <span class="meta"><b>冻结日</b> D16 2026-09-15</span>
@@ -163,7 +162,7 @@ pre .k{color:var(--accent); font-weight:600}
 <nav class="toc">
   <ol>
     <li><a href="#decisions">决策记录</a></li>
-    <li><a href="#full">方案一 · DeerFlow 2.0</a></li>
+    <li><a href="#full">方案一 · 完整架构</a></li>
     <li><a href="#mvp">方案二 · MVP</a></li>
     <li><a href="#contract">数据模型与协议</a></li>
     <li><a href="#compare">功能对比表</a></li>
@@ -185,8 +184,7 @@ pre .k{color:var(--accent); font-weight:600}
   <table>
     <thead><tr><th style="width:22%">决策项</th><th>结论</th></tr></thead>
     <tbody>
-      <tr><td>对标对象</td><td>DeerFlow <b>2.0</b>（Super-Agent Harness）。官方 <code>docs/ARCHITECTURE.md</code> 明确：2.0 是彻底重写，与 v1 Deep Research 不共享任何代码</td></tr>
-      <tr><td>实现方式</td><td><b>自建仓库 + 架构同构 + 直接依赖 LangGraph</b>。不 fork，不追求 merge 上游</td></tr>
+      <tr><td>实现方式</td><td><b>自研，分两层落地</b>：框架层（通用智能体底座）+ 应用层（数据业务）。编排底座直接依赖 LangGraph，不自造状态机</td></tr>
       <tr><td>业务主线</td><td>(a) 取数问答 Text-to-SQL ＋ (c) 元数据/资产盘点问答。排除：分析报告生成、数据质量规则、ETL 助手</td></tr>
       <tr><td>数据源</td><td>MVP 打通 PostgreSQL + MySQL；StarRocks 排到完整版，但 <code>SqlDialect</code> 抽象第一天就写</td></tr>
       <tr><td>数据安全</td><td>只读账号 · 表白名单 50–200 张 · SELECT-only 语法校验 · 强制 LIMIT + 超时 + 行数上限 · 敏感字段排除在白名单外</td></tr>
@@ -197,11 +195,11 @@ pre .k{color:var(--accent); font-weight:600}
       <tr><td>代码执行</td><td><b>MVP 零沙箱</b>。图表由前端 ECharts 渲染，LLM 只输出 chart spec (JSON)</td></tr>
       <tr><td>模型</td><td>阿里云百炼，统一 OpenAI 兼容 <code>ModelProvider</code>，默认 qwen-max，配置可切，不做多模型路由</td></tr>
       <tr><td>合规</td><td>表结构与查询结果<b>均可</b>进 prompt，<code>llm.allow_result_in_prompt = true</code></td></tr>
-      <tr><td>前端</td><td>Vue 自研；后端 API 契约刻意对齐 DeerFlow 的 thread / run / message / tool_call / artifact 语义</td></tr>
+      <tr><td>前端</td><td>Vue 自研；后端 API 契约定义为平台标准的 thread / run / message / tool_call / artifact 五对象语义</td></tr>
       <tr><td>认证授权</td><td>内部账号密码；全平台统一数据权限，<code>role</code> 与 <code>allowed_roles</code> 占位；<b>全量 SQL 审计日志必做</b></td></tr>
       <tr><td>存储</td><td>Postgres 单库 + S3 存产物；不用 Redis、不用 MQ</td></tr>
       <tr><td>部署</td><td>内部 K8s，<code>replicas=1</code>，<code>Recreate</code>；Pod 重启后 running 运行标记为 interrupted 并允许重试</td></tr>
-      <tr><td>扩展点</td><td>只做工具注册表抽象。Skills、MCP Client、IM 渠道全部排到完整版</td></tr>
+      <tr><td>扩展点</td><td>只做工具注册表抽象。技能包、外部工具协议、IM 渠道全部排到完整版</td></tr>
       <tr><td>记忆</td><td>MVP 只有会话内上下文；每次成功问答落一条 <code>qa_sample</code>，只存不用，为完整版 few-shot 铺路</td></tr>
       <tr><td>验收基线</td><td>30–50 题黄金测试集，D1 周内建立，每日自动回归</td></tr>
     </tbody>
@@ -212,7 +210,7 @@ pre .k{color:var(--accent); font-weight:600}
     <span class="lbl">未经确认的四个假设</span>
     <p><b>A1</b> 没有干系人明确要求「跑 Python 分析」→ 零沙箱写死，预留 3 人天的进程内 pandas 后处理预案。<br>
     <b>A2</b> 能拿到历史 SQL 日志 + 业务方派 1 人配合 2–3 天 → 黄金测试集成立。<br>
-    <b>A3</b> 你每周能写 3 天代码（合计 12 个编码日）。<br>
+    <b>A3</b> 后端 C（架构负责人）每周能写 3 天代码（合计 12 个编码日）。<br>
     <b>A4</b> 团队按 4 人排基线，第 5 人当加速器不当依赖。</p>
     <p style="margin-top:10px">这四条任一不成立，受影响最大的是<b>第 6 节的排期</b>与<b>第 8 节的风险等级</b>。</p>
   </div>
@@ -220,101 +218,86 @@ pre .k{color:var(--accent); font-weight:600}
 
 <section id="full">
   <span class="h2num">02</span>
-  <h2>方案一 · DeerFlow 2.0 完整架构</h2>
-  <p class="lede">以下是 clone 官方仓库后实测的结构与规模，不是从文档臆测的。它是「完整版」的目标形态，也是衡量 MVP 该砍到什么程度的标尺。</p>
-
-  <div class="tablewrap">
-  <table>
-    <thead><tr><th>实测指标</th><th style="width:20%">数值</th><th>说明</th></tr></thead>
-    <tbody>
-      <tr><td>后端 Python 文件</td><td class="num">1,207 个</td><td>含测试</td></tr>
-      <tr><td>后端总行数</td><td class="num">402,152 行</td><td>其中非测试代码 <b class="num">150,958 行</b></td></tr>
-      <tr><td>前端 TS/TSX</td><td class="num">419 个 / 60,481 行</td><td>Next.js 16 / React 19 / Tailwind v4</td></tr>
-      <tr><td>Gateway REST Router</td><td class="num">24 个</td><td>agents / threads / runs / skills / mcp / channels / scheduled_tasks …</td></tr>
-      <tr><td>IM 渠道适配</td><td class="num">12 个</td><td>飞书 / Slack / Telegram / Discord / 钉钉 / 企微 / 微信 / GitHub …</td></tr>
-      <tr><td>前端业务域</td><td class="num">30+ 个</td><td><code>frontend/src/core/*</code></td></tr>
-      <tr><td>部署形态</td><td class="num">Helm + 4 套 compose</td><td>nginx / gateway / frontend / provisioner 四服务</td></tr>
-    </tbody>
-  </table>
-  </div>
+  <h2>方案一 · 数据 Agent 平台完整架构</h2>
+  <p class="lede">这是数据 Agent 平台的目标形态——一个面向数据部门的通用智能体底座：单个主智能体编排工具、子智能体、持久记忆与沙箱执行，所有能力围绕数据资产展开。它不是一次性交付物，而是 MVP 之后逐步长成的终局。第 3 节的 MVP 是它的第一个可交付切片。</p>
 
   <h3>分层拓扑</h3>
   <div class="stack">
     <div class="layer">
-      <div class="lname"><span>接入层</span><em>nginx :2026 是唯一公开入口，Gateway :8001 永不暴露</em></div>
+      <div class="lname"><span>接入层</span><em>统一网关是唯一公开入口，内部服务端口不对外暴露</em></div>
       <div class="boxes">
-        <span class="box"><b>Nginx</b><small>/api/langgraph/* · /api/* · /*</small></span>
-        <span class="box"><b>Next.js 前端</b><small>:3000 · LangGraph SDK</small></span>
-        <span class="box"><b>IM 渠道</b><small>12 个平台桥接同一 agent</small></span>
-        <span class="box"><b>LangGraph SDK 客户端</b><small>协议兼容层</small></span>
+        <span class="box"><b>API 网关</b><small>路由 · 鉴权 · 限流</small></span>
+        <span class="box"><b>Web 工作台</b><small>会话 · 产物面板 · 资产浏览</small></span>
+        <span class="box"><b>IM 渠道桥接</b><small>飞书 / 企微 / 钉钉，复用同一智能体</small></span>
+        <span class="box"><b>开放 API</b><small>供其他内部系统调用</small></span>
       </div>
     </div>
     <div class="flowdown">↓</div>
     <div class="layer">
-      <div class="lname"><span>App 层 · <code>backend/app/</code></span><em>可 import harness，反向禁止（CI 强制）</em></div>
+      <div class="lname"><span>应用层 · <code>app/</code></span><em>可依赖框架层，反向依赖被 CI 禁止</em></div>
       <div class="boxes">
-        <span class="box"><b>Gateway (FastAPI)</b><small>24 routers · SSE</small></span>
-        <span class="box"><b>Auth</b><small>本地密码 + OIDC + session cookie</small></span>
-        <span class="box"><b>Channels</b><small>message_bus · run_policy · dedupe</small></span>
-        <span class="box"><b>Scheduler</b><small>定时任务复用同一 run 生命周期</small></span>
-        <span class="box"><b>MCP Tasks</b><small>长跑任务租约表</small></span>
+        <span class="box"><b>Gateway 服务</b><small>REST + SSE</small></span>
+        <span class="box"><b>认证与会话</b><small>密码 / SSO / 会话票据</small></span>
+        <span class="box"><b>渠道服务</b><small>消息总线 · 去重 · 运行策略</small></span>
+        <span class="box"><b>调度服务</b><small>定时任务复用同一运行生命周期</small></span>
+        <span class="box"><b>审计服务</b><small>SQL 与工具调用全量留痕</small></span>
       </div>
     </div>
     <div class="flowdown">↓</div>
     <div class="layer">
-      <div class="lname"><span>Harness 层 · <code>backend/packages/harness/deerflow/</code></span><em>可独立发布的 Agent 框架</em></div>
+      <div class="lname"><span>框架层 · <code>harness/</code></span><em>与业务解耦，可独立发布与升级</em></div>
       <div class="boxes">
-        <span class="box core"><b>Runtime</b><small>RunManager · run_agent · StreamBridge</small></span>
-        <span class="box core"><b>Agents</b><small>make_lead_agent + 8 段 middleware chain</small></span>
-        <span class="box core"><b>Tools</b><small>builtins + configured + MCP 三源合并</small></span>
-        <span class="box"><b>Subagents</b><small>SubagentExecutor · 命名空间 SSE</small></span>
-        <span class="box"><b>Sandbox</b><small>Local / AioSandbox Provider</small></span>
-        <span class="box"><b>Skills</b><small>public / custom / integrations</small></span>
-        <span class="box"><b>MCP</b><small>每 server 独立进程</small></span>
-        <span class="box"><b>Memory</b><small>跨会话长期记忆</small></span>
-        <span class="box"><b>Authz</b><small>RBAC · principal · tool_filter</small></span>
-        <span class="box"><b>Models</b><small>多 provider 抽象</small></span>
-        <span class="box"><b>Persistence</b><small>Postgres · migrations</small></span>
-        <span class="box"><b>Tracing</b><small>Langfuse · monocle</small></span>
-        <span class="box"><b>Extensions</b><small>extension-api 插件契约</small></span>
-        <span class="box"><b>Guardrails</b><small>·</small></span>
-        <span class="box"><b>Reflection</b><small>·</small></span>
-        <span class="box"><b>TUI</b><small>·</small></span>
+        <span class="box core"><b>运行时</b><small>RunManager · 流式桥接 · 状态对象</small></span>
+        <span class="box core"><b>智能体装配</b><small>主智能体 + 可插拔中间件链</small></span>
+        <span class="box core"><b>工具体系</b><small>内置 + 配置化 + 外部工具协议</small></span>
+        <span class="box core"><b>数据能力</b><small>方言抽象 · 元数据 · 检索</small></span>
+        <span class="box"><b>子智能体</b><small>独立上下文 · 命名空间流式</small></span>
+        <span class="box"><b>沙箱</b><small>本地 / 容器双 Provider</small></span>
+        <span class="box"><b>技能包</b><small>提示词 + 资源打包分发</small></span>
+        <span class="box"><b>记忆</b><small>跨会话长期记忆</small></span>
+        <span class="box"><b>权限</b><small>RBAC · 主体 · 工具级过滤</small></span>
+        <span class="box"><b>模型接入</b><small>多 provider 抽象</small></span>
+        <span class="box"><b>持久化</b><small>分域仓储 · 迁移</small></span>
+        <span class="box"><b>可观测</b><small>链路追踪 · 用量统计</small></span>
+        <span class="box"><b>插件契约</b><small>独立契约包</small></span>
+        <span class="box"><b>护栏</b><small>输入输出校验</small></span>
       </div>
     </div>
     <div class="flowdown">↓</div>
     <div class="layer">
       <div class="lname"><span>基础设施</span></div>
       <div class="boxes">
-        <span class="box"><b>LangGraph</b><small>状态图 · checkpoint · 流式</small></span>
-        <span class="box"><b>PostgreSQL</b><small>线程 / 运行 / 用户 / 任务</small></span>
-        <span class="box"><b>Provisioner</b><small>:8002 · K8s 沙箱供给</small></span>
-        <span class="box"><b>对象存储 / 线程目录</b><small>.deer-flow/threads/{id}</small></span>
+        <span class="box"><b>状态图引擎</b><small>LangGraph · checkpoint · 流式</small></span>
+        <span class="box"><b>PostgreSQL</b><small>会话 / 运行 / 资产 / 审计</small></span>
+        <span class="box"><b>沙箱供给服务</b><small>K8s 按需分配执行容器</small></span>
+        <span class="box"><b>对象存储</b><small>产物与导出文件</small></span>
+        <span class="box"><b>数据源集群</b><small>PG · MySQL · StarRocks · Hive</small></span>
       </div>
     </div>
   </div>
 
-  <h4>值得照抄的架构决策</h4>
+  <h3>七条架构原则</h3>
+  <p>这七条是平台从第一天就要立住的地基。它们不增加 MVP 的工作量，却决定了三个月后这套代码还能不能演进。</p>
   <ul>
-    <li><b>Harness / App 两层单向依赖</b>，用 CI 测试强制（<code>test_harness_boundary.py</code>）。这是让「框架」不被业务代码腐蚀的唯一有效手段。</li>
-    <li><b>ThreadState 作为唯一状态载体</b>，扩展自 LangGraph 的 <code>AgentState</code>，承载 sandbox / artifacts / todos / title 等。所有中间件读写同一个对象。</li>
-    <li><b>Middleware chain</b>：把「模型调用前要做的事」拆成可插拔的有序段，而不是塞进一个巨型函数。</li>
-    <li><b>工具三源合并</b>：内置、配置化、MCP 三类工具由 <code>get_available_tools()</code> 统一装配。</li>
-    <li><b>SSE 双通道</b>：既发 per-chunk 增量，也发有界的 <code>values</code> 快照——增量丢了还能靠快照对齐。</li>
-    <li><b>配置分权</b>：会导致代码 import 的 <code>plugins:</code> 只能写在运维掌管的 <code>config.yaml</code>，绝不放进 API 可写的 <code>extensions_config.json</code>。</li>
-    <li><b>回环默认绑定</b>：只有 nginx 对外，且 CI 校验所有 compose 端口都带显式 bind 地址。</li>
+    <li><b>框架层与应用层单向依赖</b>，并用 CI 测试强制。这是让「框架」不被业务代码腐蚀的唯一有效手段——靠自觉守不住。</li>
+    <li><b>单一状态载体</b>：一次会话的全部状态收敛到一个状态对象，所有中间件读写同一份，禁止各自藏私有状态。</li>
+    <li><b>中间件链</b>：把「模型调用前要做的事」拆成有序可插拔的段，而不是塞进一个不断膨胀的函数。</li>
+    <li><b>工具多源装配</b>：内置工具、配置化工具、外部协议工具由统一注册表装配，新增工具不改引擎。</li>
+    <li><b>流式双通道</b>：既发增量，也周期性发有界快照。增量丢包时前端靠快照对齐，不必重连整轮。</li>
+    <li><b>配置分权</b>：会导致代码加载的配置项只能由运维掌管，绝不放进接口可写的配置文件。</li>
+    <li><b>入口最小暴露</b>：只有网关对外，内部服务端口一律不发布，并由 CI 校验部署清单。</li>
   </ul>
 
-  <div class="note danger">
-    <span class="lbl">为什么不 fork</span>
-    <p>15 万行非测试后端代码，团队栈熟悉度「一般」，LangGraph 无人接触过，有效人力约 2.5 人月。fork 后要先读懂再删——而它的 authz / middleware / persistence 互相咬合，删一块塌一片。更关键的是：<b>换 Vue 已经废掉它 6 万行前端</b>，保留后端的唯一理由只剩「以后 merge 上游」，而你们必然要改核心（加 SQL 执行器、数据工具），这个理由随即失效。<b>真正值得复用的是上面这七条架构决策，读文档和关键文件就能拿到，不需要背 15 万行代码。</b></p>
+  <div class="note">
+    <span class="lbl">关于「完整架构」的诚实预期</span>
+    <p>上图是终局，不是一个月能建成的东西。同类平台的完整形态通常意味着<b>十万行量级的后端代码与多年演进</b>。这份蓝图真正的价值在于：MVP 的骨架与它同构，因此后续每一个子系统都是<b>在既有分层里填空</b>，而不是推倒重来。第 9 节给出了从 MVP 走到这里的五个增量。</p>
   </div>
 </section>
 
 <section id="mvp">
   <span class="h2num">03</span>
   <h2>方案二 · MVP 精简架构</h2>
-  <p class="lede">同构于 DeerFlow 2.0 的骨架，但只填最小可用的肉。目标：4 人 20 工作日交付，且每个被砍掉的子系统未来都是「往里填」而不是「推倒重来」。</p>
+  <p class="lede">同构于数据 Agent 平台的完整骨架，但只填最小可用的肉。目标：4 人 20 工作日交付，且每个被砍掉的子系统未来都是「往里填」而不是「推倒重来」。</p>
 
   <div class="stack">
     <div class="layer">
@@ -327,14 +310,14 @@ pre .k{color:var(--accent); font-weight:600}
     </div>
     <div class="flowdown">↓</div>
     <div class="layer">
-      <div class="lname"><span>App 层 · <code>backend/app/</code></span><em>同样禁止被 harness 反向 import，同样用 CI 测试锁住</em></div>
+      <div class="lname"><span>App 层 · <code>backend/app/</code></span><em>禁止被 harness 反向 import，用 CI 测试锁住</em></div>
       <div class="boxes">
         <span class="box core"><b>Gateway (FastAPI)</b><small>7 routers</small></span>
         <span class="box core"><b>Auth</b><small>账号密码 + session cookie</small></span>
         <span class="box core"><b>Audit</b><small>全量 SQL 审计</small></span>
         <span class="box cut"><b>Channels</b></span>
         <span class="box cut"><b>Scheduler</b></span>
-        <span class="box cut"><b>MCP Tasks</b></span>
+        <span class="box cut"><b>长跑任务</b></span>
       </div>
     </div>
     <div class="flowdown">↓</div>
@@ -351,9 +334,9 @@ pre .k{color:var(--accent); font-weight:600}
         <span class="box core"><b>Config</b><small>config.yaml 单一来源</small></span>
         <span class="box cut"><b>Subagents</b><small>留接口不实现</small></span>
         <span class="box cut"><b>Sandbox</b><small>留 ToolExecutor 抽象</small></span>
-        <span class="box cut"><b>Skills / MCP</b></span>
+        <span class="box cut"><b>技能包 / 外部工具</b></span>
         <span class="box cut"><b>Memory</b><small>只落 qa_sample</small></span>
-        <span class="box cut"><b>Authz RBAC</b><small>留 role 字段</small></span>
+        <span class="box cut"><b>RBAC 权限</b><small>留 role 字段</small></span>
         <span class="box cut"><b>Tracing</b><small>结构化日志代替</small></span>
       </div>
     </div>
@@ -372,7 +355,7 @@ pre .k{color:var(--accent); font-weight:600}
   </div>
 
   <h3>目录结构</h3>
-<pre class="tree"><span class="c"># 与 DeerFlow 2.0 同构：harness 可独立发布，app 永不被 harness import</span>
+<pre class="tree"><span class="c"># 与完整架构同构：harness 可独立发布，app 永不被 harness import</span>
 dataagent/
 ├─ backend/
 │  ├─ packages/harness/dataagent/     <span class="c"># 框架层 · import 前缀 dataagent.*</span>
@@ -430,11 +413,11 @@ dataagent/
 <section id="contract">
   <span class="h2num">04</span>
   <h2>核心数据模型与 SSE 协议</h2>
-  <p class="lede">这两样东西必须在 D4 之前冻结。它们是前后端并行开发的唯一前提，也是未来「换回官方前端」这条退路能否保留的关键。</p>
+  <p class="lede">这两样东西必须在 D4 之前冻结。它们是前后端并行开发的唯一前提，也是平台后续所有客户端（Web、IM 渠道、开放 API）共用的统一契约。</p>
 
   <h3>数据模型</h3>
-  <p>前五张表的语义<b>刻意对齐 DeerFlow</b>；后五张是本项目独有的数据侧资产。</p>
-<pre class="code"><span class="c">-- 对齐 DeerFlow 语义的五张核心表 --------------------------------</span>
+  <p>前六张是平台通用的会话与运行模型，与业务无关；后四张是数据侧资产。</p>
+<pre class="code"><span class="c">-- 平台通用：会话与运行模型 --------------------------------------</span>
 <span class="k">users</span>        (id, username UNIQUE, password_hash, display_name, role, is_active, created_at)
 <span class="k">threads</span>      (id, user_id, title, created_at, updated_at, archived_at)
 <span class="k">messages</span>     (id, thread_id, role, content, created_at, seq)
@@ -465,11 +448,11 @@ dataagent/
 
   <div class="note">
     <span class="lbl">为什么 sql_audit 单独成表</span>
-    <p>它不是 <code>tool_calls</code> 的冗余。<code>tool_calls</code> 服务于会话回放，字段随工具协议演化；<code>sql_audit</code> 服务于安全合规，字段必须稳定、必须能被 DBA 和安全团队直接查询、必须记录<b>被拒绝的 SQL</b>（那些根本没进 tool_calls）。这张表是你面对合规质疑时唯一的挡箭牌，成本极低。</p>
+    <p>它不是 <code>tool_calls</code> 的冗余。<code>tool_calls</code> 服务于会话回放，字段随工具协议演化；<code>sql_audit</code> 服务于安全合规，字段必须稳定、必须能被 DBA 和安全团队直接查询、必须记录<b>被拒绝的 SQL</b>（那些根本没进 tool_calls）。这张表是团队面对合规质疑时唯一的挡箭牌，成本极低。</p>
   </div>
 
   <h3>SSE 事件协议</h3>
-  <p>单一 <code>GET /api/threads/{tid}/runs/{rid}/stream</code>，<code>text/event-stream</code>。事件名与 DeerFlow 的语义对齐，字段收敛到最小集。</p>
+  <p>单一 <code>GET /api/threads/{tid}/runs/{rid}/stream</code>，<code>text/event-stream</code>。事件名与平台五对象语义一一对应，字段收敛到最小集。</p>
 <pre class="code"><span class="k">run.started</span>        { run_id, thread_id, model }
 <span class="k">message.delta</span>      { message_id, delta }              <span class="c"># 助手文本增量</span>
 <span class="k">tool_call.started</span>  { tool_call_id, tool_name, args }
@@ -482,7 +465,7 @@ dataagent/
 <span class="k">ping</span>               { ts }                             <span class="c"># 15s 心跳，防中间层断流</span>
 </pre>
   <ul>
-    <li><b>快照 + 增量双通道</b>照抄 DeerFlow：增量丢包时前端可用 <code>state.snapshot</code> 对齐，不必重连整轮。</li>
+    <li><b>快照 + 增量双通道</b>：增量丢包时前端可用 <code>state.snapshot</code> 对齐，不必重连整轮。</li>
     <li><code>result_ref</code> 而非内联结果：大结果集走 <code>GET /api/artifacts/{id}</code> 分页取，避免把上万行塞进 SSE。</li>
     <li>断线重连带 <code>Last-Event-ID</code>，服务端从 <code>messages.seq</code> 续发。</li>
   </ul>
@@ -496,50 +479,50 @@ dataagent/
 <section id="compare">
   <span class="h2num">05</span>
   <h2>功能对比表</h2>
-  <p class="lede">DeerFlow 2.0 与本 MVP 的逐项对照。「演进路径」一列说明未来补齐时是<b>填空</b>还是<b>重写</b>——这是判断 MVP 架构是否合格的真正标准。</p>
+  <p class="lede">完整目标架构与本次 MVP 的逐项对照。「演进路径」一列说明未来补齐时是<b>填空</b>还是<b>重写</b>——这是判断 MVP 架构是否合格的真正标准。</p>
 
   <div class="tablewrap">
   <table>
-    <thead><tr><th style="width:15%">能力域</th><th style="width:26%">DeerFlow 2.0</th><th style="width:11%">MVP</th><th>MVP 做法与演进路径</th></tr></thead>
+    <thead><tr><th style="width:15%">能力域</th><th style="width:26%">完整版（目标形态）</th><th style="width:11%">MVP</th><th>MVP 做法与演进路径</th></tr></thead>
     <tbody>
-      <tr><td>Agent 编排</td><td>Lead agent + 8 段 middleware chain</td><td><span class="chip part">简化</span></td><td>LangGraph <code>create_agent</code> 单 agent ReAct。中间件收敛到 2 段（上下文装配、标题生成）。<b>填空</b></td></tr>
-      <tr><td>子智能体</td><td>SubagentExecutor + 命名空间 SSE + 生命周期持久化</td><td><span class="chip no">无</span></td><td>预留 <code>AgentSpec</code> 与注册表，只注册一个。<b>填空</b></td></tr>
-      <tr><td>工具体系</td><td>内置 + 配置化 + MCP 三源合并</td><td><span class="chip part">简化</span></td><td>Tool 基类 + 注册表，6 个内置工具，配置可开关。<b>填空</b></td></tr>
-      <tr><td>Skills 系统</td><td>public / custom / 集成包，懒加载 + 质量审查工具</td><td><span class="chip no">无</span></td><td>完整版补。工具注册表是其共同地基。<b>填空</b></td></tr>
-      <tr><td>MCP</td><td>每 server 独立进程 + 长跑任务租约表</td><td><span class="chip no">无</span></td><td>MVP 无 server 可接，做了是死代码。<b>填空</b></td></tr>
-      <tr><td>代码沙箱</td><td>Local / AioSandbox 双 Provider + K8s Provisioner</td><td><span class="chip no">无</span></td><td>零沙箱。预留 <code>ToolExecutor</code> 抽象。<b>填空</b>（但需安全审批）</td></tr>
+      <tr><td>Agent 编排</td><td>主智能体 + 多段可插拔中间件链</td><td><span class="chip part">简化</span></td><td>LangGraph <code>create_agent</code> 单 agent ReAct。中间件收敛到 2 段（上下文装配、标题生成）。<b>填空</b></td></tr>
+      <tr><td>子智能体</td><td>子智能体执行器 + 命名空间流式 + 生命周期持久化</td><td><span class="chip no">无</span></td><td>预留 <code>AgentSpec</code> 与注册表，只注册一个。<b>填空</b></td></tr>
+      <tr><td>工具体系</td><td>内置 + 配置化 + 外部协议三源合并</td><td><span class="chip part">简化</span></td><td>Tool 基类 + 注册表，6 个内置工具，配置可开关。<b>填空</b></td></tr>
+      <tr><td>技能包</td><td>提示词 + 资源打包分发，懒加载 + 质量审查</td><td><span class="chip no">无</span></td><td>完整版补。工具注册表是其共同地基。<b>填空</b></td></tr>
+      <tr><td>外部工具协议</td><td>每个外部工具服务独立进程 + 长跑任务租约表</td><td><span class="chip no">无</span></td><td>MVP 阶段无外部工具服务可接，做了就是死代码。<b>填空</b></td></tr>
+      <tr><td>代码沙箱</td><td>本地 / 容器双 Provider + K8s 供给服务</td><td><span class="chip no">无</span></td><td>零沙箱。预留 <code>ToolExecutor</code> 抽象。<b>填空</b>（但需安全审批）</td></tr>
       <tr><td>模型接入</td><td>多 provider、多模型、视觉模型</td><td><span class="chip part">简化</span></td><td>OpenAI 兼容单 provider，配置可切模型。<b>填空</b></td></tr>
-      <tr><td>上下文压缩</td><td>SummarizationMiddleware</td><td><span class="chip no">无</span></td><td>靠工具粒度控制上下文；超长直接截断并提示。<b>填空</b></td></tr>
+      <tr><td>上下文压缩</td><td>摘要中间件</td><td><span class="chip no">无</span></td><td>靠工具粒度控制上下文；超长直接截断并提示。<b>填空</b></td></tr>
       <tr><td>记忆</td><td>独立 memory 子系统，跨会话</td><td><span class="chip no">无</span></td><td>仅会话内上下文；落 <code>qa_samples</code> 只写不读。<b>填空</b></td></tr>
-      <tr><td>持久化</td><td>Postgres + 分域 repository + migrations</td><td><span class="chip yes">有</span></td><td>同构，表更少。<b>填空</b></td></tr>
-      <tr><td>认证</td><td>本地密码 + OIDC + session cookie + 凭证文件</td><td><span class="chip part">简化</span></td><td>账号密码 + session cookie，Provider 接口预留。<b>填空</b></td></tr>
-      <tr><td>授权</td><td>RBAC + principal + 工具级过滤 + sandbox:execute</td><td><span class="chip part">占位</span></td><td>全平台统一权限，<code>role</code> / <code>allowed_roles</code> 字段先建。<b>填空</b></td></tr>
-      <tr><td>审计</td><td>分散在 tracing / persistence</td><td><span class="chip new">强化</span></td><td><b>MVP 更强</b>：独立 <code>sql_audit</code> 表，含被拒绝的 SQL</td></tr>
-      <tr><td>前端</td><td>Next.js 16 / React 19 / LangGraph SDK / 60k 行</td><td><span class="chip part">自研</span></td><td>Vue 3 + Vite + Pinia + ECharts。<b>重写</b>（已知代价）</td></tr>
-      <tr><td>流式</td><td>增量 + values 快照 + 子图命名空间</td><td><span class="chip part">简化</span></td><td>增量 + 有界快照，无子图。<b>填空</b></td></tr>
-      <tr><td>产物</td><td>artifacts + 线程目录 + 上传</td><td><span class="chip part">简化</span></td><td>结果表 / 图表 spec / CSV 导出，存 S3。<b>填空</b></td></tr>
-      <tr><td>IM 渠道</td><td>12 个平台 + message_bus + 去重 + 运行策略</td><td><span class="chip no">无</span></td><td>完整版补；Gateway 的 run 生命周期是其接入点。<b>填空</b></td></tr>
+      <tr><td>持久化</td><td>Postgres + 分域仓储 + 迁移</td><td><span class="chip yes">有</span></td><td>同构，表更少。<b>填空</b></td></tr>
+      <tr><td>认证</td><td>密码 + 企业 SSO + 会话票据</td><td><span class="chip part">简化</span></td><td>账号密码 + session cookie，Provider 接口预留。<b>填空</b></td></tr>
+      <tr><td>授权</td><td>RBAC + 主体模型 + 工具级过滤 + 执行权限</td><td><span class="chip part">占位</span></td><td>全平台统一权限，<code>role</code> / <code>allowed_roles</code> 字段先建。<b>填空</b></td></tr>
+      <tr><td>审计</td><td>全量工具调用 + SQL 留痕 + 合规导出</td><td><span class="chip yes">有</span></td><td>独立 <code>sql_audit</code> 表，含被拒绝的 SQL。<b>MVP 即达标</b></td></tr>
+      <tr><td>前端</td><td>多标签工作区 + 产物面板 + 资产浏览 + 智能体管理</td><td><span class="chip part">简化</span></td><td>Vue 3 + Vite + Pinia + ECharts，仅会话与结果视图。<b>填空</b></td></tr>
+      <tr><td>流式</td><td>增量 + 有界快照 + 子图命名空间</td><td><span class="chip part">简化</span></td><td>增量 + 有界快照，无子图。<b>填空</b></td></tr>
+      <tr><td>产物</td><td>产物库 + 会话工作目录 + 文件上传</td><td><span class="chip part">简化</span></td><td>结果表 / 图表 spec / CSV 导出，存 S3。<b>填空</b></td></tr>
+      <tr><td>IM 渠道</td><td>多 IM 平台 + 消息总线 + 去重 + 运行策略</td><td><span class="chip no">无</span></td><td>完整版补；Gateway 的 run 生命周期是其接入点。<b>填空</b></td></tr>
       <tr><td>定时任务</td><td>调度器复用同一 run 生命周期</td><td><span class="chip no">无</span></td><td>同上。<b>填空</b></td></tr>
-      <tr><td>可观测</td><td>Langfuse / monocle tracing</td><td><span class="chip part">简化</span></td><td>结构化 JSON 日志 + run 表统计。<b>填空</b></td></tr>
-      <tr><td>插件扩展</td><td>extension-api 独立契约包</td><td><span class="chip no">无</span></td><td>完整版补。<b>填空</b></td></tr>
-      <tr><td>部署</td><td>Helm + 4 套 compose + nginx + provisioner 四服务</td><td><span class="chip part">简化</span></td><td>单 Deployment replicas=1 + Ingress。<b>填空</b></td></tr>
-      <tr class="hl"><td>数据源接入</td><td><span class="chip no">无</span>（通用框架，不含）</td><td><span class="chip new">新增</span></td><td><b>MVP 独有</b>：PG + MySQL 只读接入，<code>SqlDialect</code> 抽象</td></tr>
-      <tr><td>元数据 / 表卡片</td><td><span class="chip no">无</span></td><td><span class="chip new">新增</span></td><td><b>MVP 独有</b>：抽取器 + LLM 半自动生成 + 人工校对</td></tr>
-      <tr><td>Text-to-SQL</td><td><span class="chip no">无</span></td><td><span class="chip new">新增</span></td><td><b>MVP 独有</b>：检索 → 生成 → 校验 → 执行 → 解读</td></tr>
-      <tr><td>SQL 安全</td><td><span class="chip no">无</span></td><td><span class="chip new">新增</span></td><td><b>MVP 独有</b>：AST 级 SELECT-only、白名单、LIMIT、超时、行数上限</td></tr>
-      <tr><td>图表</td><td><span class="chip no">无</span></td><td><span class="chip new">新增</span></td><td><b>MVP 独有</b>：LLM 出 spec，前端 ECharts 渲染</td></tr>
-      <tr><td>效果评测</td><td><span class="chip part">benchmark 脚本</span></td><td><span class="chip new">强化</span></td><td><b>MVP 更强</b>：黄金测试集 + 每日自动回归 + 准确率报表</td></tr>
+      <tr><td>可观测</td><td>链路追踪 + 用量与成本统计</td><td><span class="chip part">简化</span></td><td>结构化 JSON 日志 + run 表统计。<b>填空</b></td></tr>
+      <tr><td>插件扩展</td><td>独立插件契约包</td><td><span class="chip no">无</span></td><td>完整版补。<b>填空</b></td></tr>
+      <tr><td>部署</td><td>Helm 多服务部署 + 网关 + 沙箱供给</td><td><span class="chip part">简化</span></td><td>单 Deployment replicas=1 + Ingress。<b>填空</b></td></tr>
+      <tr class="hl"><td>数据源接入</td><td>多引擎（PG / MySQL / StarRocks / Hive）+ 统一路由</td><td><span class="chip part">简化</span></td><td>PG + MySQL 只读接入，<code>SqlDialect</code> 抽象已就位。<b>填空</b></td></tr>
+      <tr><td>元数据 / 表卡片</td><td>自动同步 + 血缘 + 变更订阅 + 资产评分</td><td><span class="chip part">简化</span></td><td>抽取器 + LLM 半自动生成 + 人工校对，无血缘。<b>填空</b></td></tr>
+      <tr><td>Text-to-SQL</td><td>样本飞轮 + 多轮自纠错 + 口径仲裁</td><td><span class="chip part">简化</span></td><td>检索 → 生成 → 校验 → 执行 → 解读，单轮。<b>填空</b></td></tr>
+      <tr><td>SQL 安全</td><td>行级权限 + 字段脱敏 + 敏感查询审批流</td><td><span class="chip part">简化</span></td><td>AST 级 SELECT-only、白名单、LIMIT、超时、行数上限。<b>填空</b></td></tr>
+      <tr><td>可视化</td><td>图表推荐 + 看板沉淀 + 定时推送</td><td><span class="chip part">简化</span></td><td>LLM 出 chart spec，前端 ECharts 渲染。<b>填空</b></td></tr>
+      <tr><td>效果评测</td><td>在线评测 + 用户反馈闭环 + A/B 实验</td><td><span class="chip part">简化</span></td><td>黄金测试集 + 每日自动回归 + 准确率报表。<b>填空</b></td></tr>
     </tbody>
   </table>
   </div>
 
-  <p>统计口径：MVP 相对 DeerFlow 2.0，<b>完全砍掉 9 个子系统</b>、<b>简化 10 个</b>、<b>保持 1 个</b>，同时<b>新增 6 个数据侧能力</b>。演进路径一列里只有「前端」是重写，其余全是填空——这就是选择「架构同构」而不是「fork」换来的东西。</p>
+  <p>统计口径：MVP 相对完整形态，<b>完全砍掉 8 个子系统</b>、<b>简化 15 个</b>、<b>保持 2 个</b>。<b>演进路径一列里没有一项是「重写」，全部是「填空」</b>——这是这份 MVP 架构唯一需要被验证的指标，也是它区别于「先做个能跑的demo，回头再重构」的地方。</p>
 </section>
 
 <section id="plan">
   <span class="h2num">06</span>
   <h2>20 个工作日任务规划</h2>
-  <p class="lede">4 人基线：你（架构，按 3 天/周计＝12 个编码日）、后端 A（数据侧）、后端 B / 浮动（检索·评测·平台）、前端 1 人。第 5 人到位后优先接管「平台与部署」整条泳道。</p>
+  <p class="lede">4 人基线：<b>后端 C</b>（架构负责人，按 3 天/周计＝12 个编码日）、后端 A（数据侧）、后端 B / 浮动（检索·评测·平台）、前端 1 人。第 5 人到位后优先接管「平台与部署」整条泳道。</p>
 
   <div class="ms">
     <div class="msc"><span class="tag">M1 · D4 · 08-28</span><b>契约冻结</b><p>DDL + REST + SSE 协议 + mock 流端点定稿，前端解除阻塞独立开发</p></div>
@@ -553,7 +536,7 @@ dataagent/
   <div class="week">
     <header><h3>第 1 周 · 契约周</h3><span class="dates">D1–D4 · 08-25 → 08-28</span><span class="goal">目标：所有人在 D5 之后都能独立推进，不互相等</span></header>
     <div class="lanes">
-      <div class="lane you"><div class="who"><i></i>你 · 架构</div><ul>
+      <div class="lane you"><div class="who"><i></i>后端 C · 架构</div><ul>
         <li><span class="d">D1–D2</span> 仓库骨架、harness/app 两层边界 + <code>test_harness_boundary</code>、<code>config.yaml</code> 加载器、CI（lint/type/test）</li>
         <li><span class="d">D2–D3</span> <b>冻结数据模型 DDL + REST 契约 + SSE 事件协议</b>，交付 <code>/mock/stream</code></li>
         <li><span class="d">D4</span> MVP 范围文档定稿，<b>找验收方签字</b>（含「零沙箱」一条）</li>
@@ -578,7 +561,7 @@ dataagent/
   <div class="week">
     <header><h3>第 2 周 · 主线打通</h3><span class="dates">D5–D9 · 08-31 → 09-04</span><span class="goal">目标：D9 端到端跑通一次真实问答</span></header>
     <div class="lanes">
-      <div class="lane you"><div class="who"><i></i>你 · 架构</div><ul>
+      <div class="lane you"><div class="who"><i></i>后端 C · 架构</div><ul>
         <li><span class="d">D5–D7</span> <b>编排引擎</b>：<code>ThreadState</code>、LangGraph agent 循环、工具注册表、<code>StreamBridge</code></li>
         <li><span class="d">D8</span> <code>ModelProvider</code> 抽象 + qwen-max 接入 + token 计量</li>
         <li><span class="d">D9</span> run 生命周期落库、启动时 interrupted 回收、<b>M2 联调</b></li>
@@ -603,7 +586,7 @@ dataagent/
   <div class="week">
     <header><h3>第 3 周 · 准确率攻坚</h3><span class="dates">D10–D14 · 09-07 → 09-11</span><span class="goal">目标：D12 主线可演示，之后全力提准确率</span></header>
     <div class="lanes">
-      <div class="lane you"><div class="who"><i></i>你 · 架构</div><ul>
+      <div class="lane you"><div class="who"><i></i>后端 C · 架构</div><ul>
         <li><span class="d">D10–D11</span> <code>SqlDialect</code> 抽象 + <code>run_sql</code> / <code>make_chart</code> 接入编排</li>
         <li><span class="d">D12</span> 端到端串联，<b>M3</b></li>
         <li><span class="d">D13–D14</span> <b>主导 prompt 工程</b>：系统提示词、工具描述、口径消歧、失败重试策略</li>
@@ -626,7 +609,7 @@ dataagent/
   <div class="week">
     <header><h3>第 4 周 · 收敛与演示</h3><span class="dates">D15–D20 · 09-14 → 09-21</span><span class="goal">目标：D16 功能冻结，D20 稳定演示</span></header>
     <div class="lanes">
-      <div class="lane you"><div class="who"><i></i>你 · 架构</div><ul>
+      <div class="lane you"><div class="who"><i></i>后端 C · 架构</div><ul>
         <li><span class="d">D15</span> 准确率评估会，<b>决定是否收窄白名单换准确率</b>（该收就收）</li>
         <li><span class="d">D16</span> <b>宣布功能冻结</b></li>
         <li><span class="d">D17–D18</span> 只调 prompt 与修 bug；写完整版演进文档</li>
@@ -651,8 +634,8 @@ dataagent/
   <h3>关键路径</h3>
   <p>下面这条链上任何一环延期，演示日直接顺延——它上面没有缓冲：</p>
   <pre class="code"><span class="k">D3</span> SSE 协议冻结 ─→ <span class="k">D7</span> 编排引擎可跑 ─→ <span class="k">D9</span> 端到端贯通 ─→ <span class="k">D12</span> 主线可演示 ─→ <span class="k">D16</span> 功能冻结 ─→ <span class="k">D20</span> 演示
-     ↑ 你                ↑ 你               ↑ 全员            ↑ 你+A           ↑ 你</pre>
-  <p><b>五个环节里四个在你手上。</b>这是「核心你来写」的必然结果，也是这份排期最大的单点风险——见第 8 节 R4。</p>
+     ↑ 后端 C            ↑ 后端 C          ↑ 全员            ↑ C + A          ↑ 后端 C</pre>
+  <p><b>五个环节里四个落在后端 C 手上。</b>这是「框架与核心由架构负责人统一开发」的必然结果，也是这份排期最大的单点风险——见第 8 节 R4。</p>
 
   <div class="note warn">
     <span class="lbl">排期里刻意留出的三个缓冲</span>
@@ -662,28 +645,28 @@ dataagent/
 
 <section id="mine">
   <span class="h2num">07</span>
-  <h2>我的核心模块：拆解与交接点</h2>
-  <p class="lede">作为架构负责人，你要写的是「切开就会烂」的那几块——它们内部耦合紧、接口决定全局、返工成本最高。其余一切都应该交出去。</p>
+  <h2>架构负责人的核心模块：拆解与交接点</h2>
+  <p class="lede">后端 C 负责的是「切开就会烂」的那几块——内部耦合紧、接口决定全局、返工成本最高。其余一切都应该交出去。</p>
 
   <div class="tablewrap">
   <table>
-    <thead><tr><th style="width:22%">模块</th><th style="width:10%">工期</th><th style="width:34%">为什么必须你写</th><th>交接点</th></tr></thead>
+    <thead><tr><th style="width:22%">模块</th><th style="width:10%">工期</th><th style="width:34%">为什么必须由后端 C 统一写</th><th>交接点</th></tr></thead>
     <tbody>
       <tr><td>仓库骨架与两层边界</td><td class="num">D1–D2</td><td>harness/app 的单向依赖一旦第一周没立住，第三周就再也拆不开了</td><td>D2 起所有人在此骨架上提交</td></tr>
-      <tr><td><b>协议与数据模型</b></td><td class="num">D2–D3</td><td>它同时约束前端、后端、未来能否换回官方前端。改一次全员返工</td><td>D3 交付 mock 流后<b>完全交给前端</b>，你不再碰前端</td></tr>
+      <tr><td><b>协议与数据模型</b></td><td class="num">D2–D3</td><td>它同时约束前端、后端与后续所有客户端。改一次全员返工</td><td>D3 交付 mock 流后<b>完全交给前端</b>，架构负责人不再介入前端</td></tr>
       <tr><td><b>编排引擎</b></td><td class="num">D5–D7</td><td>ThreadState + agent 循环 + 工具注册表 + StreamBridge 四者高度耦合，两个人写必然打架</td><td>D7 后工具作者只需实现 Tool 基类，不碰引擎</td></tr>
       <tr><td>ModelProvider 与 run 生命周期</td><td class="num">D8–D9</td><td>紧贴编排引擎，且决定 token 计量与失败重试语义</td><td>D9 后配置化，换模型不改代码</td></tr>
       <tr><td>SqlDialect 抽象</td><td class="num">D10–D11</td><td>决定未来接 StarRocks 是填空还是重写，是「架构同构」承诺的兑现点</td><td>D11 后方言实现交给后端 A 扩展</td></tr>
-      <tr><td><b>Prompt 工程</b></td><td class="num">D13–D18</td><td>准确率的最终责任人；它需要同时懂编排、懂工具、懂业务口径——只有你三样都有</td><td>不交接，持续到冻结日</td></tr>
+      <tr><td><b>Prompt 工程</b></td><td class="num">D13–D18</td><td>准确率的最终责任人；需要同时懂编排、懂工具、懂业务口径，三者兼具的只有架构负责人</td><td>不交接，持续到冻结日</td></tr>
     </tbody>
   </table>
   </div>
 
   <div class="note danger">
-    <span class="lbl">你最该警惕的三件事</span>
-    <p><b>① 不要去写工具实现。</b><code>search_tables</code>、<code>run_sql</code> 这些看着最有意思，但它们是可并行、可替换的叶子节点，交给后端 A。你一旦下沉去写工具，编排引擎就会晚，全队跟着堵在 D7。</p>
-    <p><b>② 不要碰前端。</b>你「全栈都懂」是这个项目最危险的属性。协议交付后前端就是黑盒，你的时间不该花在那里。</p>
-    <p><b>③ 不要自己做部署。</b>K8s + CI/CD 明确指给后端 B 或第 5 人。这块延期只影响 D17–D18，不在关键路径上；而你延期，整个项目延期。</p>
+    <span class="lbl">后端 C 最该警惕的三件事</span>
+    <p><b>① 不要去写工具实现。</b><code>search_tables</code>、<code>run_sql</code> 这些看着最有意思，但它们是可并行、可替换的叶子节点，应交给后端 A。架构负责人一旦下沉去写工具，编排引擎就会晚，全队跟着堵在 D7。</p>
+    <p><b>② 不要碰前端。</b>「全栈都懂」在这个项目里是最危险的属性。协议交付后前端即为黑盒，架构负责人的时间不该花在那里。</p>
+    <p><b>③ 不要自己做部署。</b>K8s + CI/CD 明确指给后端 B 或第 5 人。这块延期只影响 D17–D18，不在关键路径上；而架构负责人延期，整个项目延期。</p>
   </div>
 </section>
 
@@ -712,9 +695,9 @@ dataagent/
         <td>假设 A2 的直接后果。降级方案：每周一次业务方试用会替代自动回归，但<b>必须同时告知验收方「本项目将没有客观准确率指标」</b>——这是必须上报的决策，不能默默承受</td>
       </tr>
       <tr>
-        <td class="num">R4</td><td><b>架构负责人单点</b></td><td><span class="chip part">高</span></td>
-        <td>关键路径 5 个环节中 4 个在你手上；你的周投入低于 3 天</td>
-        <td>若实际只有 2 天/周：把 D8–D9 的「run 生命周期落库」整块切给后端 A，编排引擎顺延至 D8，M2 推到 D10。<b>宁可砍功能，不要砍你在编排引擎上的时间</b></td>
+        <td class="num">R4</td><td><b>架构负责人（后端 C）单点</b></td><td><span class="chip part">高</span></td>
+        <td>关键路径 5 个环节中 4 个落在后端 C 手上；其周投入低于 3 天</td>
+        <td>若实际只有 2 天/周：把 D8–D9 的「run 生命周期落库」整块切给后端 A，编排引擎顺延至 D8，M2 推到 D10。<b>宁可砍功能，不要砍后端 C 在编排引擎上的时间</b></td>
       </tr>
       <tr>
         <td class="num">R5</td><td>前端流式状态管理</td><td><span class="chip part">中高</span></td>
@@ -749,7 +732,7 @@ dataagent/
 <section id="road">
   <span class="h2num">09</span>
   <h2>从 MVP 到完整版</h2>
-  <p class="lede">五个增量，每个都是在既有骨架上填空。顺序按「投入产出比」排，不按 DeerFlow 的模块顺序排。</p>
+  <p class="lede">五个增量，每个都是在既有骨架上填空。顺序按「投入产出比」排，不按架构图的模块顺序排。</p>
 
   <div class="tablewrap">
   <table>
@@ -759,20 +742,20 @@ dataagent/
       <tr><td class="num">I2</td><td>StarRocks 方言 + 多数据源路由</td><td class="num">1–2 周</td><td><code>SqlDialect</code> 抽象已在，是纯填空。覆盖用户面最广</td></tr>
       <tr><td class="num">I3</td><td>RBAC + 行级/表级数据权限 + 复用数仓自身权限</td><td class="num">3–4 周</td><td><code>role</code> / <code>allowed_roles</code> 字段已埋。用户规模一扩大，这条立刻从「可选」变成「阻塞」</td></tr>
       <tr><td class="num">I4</td><td>沙箱 + Python 分析 + 分析报告生成</td><td class="num">4–6 周</td><td>需要安全审批，周期不可控，所以放后面。<code>ToolExecutor</code> 抽象已在。这一步做完才能吃下 MVP 砍掉的场景 (b)</td></tr>
-      <tr><td class="num">I5</td><td>Skills / MCP / 子智能体 / IM 渠道 / 定时任务</td><td class="num">按需</td><td>DeerFlow 2.0 的通用能力。它们让平台更「像 DeerFlow」，但对数据部门的<b>直接业务价值最低</b>，所以排最后。有明确需求再做，不要为了对标而做</td></tr>
+      <tr><td class="num">I5</td><td>技能包 / 外部工具协议 / 子智能体 / IM 渠道 / 定时任务</td><td class="num">按需</td><td>平台的通用底座能力。它们让平台更「像一个通用智能体平台」，但对数据部门的<b>直接业务价值最低</b>，所以排最后。有明确需求再做，不要为了架构完整性而做</td></tr>
     </tbody>
   </table>
   </div>
 
   <div class="note">
     <span class="lbl">对「后续演进到完整版」这句承诺的诚实说明</span>
-    <p>DeerFlow 2.0 是 15 万行非测试后端代码的体量，那是几十人年的积累。<b>你们不会、也不需要「追平」它。</b>这份 MVP 的骨架与它同构，意味着 I1–I5 每一步都是在既有分层里填空、而不是推倒重来——这已经是一个月的预算能买到的最好结果。真正决定这个产品价值的，是 I1 那条准确率飞轮，而不是 I5 里那些看起来更像「超级智能体」的功能。</p>
+    <p>第 2 节那张完整架构图是终局，不是一个季度能建成的东西。<b>不需要、也不应该急于追平它。</b>MVP 的骨架与它同构，意味着 I1–I5 每一步都是在既有分层里填空、而不是推倒重来——这已经是一个月的预算能买到的最好结果。真正决定这个产品价值的，是 I1 那条准确率飞轮，而不是 I5 里那些看起来更像「通用智能体平台」的功能。</p>
   </div>
 </section>
 
 <footer style="border-top:1px solid var(--line); padding-top:22px; color:var(--muted); font-size:13px; font-family:'IBM Plex Mono',monospace">
-  <p style="margin:0">基准：bytedance/deer-flow @ main（末次提交 2026-08-24），规模数据为本地 clone 实测 · 排期基于 D1 = 2026-08-25，20 个工作日，未计临时假期<br>
-  待确认假设：A1 沙箱期待 · A2 测试集可得性 · A3 你的周投入 · A4 第 5 人到位时间</p>
+  <p style="margin:0">数据 Agent 平台 · 架构蓝图与 MVP 交付计划 · 内部文档<br>
+  排期基于 D1 = 2026-08-25，20 个工作日，未计临时假期 · 待确认假设：A1 沙箱期待 · A2 测试集可得性 · A3 架构负责人周投入 · A4 第 5 人到位时间</p>
 </footer>
 
 </div>
