@@ -1,0 +1,523 @@
+<title>架构泳道施工手册</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F6F7F8; --surface:#FFFFFF; --surface-2:#EEF1F2; --line:#DCE1E4; --line-strong:#C3CBD0;
+  --ink:#14181B; --ink-2:#3D474E; --muted:#68757E;
+  --accent:#0E6C68; --accent-soft:#DCEDEB; --accent-ink:#0A4B48;
+  --warm:#A5511C; --warm-soft:#F6E7DC;
+  --warn:#8A6100; --danger:#9E2B2B; --ok:#2C6E49;
+  --shadow:0 1px 2px rgba(20,24,27,.05),0 8px 24px -12px rgba(20,24,27,.18);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1113; --surface:#161A1D; --surface-2:#1D2226; --line:#2A3237; --line-strong:#3A444A;
+    --ink:#E7ECEE; --ink-2:#C0C9CE; --muted:#8D9AA2;
+    --accent:#54C6BE; --accent-soft:#12312F; --accent-ink:#8FDDD6;
+    --warm:#E1935C; --warm-soft:#33241A;
+    --warn:#D3A43C; --danger:#E07272; --ok:#6FBF8E;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1113; --surface:#161A1D; --surface-2:#1D2226; --line:#2A3237; --line-strong:#3A444A;
+  --ink:#E7ECEE; --ink-2:#C0C9CE; --muted:#8D9AA2;
+  --accent:#54C6BE; --accent-soft:#12312F; --accent-ink:#8FDDD6;
+  --warm:#E1935C; --warm-soft:#33241A;
+  --warn:#D3A43C; --danger:#E07272; --ok:#6FBF8E;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans","Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  font-size:16px; line-height:1.72; margin:0; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:0 24px 96px}
+.prose{max-width:74ch}
+
+/* ---- masthead ---- */
+.masthead{border-bottom:1px solid var(--line); background:var(--surface); margin-bottom:48px}
+.masthead .wrap{padding-top:56px; padding-bottom:40px; display:flex; flex-direction:column; gap:20px}
+.kicker{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:600}
+h1{font-family:"Spectral",Georgia,serif; font-weight:600; font-size:clamp(32px,4.4vw,50px); line-height:1.14; margin:0; text-wrap:balance; letter-spacing:-.01em}
+.dek{color:var(--ink-2); font-size:18px; max-width:66ch; margin:0}
+.metabar{display:flex; flex-wrap:wrap; gap:8px 10px; margin-top:4px}
+.meta{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); border:1px solid var(--line); border-radius:2px; padding:4px 9px; background:var(--bg)}
+.meta b{color:var(--ink-2); font-weight:600}
+
+/* ---- toc ---- */
+nav.toc{position:sticky; top:0; z-index:20; background:color-mix(in srgb,var(--bg) 92%,transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); margin-bottom:56px}
+nav.toc ol{display:flex; gap:0; list-style:none; margin:0; padding:0; overflow-x:auto; max-width:1180px; margin:0 auto}
+nav.toc a{display:block; white-space:nowrap; font-size:13px; font-family:"IBM Plex Mono",monospace; color:var(--muted); text-decoration:none; padding:11px 14px; border-bottom:2px solid transparent}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent); border-bottom-color:var(--accent); outline:none}
+nav.toc li:first-child a{padding-left:24px}
+
+/* ---- sections ---- */
+section{margin-bottom:76px; scroll-margin-top:64px}
+h2{font-family:"Spectral",Georgia,serif; font-weight:600; font-size:clamp(24px,2.8vw,32px); line-height:1.24; margin:0 0 6px; text-wrap:balance; letter-spacing:-.005em}
+.h2num{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.14em; color:var(--accent); font-weight:600; display:block; margin-bottom:10px}
+h3{font-family:"IBM Plex Sans",sans-serif; font-weight:600; font-size:18px; margin:38px 0 12px; color:var(--ink)}
+h4{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:26px 0 10px}
+p{margin:0 0 16px}
+.lede{font-size:17px; color:var(--ink-2); margin-bottom:26px; max-width:70ch}
+ul,ol{margin:0 0 18px; padding-left:22px} li{margin-bottom:7px}
+code{font-family:"IBM Plex Mono",monospace; font-size:.88em; background:var(--surface-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px}
+a{color:var(--accent)}
+strong{font-weight:600}
+hr{border:0; border-top:1px solid var(--line); margin:44px 0}
+
+/* ---- tables ---- */
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:4px; background:var(--surface); box-shadow:var(--shadow); margin-bottom:22px}
+table{border-collapse:collapse; width:100%; min-width:640px; font-size:14.5px}
+th{text-align:left; font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600; padding:12px 14px; border-bottom:1px solid var(--line-strong); background:var(--surface-2); position:sticky; top:0}
+td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink-2)}
+tr:last-child td{border-bottom:0}
+tr.hl td{background:var(--accent-soft)}
+tr.hl td:first-child{color:var(--accent-ink)}
+td:first-child{color:var(--ink); font-weight:500}
+.num{font-variant-numeric:tabular-nums; font-family:"IBM Plex Mono",monospace}
+
+/* ---- chips ---- */
+.chip{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; padding:2px 7px; border-radius:2px; border:1px solid; white-space:nowrap}
+.chip.yes{color:var(--ok); border-color:color-mix(in srgb,var(--ok) 40%,transparent); background:color-mix(in srgb,var(--ok) 10%,transparent)}
+.chip.part{color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,transparent); background:color-mix(in srgb,var(--warn) 10%,transparent)}
+.chip.no{color:var(--muted); border-color:var(--line-strong); background:var(--surface-2)}
+.chip.new{color:var(--accent); border-color:color-mix(in srgb,var(--accent) 45%,transparent); background:var(--accent-soft)}
+
+/* ---- callouts ---- */
+.note{border:1px solid var(--line); border-left:3px solid var(--accent); background:var(--surface); border-radius:0 4px 4px 0; padding:16px 20px; margin:24px 0}
+.note.warn{border-left-color:var(--warm); background:var(--surface)}
+.note.danger{border-left-color:var(--danger)}
+.note p:last-child{margin-bottom:0}
+.note .lbl{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:600; color:var(--accent); display:block; margin-bottom:6px}
+.note.warn .lbl{color:var(--warm)} .note.danger .lbl{color:var(--danger)}
+
+/* ---- layer diagram ---- */
+.stack{display:flex; flex-direction:column; gap:10px; margin:26px 0}
+.layer{border:1px solid var(--line); border-radius:4px; background:var(--surface); padding:14px 16px; box-shadow:var(--shadow)}
+.layer > .lname{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:10px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.layer > .lname em{font-style:normal; color:var(--accent); text-transform:none; letter-spacing:0; font-size:11.5px}
+.boxes{display:flex; flex-wrap:wrap; gap:8px}
+.box{font-size:13px; border:1px solid var(--line-strong); border-radius:3px; padding:6px 11px; background:var(--bg); color:var(--ink-2); line-height:1.4}
+.box b{display:block; color:var(--ink); font-weight:600; font-size:13px}
+.box small{color:var(--muted); font-size:11.5px; font-family:"IBM Plex Mono",monospace}
+.box.core{border-color:var(--accent); background:var(--accent-soft)}
+.box.core b{color:var(--accent-ink)}
+.box.cut{border-style:dashed; color:var(--muted); background:transparent}
+.box.cut b{color:var(--muted); font-weight:500}
+.flowdown{text-align:center; color:var(--line-strong); font-size:14px; line-height:1; margin:-2px 0}
+
+/* ---- tree ---- */
+pre.tree,pre.code{font-family:"IBM Plex Mono",monospace; font-size:13px; line-height:1.62; background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:18px 20px; overflow-x:auto; margin:0 0 22px; color:var(--ink-2); box-shadow:var(--shadow)}
+pre .c{color:var(--muted)}
+pre .k{color:var(--accent); font-weight:600}
+
+/* ---- plan grid ---- */
+.week{border:1px solid var(--line); border-radius:4px; background:var(--surface); margin-bottom:18px; overflow:hidden; box-shadow:var(--shadow)}
+.week > header{display:flex; justify-content:space-between; align-items:baseline; gap:14px; flex-wrap:wrap; padding:13px 18px; background:var(--surface-2); border-bottom:1px solid var(--line)}
+.week h3{margin:0; font-size:16px}
+.week .dates{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums}
+.week .goal{font-size:13.5px; color:var(--accent-ink); background:var(--accent-soft); border:1px solid color-mix(in srgb,var(--accent) 30%,transparent); border-radius:2px; padding:2px 9px}
+.lanes{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.lane{padding:15px 18px; border-right:1px solid var(--line)}
+.lane:last-child{border-right:0}
+.lane .who{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; font-weight:600; color:var(--ink); margin-bottom:9px; display:flex; align-items:center; gap:7px}
+.lane .who i{width:7px; height:7px; border-radius:50%; background:var(--accent); font-style:normal; flex:none}
+.lane.you .who i{background:var(--warm)}
+.lane ul{margin:0; padding-left:16px; font-size:13.5px}
+.lane li{margin-bottom:6px; color:var(--ink-2)}
+.lane .d{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums}
+
+.twocol3{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin:20px 0}
+.card{border:1px solid var(--line); border-radius:4px; background:var(--surface); padding:15px 17px; box-shadow:var(--shadow)}
+.card h4{margin:0 0 7px}
+.card p{font-size:13.5px; margin:0; color:var(--ink-2)}
+
+/* ---- milestones ---- */
+.ms{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:12px; margin:24px 0}
+.msc{border:1px solid var(--line); border-top:3px solid var(--accent); border-radius:0 0 4px 4px; background:var(--surface); padding:14px 16px; box-shadow:var(--shadow)}
+.msc .tag{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.08em; color:var(--accent); display:block; margin-bottom:5px}
+.msc b{display:block; font-size:14.5px; margin-bottom:5px}
+.msc p{font-size:13px; color:var(--muted); margin:0; line-height:1.55}
+.msc.freeze{border-top-color:var(--warm)} .msc.freeze .tag{color:var(--warm)}
+
+@media (max-width:720px){
+  .wrap{padding:0 18px 72px}
+  .lane{border-right:0; border-bottom:1px solid var(--line)}
+  .lane:last-child{border-bottom:0}
+}
+</style><style>
+.twocol3{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin:20px 0}
+.card{border:1px solid var(--line); border-radius:4px; background:var(--surface); padding:15px 17px; box-shadow:var(--shadow)}
+.card h4{margin:0 0 7px}
+.card p{font-size:13.5px; margin:0; color:var(--ink-2)}
+.fence{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 4px 4px 0; background:var(--surface); padding:16px 20px; margin:22px 0}
+.fence > .n{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:600; color:var(--accent); display:block; margin-bottom:5px}
+.fence h3{margin:0 0 8px; font-size:17px}
+.fence p:last-child{margin-bottom:0}
+.day{display:grid; grid-template-columns:78px 1fr; gap:0 16px; border-bottom:1px solid var(--line); padding:11px 0; align-items:start}
+.day:last-child{border-bottom:0}
+.day .dn{font-family:"IBM Plex Mono",monospace; font-size:12.5px; font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums; padding-top:2px}
+.day .dn small{display:block; color:var(--muted); font-weight:400; font-size:11px}
+.day .dt{font-size:14px; color:var(--ink-2)}
+.day .dt b{color:var(--ink)}
+.day .out{display:block; margin-top:4px; font-size:12.5px; color:var(--muted); font-family:"IBM Plex Mono",monospace}
+.day.gate{background:color-mix(in srgb,var(--warm) 8%,transparent); margin:0 -12px; padding-left:12px; padding-right:12px; border-radius:3px}
+.day.gate .dn{color:var(--warm)}
+.qa{border:1px solid var(--line); border-left:3px solid var(--warm); border-radius:0 4px 4px 0; background:var(--surface); padding:16px 20px; margin:16px 0}
+.qa b.q{display:block; font-size:14.5px; margin-bottom:6px; color:var(--ink)}
+.qa p{margin:0; font-size:13.5px; color:var(--ink-2)}
+.qa .rec{margin-top:8px; font-size:13.5px; color:var(--accent-ink); background:var(--accent-soft); border-radius:3px; padding:6px 10px; display:block}
+.daybox{border:1px solid var(--line); border-radius:4px; background:var(--surface); padding:6px 18px; box-shadow:var(--shadow); margin-bottom:22px}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <span class="kicker">架构泳道 · 施工手册</span>
+    <h1>我这条泳道怎么修，怎么和框架层对上</h1>
+    <p class="dek">应用层与数据能力这条泳道的执行手册：每个模块的完成定义、逐日清单、技术要点，以及与框架层联调的四道防线。配合《架构蓝图与 MVP 交付计划》使用。</p>
+    <div class="metabar">
+      <span class="meta"><b>归属</b> 架构（应用层 + 数据能力）</span>
+      <span class="meta"><b>周期</b> D1–D20</span>
+      <span class="meta"><b>对接</b> 算法（框架层）· 前端</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <ol>
+    <li><a href="#scope">泳道全景</a></li>
+    <li><a href="#integrate">联调四道防线</a></li>
+    <li><a href="#daily">逐日清单</a></li>
+    <li><a href="#tech">技术要点</a></li>
+    <li><a href="#traps">五个必炸点</a></li>
+    <li><a href="#ask">待澄清</a></li>
+  </ol>
+</nav>
+
+<div class="wrap">
+
+<section id="scope">
+  <span class="h2num">01</span>
+  <h2>泳道全景：九个模块，一条顺序</h2>
+  <p class="lede">先看清楚自己要交付什么、每样东西「做完」的判定标准是什么。没有完成定义（DoD）的模块，都会在最后一周变成「还差一点」。</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:4%">#</th><th style="width:18%">模块</th><th style="width:8%">工期</th><th style="width:14%">依赖</th><th>完成定义（可验证）</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td><b>仓库骨架与 CI</b></td><td class="num">1 天</td><td>—</td><td>两层目录建好；<code>test_harness_boundary</code> 能因为一次故意的反向 import 而变红；lint / type / test 三条 CI 全绿</td></tr>
+      <tr><td class="num">2</td><td><b>协议与数据模型</b></td><td class="num">2 天</td><td>与算法共定</td><td>DDL 迁移可跑；<code>/mock/stream</code> 能吐完整一轮假事件；前端用它跑通渲染</td></tr>
+      <tr><td class="num">3</td><td><b>流式桥接</b></td><td class="num">2.5 天</td><td>模块 2</td><td>断开重连带 <code>Last-Event-ID</code> 能续上；心跳 15s；订阅者落后能收到断档信号；单测覆盖这三条</td></tr>
+      <tr><td class="num">4</td><td><b>元数据与表卡片</b></td><td class="num">2 天</td><td>数仓只读账号</td><td>一条命令从库里抽出 N 张表的 YAML 卡片；人工补完口径后能被检索命中</td></tr>
+      <tr><td class="num">5</td><td><b>SQL 校验器</b></td><td class="num">1.5 天</td><td>模块 4</td><td>一组恶意 / 越界 SQL 用例<b>全部被拒</b>，一组正常查询<b>全部通过</b>——这组用例先写，再写实现</td></tr>
+      <tr><td class="num">6</td><td><b>SQL 执行器</b></td><td class="num">1.5 天</td><td>模块 5</td><td>超时能真的掐断正在跑的慢查询（不是等它跑完再报错）；行数上限生效；取消可用</td></tr>
+      <tr><td class="num">7</td><td><b>四个数据工具</b></td><td class="num">2 天</td><td>模块 4/6 + Tool 契约</td><td>四个工具能通过<b>契约测试</b>；返回内容在 token 预算内</td></tr>
+      <tr><td class="num">8</td><td><b>网关 · 认证 · 审计</b></td><td class="num">2 天</td><td>模块 2/3</td><td>未登录访问全部 401；每条 SQL（含被拒绝的）都能在 <code>sql_audit</code> 里查到</td></tr>
+      <tr><td class="num">9</td><td><b>评测与部署</b></td><td class="num">3 天</td><td>模块 7</td><td>一条命令跑完测试集出准确率；一条命令部署到演示环境</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note">
+    <span class="lbl">顺序的依据</span>
+    <p>模块 1→2→3 必须最先做完，因为<b>它们解锁的是别人</b>：模块 2 解锁前端，模块 2+3 解锁与算法的并行。剩下的 4→5→6→7 是你自己链条上的事，晚一天只影响你自己。<b>先做解锁别人的，再做只影响自己的</b>——三人小队里这条比任何优先级方法都管用。</p>
+  </div>
+</section>
+
+<section id="integrate">
+  <span class="h2num">02</span>
+  <h2>与框架层联调：四道防线</h2>
+  <p class="lede">「联调」不是某一天的事件，是一套从第一天就开始运转的机制。四道防线依次是：<b>契约先行 → 双向假实现 → 契约测试 → 录制回放</b>。每一道拦不住的问题，才轮到下一道。</p>
+
+  <div class="fence">
+    <span class="n">防线 1 · D1–D3</span>
+    <h3>契约先行：只有两处跨人接口，必须写成代码而不是文档</h3>
+    <p>把 <code>StreamBridge</code> 收回自己手里之后，你和算法之间只剩两个接口。<b>它们必须以「一个能 import 的 Python 模块」的形式存在</b>——写在 Confluence 上的接口约定，两周后一定对不上。</p>
+<pre class="code"><span class="c"># harness/dataagent/contracts.py —— 两人共同维护，改动需双方 approve</span>
+
+<span class="k">class</span> RunManager(Protocol):
+    <span class="k">async def</span> start_run(self, thread_id: str, user_input: str,
+                        run_id: str, ctx: RunContext) -> <span class="k">None</span>: ...
+    <span class="k">async def</span> cancel(self, run_id: str) -> <span class="k">None</span>: ...
+    <span class="c"># 事件不从返回值出，而是由实现方 publish 到 StreamBridge</span>
+
+<span class="k">class</span> Tool(Protocol):
+    name: str
+    description: str          <span class="c"># 给模型看的，算法可改，你不要动</span>
+    args_schema: type[BaseModel]
+    <span class="k">async def</span> run(self, ctx: ToolContext, **kwargs) -> ToolResult: ...
+
+@dataclass
+<span class="k">class</span> ToolResult:
+    ok: bool
+    summary: str              <span class="c"># 进 prompt 的内容，必须受 token 预算约束</span>
+    artifact_ref: str | <span class="k">None</span>  <span class="c"># 大结果走引用，不进 prompt</span>
+    error: str | <span class="k">None</span>       <span class="c"># 失败时给模型看的错误，要可读、可自纠错</span>
+</pre>
+    <p><b>三条约定要在 D3 一起敲死</b>：① 入参校验由框架层做（它有 <code>args_schema</code>），工具实现只管业务；② 工具失败<b>不抛异常</b>，返回 <code>ok=False</code> + 可读的 <code>error</code>，让模型自己纠错；③ <code>summary</code> 的 token 上限是多少（建议 1500），超了由工具自己截断并说明。</p>
+  </div>
+
+  <div class="fence">
+    <span class="n">防线 2 · D3 起全程</span>
+    <h3>双向假实现：两边都能在对方一行代码没写时跑通</h3>
+    <p>这是整套机制里最值钱的一条。<b>你写一个假的框架层，算法写一组假的工具</b>，两个假实现都遵守防线 1 的同一份契约。</p>
+    <div class="twocol3">
+      <div class="card"><h4>你写：FakeRunManager</h4><p>不调模型，按脚本发一串预设事件（文本增量 → 工具调用 → 结果 → 结束）。有了它，你的网关、流式桥接、前端可以在 D3 就完整跑通，不等算法。</p></div>
+      <div class="card"><h4>算法写：FakeTools</h4><p>四个工具的假版本，返回固定的假表卡片、假 schema、假结果集。有了它，他的循环可以在你的执行器没写完时就跑通，也不等你。</p></div>
+      <div class="card"><h4>关键约束</h4><p>两个假实现必须和真实现<b>跑同一套契约测试</b>（防线 3）。否则「各自跑通、合起来炸」照样会发生，只是炸得更晚。</p></div>
+    </div>
+<pre class="code"><span class="c"># app/testing/fake_runtime.py —— 你写，D3 交付</span>
+<span class="k">class</span> FakeRunManager:
+    <span class="k">def</span> __init__(self, bridge: StreamBridge, script: str = <span class="s">"happy_path"</span>): ...
+
+    <span class="k">async def</span> start_run(self, thread_id, user_input, run_id, ctx):
+        <span class="k">for</span> ev <span class="k">in</span> load_script(self.script):   <span class="c"># YAML 脚本，一行一个事件</span>
+            <span class="k">await</span> asyncio.sleep(ev.delay)      <span class="c"># 模拟真实节奏，能暴露前端时序 bug</span>
+            <span class="k">await</span> self.bridge.publish(run_id, ev.event, ev.data)
+        <span class="k">await</span> self.bridge.publish_end(run_id)
+
+<span class="c"># 至少准备四个脚本，覆盖前端和网关必须处理的四种情况：</span>
+<span class="c">#   happy_path        正常一轮</span>
+<span class="c">#   tool_error        工具失败 → 模型自纠错 → 第二次成功</span>
+<span class="c">#   clarification     反问用户，中断等待</span>
+<span class="c">#   run_error         模型超时，终态是 error</span>
+</pre>
+  </div>
+
+  <div class="fence">
+    <span class="n">防线 3 · D4 起，每次 PR</span>
+    <h3>契约测试：同一套断言，跑在真假两个实现上</h3>
+    <p>放在 <code>tests/contract/</code>，两人共同维护。它<b>不测业务逻辑，只测契约</b>——参数化跑过每一个实现。假实现和真实现的行为一旦分叉，CI 立刻红。</p>
+<pre class="code"><span class="c"># tests/contract/test_tool_contract.py</span>
+@pytest.mark.parametrize(<span class="s">"tool"</span>, [FakeSearchTables(), SearchTables(db)])
+<span class="k">async def</span> test_bad_args_returns_error_not_raise(tool):
+    r = <span class="k">await</span> tool.run(ctx, query=<span class="k">None</span>)
+    <span class="k">assert</span> r.ok <span class="k">is False</span> <span class="k">and</span> r.error          <span class="c"># 约定②：不抛异常</span>
+
+@pytest.mark.parametrize(<span class="s">"tool"</span>, ALL_TOOLS)
+<span class="k">async def</span> test_summary_within_token_budget(tool):
+    r = <span class="k">await</span> tool.run(ctx, **tool.sample_args)
+    <span class="k">assert</span> count_tokens(r.summary) &lt;= 1500     <span class="c"># 约定③</span>
+</pre>
+    <p><b>这套测试由谁写？</b>建议 D3 你和算法各写一半、互相 review。它是唯一能在 D10 之前就发现语义分歧的东西，值得两个人各花半天。</p>
+  </div>
+
+  <div class="fence">
+    <span class="n">防线 4 · D10 起</span>
+    <h3>录制回放：把一次真实的 run 冻成 fixture</h3>
+    <p>D10 集成成功当天，立刻把那一轮的完整事件序列录成 JSON 存进仓库。之后：<b>前端的测试用它、你的网关测试用它、回归也用它</b>。谁都不需要真模型、不需要真数据库，就能验证「事件流没被改坏」。</p>
+    <p>成本约 2 小时，收益是后面十天里每一次「前端说事件不对、后端说我没改」的扯皮都能在 30 秒内定论。</p>
+  </div>
+
+  <h3>联调节奏表</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:10%">时点</th><th style="width:20%">做什么</th><th style="width:12%">耗时</th><th>通过标准</th></tr></thead>
+    <tbody>
+      <tr><td><b>D3</b></td><td>契约冻结会</td><td>半天，两人</td><td><code>contracts.py</code> 合并进主干；两个假实现的骨架同时合并</td></tr>
+      <tr class="hl"><td><b>D7</b></td><td><b>假集成演练</b></td><td>30 分钟</td><td>你用 <code>FakeRunManager</code> 跑通全链路，算法用 <code>FakeTools</code> 跑通循环。<b>各自跑，不合并代码</b>——目的是暴露对契约的理解分歧，不是集成</td></tr>
+      <tr class="hl"><td><b>D10</b></td><td><b>集成日</b></td><td>1 天，全员</td><td>真 RunManager + 真工具 + 真前端，跑通一轮完整问答（工具可以还是假数据）</td></tr>
+      <tr><td>D11 起</td><td>每日集成</td><td>CI 自动</td><td>主干上契约测试 + 回放 fixture 测试全绿，红了当天必须修</td></tr>
+      <tr><td>随时</td><td>契约变更</td><td>—</td><td>见下方流程</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note warn">
+    <span class="lbl">契约变更流程（写进 README，别靠自觉）</span>
+    <p>改 <code>contracts.py</code> 的人，<b>必须在同一个 PR 里同时改</b>：真实现、假实现、契约测试。PR 需要另一个人 approve。<b>不允许「我先改了，你回头跟一下」</b>——那句话是三人小队里所有集成事故的开头。</p>
+  </div>
+
+  <div class="note danger">
+    <span class="lbl">D7 假集成演练具体怎么做（很多人会跳过，别跳）</span>
+    <p>三十分钟，三步：<b>①</b> 你把 <code>FakeRunManager</code> 接上真网关，前端点一次提问，看事件在浏览器里长什么样，截图发群里。<b>②</b> 算法把 <code>FakeTools</code> 接上真循环，跑一次，把他侧产生的事件序列打印出来发群里。<b>③</b> 两份序列并排比对——事件名对不对得上、字段名一致不一致、工具调用的 id 是谁生成的。<b>90% 的集成事故在这一步就能看出来</b>，而此刻距离 D10 还有三天，改得动。</p>
+  </div>
+</section>
+
+<section id="daily">
+  <span class="h2num">03</span>
+  <h2>逐日清单</h2>
+  <p class="lede">只列你这条泳道。橙色行是<b>关口日</b>——那天有必须做出的判断或必须交付给别人的东西，不能顺延。</p>
+  <div class="daybox">
+    <div class="day"><div class="dn">D1<small>08-25</small></div><div class="dt"><b>提数仓只读账号与白名单审批</b>——纯等待事项，第一件事就做。当天再搭仓库骨架、两层目录、<code>test_harness_boundary</code>、三条 CI。<span class="out">产出：CI 全绿 · 故意的反向 import 能让 CI 变红</span></div></div>
+    <div class="day"><div class="dn">D2<small>08-26</small></div><div class="dt">十张表的 DDL 与迁移脚本；REST 路由清单草稿；与算法开始碰接口。<span class="out">产出：迁移可正反向执行</span></div></div>
+    <div class="day gate"><div class="dn">D3<small>08-27</small></div><div class="dt"><b>关口 · 解锁另外两个人。</b>SSE 事件全集定稿、<code>contracts.py</code> 合并、<code>/mock/stream</code> 与 <code>FakeRunManager</code> 四个脚本交付。<span class="out">产出：前端能独立开发到 D9 · 算法能独立开发到 D10</span></div></div>
+    <div class="day gate"><div class="dn">D4<small>08-28</small></div><div class="dt"><b>关口 · 范围签字。</b>把范围文档（含七项削减、零沙箱）交验收方确认。下午与算法各写一半契约测试。<span class="out">产出：M1 · 范围文档已签 · 契约测试骨架进主干</span></div></div>
+    <div class="day"><div class="dn">D5<small>08-31</small></div><div class="dt">元数据抽取器：单引擎 <code>information_schema</code> → 统一中间结构，含分区列、主键、注释。<span class="out">产出：一条命令抽出全库表结构 JSON</span></div></div>
+    <div class="day"><div class="dn">D6<small>09-01</small></div><div class="dt">表卡片 YAML 生成 + LLM 补中文释义脚本；圈定白名单 60–80 张核心表。<span class="out">产出：卡片进 Git · 待人工补口径的字段已标出</span></div></div>
+    <div class="day gate"><div class="dn">D7<small>09-02</small></div><div class="dt">SQL 校验器（<b>先写拒绝用例，再写实现</b>）。<b>下午 30 分钟：与算法做假集成演练。</b><span class="out">产出：恶意用例全拒 · 两侧事件序列已并排比对</span></div></div>
+    <div class="day"><div class="dn">D8<small>09-03</small></div><div class="dt">SQL 执行器：连接池、数据库级超时、取消、行数上限、结果集序列化。<span class="out">产出：能真的掐断一条跑 60 秒的慢查询</span></div></div>
+    <div class="day"><div class="dn">D9<small>09-04</small></div><div class="dt">网关路由、账号密码认证与会话、审计与 <code>qa_samples</code> 打点。<span class="out">产出：你这侧用 Fake 跑通全链路 · 前端切真后端验证协议</span></div></div>
+    <div class="day gate"><div class="dn">D10<small>09-07</small></div><div class="dt"><b>关口 · 集成日。</b>与算法合并，真 RunManager + 真循环 + 真前端跑通一轮（工具可用假数据）。<span class="out">产出：M2 · 当天不通就砍范围，不要拖到 D11</span></div></div>
+    <div class="day"><div class="dn">D11<small>09-08</small></div><div class="dt"><code>search_tables</code> 与 <code>describe_table</code> 实现并接入注册表，跑通契约测试。<span class="out">产出：模型能自己找到表并展开结构</span></div></div>
+    <div class="day"><div class="dn">D12<small>09-09</small></div><div class="dt"><code>search_knowledge</code> 与 <code>run_sql</code> 实现；token 预算调优（宽表截断、结果集裁剪）。<span class="out">产出：四个工具全部可用</span></div></div>
+    <div class="day gate"><div class="dn">D13<small>09-10</small></div><div class="dt"><b>关口 · 主线打通。</b>真实问答端到端跑通。<b>当天立刻录制回放 fixture 进仓库。</b><span class="out">产出：M3 · fixture 成为此后所有回归的基准</span></div></div>
+    <div class="day"><div class="dn">D14<small>09-11</small></div><div class="dt">黄金测试集（从历史 SQL 日志挖 30 题）+ 评测脚本。<span class="out">产出：第一个准确率数字，无论多难看</span></div></div>
+    <div class="day gate"><div class="dn">D15<small>09-14</small></div><div class="dt"><b>关口 · 唯一的决策日。</b>准确率评估：收窄白名单？启用元数据问答降级方案？<span class="out">产出：M4 · 一个明确决定，不是「再看看」</span></div></div>
+    <div class="day gate"><div class="dn">D16<small>09-15</small></div><div class="dt"><b>关口 · 功能冻结。</b>此后只修 bug、调提示词、准备演示。补完审计与错误态。<span class="out">产出：M5 · 冻结通知发出</span></div></div>
+    <div class="day"><div class="dn">D17<small>09-16</small></div><div class="dt">Dockerfile、Deployment、Secret、Ingress（含 SSE 不缓冲配置）、演示环境拉起。<span class="out">产出：演示环境可访问</span></div></div>
+    <div class="day"><div class="dn">D18<small>09-17</small></div><div class="dt">CI/CD 打通、冒烟脚本、演示数据准备与预热。<span class="out">产出：一条命令部署 · 一条命令冒烟</span></div></div>
+    <div class="day"><div class="dn">D19<small>09-18</small></div><div class="dt">演示脚本定稿 + 第一次完整演练（掐表，找卡点）。<span class="out">产出：演练问题清单</span></div></div>
+    <div class="day gate"><div class="dn">D20<small>09-21</small></div><div class="dt">第二次演练 + 验收会 + 准确率报表 + 完整版演进说明。<span class="out">产出：M6</span></div></div>
+  </div>
+
+  <div class="note warn">
+    <span class="lbl">这份清单里被压缩最狠的是什么</span>
+    <p>模块清单加起来 <b>17.5 人天</b>，而 D1–D16 只有 16 天，其中还要扣掉集成日和评估日。<b>意味着从第一天起就没有缓冲。</b>真正的缓冲在 D17–D20 那四天——它们排的是部署和演练，一旦前面延期，可以压缩到两天。<b>但不要主动预支它</b>：没有演练的演示，翻车概率比你想的高得多。</p>
+  </div>
+</section>
+
+<section id="tech">
+  <span class="h2num">04</span>
+  <h2>技术要点：六件容易做错的事</h2>
+
+  <h3>1 · 元数据抽取的三个坑</h3>
+  <ul>
+    <li><b>注释拿不到不是异常，是常态。</b>覆盖率 80% 意味着有 20% 空白，抽取器要把「无注释」显式标成待补状态，而不是留空字符串——待补清单就是人工校对的工作单。</li>
+    <li><b>采样值要脱敏再入卡片。</b>示例值对模型理解字段极有帮助，但手机号、姓名不能进 YAML（YAML 是要进 Git 的）。规则：字符串列采样时做长度与字符类型检测，疑似敏感的只写「格式示例」不写真值。</li>
+    <li><b>分区列必须单独标记。</b>数仓表的分区列决定了 SQL 写得对不对（见第 6 点），它不是一个普通字段。</li>
+  </ul>
+
+  <h3>2 · 表卡片长什么样</h3>
+<pre class="code">table: dwd_order_detail
+datasource: dw_main
+display_name: 订单明细表
+domain: 交易
+purpose: 每行一笔订单中的一个商品，交易分析的主表
+grain: 订单 × 商品                  <span class="c"># 粒度写错，聚合就一定错</span>
+time_column: dt
+metrics_note: |                     <span class="c"># 这一段的价值大于其余全部字段之和</span>
+  GMV = pay_amount 求和，含税、不扣退款
+  按天统计一律用分区列 dt，不要用 create_time
+columns:
+  - {name: order_id,   type: bigint,         cn: 订单号,           sample: <span class="s">"8801234"</span>}
+  - {name: pay_amount, type: decimal(18,2),  cn: 支付金额（含税）,  sample: <span class="s">"129.00"</span>}
+  - {name: dt,         type: string,         cn: 分区日期,         sample: <span class="s">"2026-08-24"</span>, partition: <span class="k">true</span>}
+  - {name: user_id,    type: bigint,         cn: 用户ID,           todo: <span class="s">"口径待确认"</span>}
+related:
+  - dim_user  <span class="c"># dwd_order_detail.user_id = dim_user.user_id</span>
+allowed_roles: [<span class="s">"*"</span>]</pre>
+
+  <h3>3 · SQL 校验器必须拒绝的七类</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:5%">#</th><th style="width:26%">拒绝什么</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>根节点不是 SELECT</td><td>INSERT / UPDATE / DELETE / DDL / CALL 一律拒</td></tr>
+      <tr><td class="num">2</td><td>多语句</td><td>分号拼接的第二条语句</td></tr>
+      <tr class="hl"><td class="num">3</td><td><b>数据修改型 CTE</b></td><td>PostgreSQL 允许 <code>WITH x AS (DELETE FROM t RETURNING *) SELECT * FROM x</code>——<b>根节点是 SELECT，却会删数据</b>。只看根节点类型的校验器在这里全军覆没，必须遍历整棵 AST</td></tr>
+      <tr><td class="num">4</td><td><code>SELECT ... INTO</code> 类</td><td>含 <code>INTO OUTFILE</code> / <code>INTO DUMPFILE</code></td></tr>
+      <tr><td class="num">5</td><td>文件与系统函数</td><td><code>pg_read_file</code> / <code>pg_ls_dir</code> / <code>lo_import</code> / <code>LOAD_FILE</code> 等</td></tr>
+      <tr><td class="num">6</td><td>表不在白名单</td><td>遍历 AST 收集<b>全部</b>表引用，含 CTE 内部与嵌套子查询</td></tr>
+      <tr><td class="num">7</td><td>缺 LIMIT 或超上限</td><td>这一类<b>不拒绝，而是改写</b>：注入 LIMIT，或把过大的 LIMIT 收紧到上限</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>只读账号是第一道防线，AST 校验是第二道。</b>两道都要，别只靠一道——AST 挡不住你没想到的语法，只读账号挡不住把数仓拖垮的全表扫描。</p>
+
+  <h3>4 · 超时必须由数据库执行，不能靠 Python</h3>
+  <p>这是最常见的错误实现：用 <code>asyncio.wait_for</code> 包住查询，超时就抛异常。<b>问题是 Python 只是放弃了等待，数据库那边的慢查询还在跑</b>，继续占着数仓资源——演示当天并发几个人，数仓就被你们拖垮了。正确做法各引擎不同：</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:16%">引擎</th><th style="width:38%">设超时</th><th>强制终止</th></tr></thead>
+    <tbody>
+      <tr><td>PostgreSQL</td><td>事务内 <code>SET LOCAL statement_timeout = '30s'</code></td><td>驱动的连接取消机制（另开控制连接发 cancel 请求）</td></tr>
+      <tr><td>MySQL</td><td>优化器提示 <code>SELECT /*+ MAX_EXECUTION_TIME(30000) */ …</code>，或会话级 <code>MAX_EXECUTION_TIME</code>（仅对只读 SELECT 生效）</td><td>另开一条连接执行 <code>KILL QUERY &lt;thread_id&gt;</code>，所以要记住每条查询的连接 id</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>行数上限同样要两层：SQL 里注入 LIMIT 是第一层，游标侧 <code>fetchmany</code> 到上限就停是第二层——防止某些引擎对 LIMIT 的处理不如你预期。</p>
+
+  <h3>5 · 工具返回的 token 预算</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:20%">工具</th><th style="width:16%">进 prompt 上限</th><th>超了怎么办</th></tr></thead>
+    <tbody>
+      <tr><td><code>search_tables</code></td><td>≈ 600 token</td><td>只返回 5–8 张卡片的摘要（表名 + 中文名 + 一句话用途），<b>绝不返回字段</b></td></tr>
+      <tr><td><code>describe_table</code></td><td>≈ 1500 token</td><td>宽表截断：优先给分区列、时间列、主键、与问题词面匹配的字段，再补到 30 个，并注明「已截断，共 N 字段」</td></tr>
+      <tr><td><code>search_knowledge</code></td><td>≈ 1200 token</td><td>最多 5 段，每段截断并带出处</td></tr>
+      <tr><td><code>run_sql</code></td><td>≈ 1500 token</td><td>进 prompt 最多 50 行 × 20 列，单元格截断 100 字符；<b>完整结果走 <code>artifact_ref</code></b>，前端另取</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>再加一条 run 级总量告警：单轮问答超过 3 万 token 就打日志。它是「上下文设计出问题了」的最早信号。</p>
+
+  <h3>6 · 评测脚本的最小形态</h3>
+  <p>判定分三档，都能自动算，<b>而三档的比例告诉你该去修哪里</b>：</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:8%">档位</th><th style="width:30%">含义</th><th>这一档偏多说明什么</th></tr></thead>
+    <tbody>
+      <tr><td><b>A</b></td><td>结果集与标准 SQL 的执行结果一致</td><td>—</td></tr>
+      <tr><td><b>B</b></td><td>结果不一致，但用到的表是对的</td><td><b>检索对了、SQL 写错了 → 提示词与口径问题，找算法</b></td></tr>
+      <tr><td><b>C</b></td><td>找错表，或直接报错</td><td><b>元数据问题 → 表卡片没写清楚，找你自己</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>这个划分的用处是<b>止住互相甩锅</b>：B 多就是提示词的事，C 多就是表卡片的事，不需要开会讨论。</p>
+</section>
+
+<section id="traps">
+  <span class="h2num">05</span>
+  <h2>五个必炸点</h2>
+  <p class="lede">按「会浪费你多少小时」排序。前三个我见过太多次，值得在写代码之前就先记住。</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:4%">#</th><th style="width:22%">现象</th><th style="width:30%">真正原因</th><th>预防</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>超时了，但数仓还是被拖垮</td><td><code>asyncio.wait_for</code> 只放弃等待，数据库那边的查询还在跑</td><td>用引擎自己的超时机制（见 04-4）。<b>写执行器的第一天就写对，事后很难发现</b></td></tr>
+      <tr><td class="num">2</td><td>前端「卡住半天，然后内容一次性全出来」</td><td>SSE 被 Nginx / Ingress 缓冲了，不是你的代码问题</td><td>响应头加 <code>X-Accel-Buffering: no</code>；Ingress 上关掉 proxy buffering。<b>D17 部署时才会暴露，但要在 D3 写进协议文档</b></td></tr>
+      <tr><td class="num">3</td><td>前端把两次工具调用画成了一次</td><td>工具调用的标识谁生成没定死：模型给的 <code>tool_call_id</code> 与你侧的执行 id 没有稳定映射</td><td>D3 契约里写死：<b>以模型给的 <code>tool_call_id</code> 为准</b>，你侧的执行记录去关联它，全链路（事件、落库、审计）用同一个</td></tr>
+      <tr><td class="num">4</td><td>改了表卡片，检索结果还是旧的</td><td>卡片改了但检索索引没重建</td><td>抽取脚本最后一步强制重建索引；卡片文件加内容哈希，启动时比对不一致就告警</td></tr>
+      <tr><td class="num">5</td><td>「上个月」查出来是全表扫描</td><td>模型用了 <code>create_time</code> 而不是分区列 <code>dt</code></td><td>表卡片里把分区列显式标出 + <code>metrics_note</code> 里写死「按天统计一律用 dt」。<b>这是靠元数据解决的问题，不是靠提示词</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="ask">
+  <span class="h2num">06</span>
+  <h2>需要你澄清的五件事</h2>
+  <p class="lede">前三个会改变上面的实施细节，后两个会改变联调机制或效率。都不阻塞——我按推荐先写着。</p>
+
+  <div class="qa">
+    <b class="q">Q1 · PostgreSQL 和 MySQL，先打通哪一个？</b>
+    <p>范围削减清单第 1 项要求 MVP 只做一个引擎。这直接影响执行器怎么写（两者的超时与强杀机制完全不同，见 04-4），也影响校验器的重点（数据修改型 CTE 是 PostgreSQL 独有的坑）。</p>
+    <span class="rec">推荐：选数据部门<b>真实查询量最大</b>的那个，不是选技术上更顺手的那个。测试集要从它的历史查询日志里挖。</span>
+  </div>
+
+  <div class="qa">
+    <b class="q">Q2 · 单仓还是两个仓？分支与 review 怎么定？</b>
+    <p>这决定契约测试能不能在一次 CI 里同时跑真假两个实现——也就是防线 3 成不成立。两个仓的话，框架层要发版、应用层要升版本，改一次契约要走两轮发布，三人小队扛不住这个开销。</p>
+    <span class="rec">推荐：<b>单仓（monorepo）</b>，两层用目录隔离 + CI 强制单向依赖，效果与两个仓一样但零发布开销。主干开发 + 短分支，PR 必须另一人 approve，改 <code>contracts.py</code> 的 PR 必须两人都看。</span>
+  </div>
+
+  <div class="qa">
+    <b class="q">Q3 · 有没有可用的 CI 环境？能跑容器吗？</b>
+    <p>防线 3 和防线 4 都依赖「每次 PR 自动跑契约测试与回放测试」。如果没有 CI，这两道防线退化成「记得手动跑」，也就等于没有。</p>
+    <span class="rec">推荐：D1 就确认。若公司 CI 不可用，退而求其次用 pre-commit hook + 每天早上一次手动全量跑，并把这条写进团队约定——<b>但要知道这是明显更弱的保障</b>。</span>
+  </div>
+
+  <div class="qa">
+    <b class="q">Q4 · 算法同学愿意承担 FakeTools 和一半契约测试吗？</b>
+    <p>大约 1 人天。这是防线 2 和 3 的前提。从算法的视角看，这是「给别人写的测试代码」，很容易被排到最后然后不了了之——但它恰恰是让他自己能在 D5–D9 独立开发的东西。</p>
+    <span class="rec">推荐：D1 就把这件事作为<b>他的交付物</b>写进分工，而不是作为「有空就做」。跟他讲清楚收益：有了 FakeTools，他到 D10 之前完全不用等你的执行器。</span>
+  </div>
+
+  <div class="qa">
+    <b class="q">Q5 · 本地能直连数仓吗，还是必须跳板机？</b>
+    <p>这条对开发效率的影响可能超过其余所有因素之和。如果每次调试 SQL 都要过跳板机、不能在本地跑集成测试，模块 4–7 的实际耗时要在估算上乘 1.5。</p>
+    <span class="rec">推荐：优先争取一个<b>脱敏的测试库</b>放在能直连的网络里，结构与生产一致、数据量小。拿不到的话，D1 就要把这个约束反映到排期上——而不是等到 D8 发现调不动。</span>
+  </div>
+</section>
+
+<footer style="border-top:1px solid var(--line); padding-top:22px; color:var(--muted); font-size:13px; font-family:'IBM Plex Mono',monospace">
+  <p style="margin:0">数据 Agent 平台 · 架构泳道施工手册 · 内部文档 · 配套《架构蓝图与 MVP 交付计划》《架构图》</p>
+</footer>
+
+</div>
