@@ -1,0 +1,77 @@
+<svg viewBox="0 0 1400 450" role="img" aria-label="一次问答在平台内的流转：用户提问经网关鉴权、运行编排创建 run，进入智能体循环，循环内模型决策后调用检索表结构、查口径、生成校验 SQL、执行取数四类工具，工具结果回填上下文继续下一轮，最终产出结论与图表或反问澄清，全程通过 SSE 流式回传" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" fill-opacity="0.55"/></marker>
+<marker id="a3c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2E9E97"/></marker>
+</defs>
+
+<rect x="20" y="196" width="110" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="75" y="222" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor">用户提问</text>
+<text x="75" y="239" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">自然语言</text>
+
+<line x1="130" y1="224" x2="151" y2="224" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.6" marker-end="url(#a3)"/>
+
+<rect x="160" y="196" width="130" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="225" y="222" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor">API 网关</text>
+<text x="225" y="239" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">鉴权 · 限流</text>
+
+<line x1="290" y1="224" x2="311" y2="224" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.6" marker-end="url(#a3)"/>
+
+<rect x="320" y="196" width="150" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="395" y="222" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor">运行编排</text>
+<text x="395" y="239" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">创建 run · 装配上下文</text>
+
+<line x1="470" y1="224" x2="491" y2="224" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.6" marker-end="url(#a3)"/>
+
+<rect x="500" y="70" width="580" height="280" rx="8" fill="#2E9E97" fill-opacity="0.05" stroke="#2E9E97" stroke-opacity="0.55"/>
+<text x="516" y="92" font-size="12.5" font-weight="600" letter-spacing="1" fill="#2E9E97">智能体循环（ReAct · 最多 N 轮）</text>
+
+<rect x="620" y="100" width="380" height="54" rx="4" fill="#2E9E97" fill-opacity="0.14" stroke="#2E9E97" stroke-opacity="0.9"/>
+<text x="810" y="123" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2E9E97">模型决策</text>
+<text x="810" y="141" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.55">读上下文 → 决定调哪个工具，或给出答案</text>
+
+<line x1="810" y1="154" x2="810" y2="180" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5"/>
+<line x1="586" y1="180" x2="1034" y2="180" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5"/>
+<text x="1044" y="177" font-size="11" fill="currentColor" fill-opacity="0.6">工具调用</text>
+<line x1="586" y1="180" x2="586" y2="201" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5" marker-end="url(#a3)"/>
+<line x1="735" y1="180" x2="735" y2="201" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5" marker-end="url(#a3)"/>
+<line x1="884" y1="180" x2="884" y2="201" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5" marker-end="url(#a3)"/>
+<line x1="1033" y1="180" x2="1033" y2="201" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.5" marker-end="url(#a3)"/>
+
+<rect x="520" y="210" width="133" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="586" y="234" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">搜表 / 取结构</text>
+<text x="586" y="251" text-anchor="middle" font-size="10.5" fill="currentColor" fill-opacity="0.5">先摘要，再展开</text>
+
+<rect x="669" y="210" width="133" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="735" y="234" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">查口径知识</text>
+<text x="735" y="251" text-anchor="middle" font-size="10.5" fill="currentColor" fill-opacity="0.5">向量库检索</text>
+
+<rect x="818" y="210" width="133" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="884" y="234" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">生成并校验 SQL</text>
+<text x="884" y="251" text-anchor="middle" font-size="10.5" fill="currentColor" fill-opacity="0.5">AST · 白名单 · LIMIT</text>
+
+<rect x="967" y="210" width="133" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="1033" y="234" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">执行取数</text>
+<text x="1033" y="251" text-anchor="middle" font-size="10.5" fill="currentColor" fill-opacity="0.5">超时 · 行数上限 · 审计</text>
+
+<polyline points="586,266 586,300 1033,300 1033,266" fill="none" stroke="currentColor" stroke-opacity="0.4" stroke-width="1.4"/>
+<polyline points="735,266 735,300" fill="none" stroke="currentColor" stroke-opacity="0.4" stroke-width="1.4"/>
+<polyline points="884,266 884,300" fill="none" stroke="currentColor" stroke-opacity="0.4" stroke-width="1.4"/>
+<polyline points="810,300 810,322 540,322 540,127 611,127" fill="none" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.6" marker-end="url(#a3)"/>
+<text x="556" y="338" font-size="11" fill="currentColor" fill-opacity="0.62">工具结果回填上下文 → 继续下一轮（失败亦然：读错误信息自纠错）</text>
+
+<line x1="1080" y1="178" x2="1121" y2="178" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.6" marker-end="url(#a3)"/>
+<text x="1084" y="170" font-size="10.5" fill="currentColor" fill-opacity="0.6">得到答案</text>
+<rect x="1130" y="150" width="250" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="1255" y="174" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">结论 + 结果表 + 图表 spec</text>
+<text x="1255" y="191" text-anchor="middle" font-size="10.5" fill="currentColor" fill-opacity="0.5">图由前端 ECharts 渲染</text>
+
+<line x1="1080" y1="290" x2="1121" y2="290" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.6" marker-end="url(#a3)"/>
+<text x="1084" y="282" font-size="10.5" fill="currentColor" fill-opacity="0.6">口径歧义</text>
+<rect x="1130" y="262" width="250" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3" stroke-dasharray="6 4"/>
+<text x="1255" y="286" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">反问澄清</text>
+<text x="1255" y="303" text-anchor="middle" font-size="10.5" fill="currentColor" fill-opacity="0.5">中断本轮，等待用户补充</text>
+
+<polyline points="1255,318 1255,400 75,400 75,261" fill="none" stroke="#2E9E97" stroke-opacity="0.85" stroke-width="1.8" marker-end="url(#a3c)"/>
+<polyline points="1255,206 1290,206 1290,400" fill="none" stroke="#2E9E97" stroke-opacity="0.85" stroke-width="1.8"/>
+<text x="700" y="392" text-anchor="middle" font-size="11.5" fill="#2E9E97">SSE 流式回传：从第一个 token 起持续推送，不等整轮结束</text>
+</svg>

@@ -1,0 +1,113 @@
+<svg viewBox="0 0 1240 1084" role="img" aria-label="数据 Agent 平台产品架构：使用者、接触点、产品场景、平台能力、数据资产、底层依赖六层，场景与能力按 MVP、一期、二期三个阶段用实线、虚线、点线区分" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" fill-opacity="0.55"/></marker><marker id="arac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2E9E97"/></marker></defs>
+<rect x="60" y="40" width="1120" height="102" rx="6" fill="currentColor" fill-opacity="0.035" stroke="currentColor" stroke-opacity="0.22"/>
+<text x="76" y="61" font-size="12.5" font-weight="600" letter-spacing="1.2" fill="currentColor" fill-opacity="0.62">使用者</text>
+<text x="1164" y="61" text-anchor="end" font-size="11.5" fill="currentColor" fill-opacity="0.42">数据部门为主，逐步开放给业务方</text>
+<rect x="76.0" y="70" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="208.2" y="94" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">数据分析师</text>
+<text x="208.2" y="112" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">取数 · 归因 · 临时分析</text>
+<rect x="350.5" y="70" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="482.8" y="94" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">数据工程师</text>
+<text x="482.8" y="112" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">开发 · 排障</text>
+<rect x="625.0" y="70" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="757.2" y="94" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">业务方</text>
+<text x="757.2" y="112" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">自助问数</text>
+<rect x="899.5" y="70" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="1031.8" y="94" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">数据治理岗</text>
+<text x="1031.8" y="112" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">资产 · 质量 · 合规</text>
+<line x1="300" y1="142" x2="300" y2="185" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="312" y="172.0" font-size="11.5" fill="currentColor" fill-opacity="0.62">通过</text>
+<rect x="60" y="194" width="1120" height="102" rx="6" fill="currentColor" fill-opacity="0.035" stroke="currentColor" stroke-opacity="0.22"/>
+<text x="76" y="215" font-size="12.5" font-weight="600" letter-spacing="1.2" fill="currentColor" fill-opacity="0.62">接触点</text>
+<rect x="76.0" y="224" width="356.0" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="254.0" y="248" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">Web 工作台</text>
+<text x="254.0" y="266" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">完整能力</text>
+<rect x="442.0" y="224" width="356.0" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="620.0" y="248" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">IM 助手</text>
+<text x="620.0" y="266" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">轻量问答与推送</text>
+<rect x="808.0" y="224" width="356.0" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="986.0" y="248" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">嵌入式入口</text>
+<text x="986.0" y="266" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">BI / 内部系统</text>
+<line x1="300" y1="296" x2="300" y2="339" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="312" y="326.0" font-size="11.5" fill="currentColor" fill-opacity="0.62">发起场景请求</text>
+<rect x="60" y="348" width="1120" height="168" rx="6" fill="currentColor" fill-opacity="0.035" stroke="currentColor" stroke-opacity="0.22"/>
+<text x="76" y="369" font-size="12.5" font-weight="600" letter-spacing="1.2" fill="currentColor" fill-opacity="0.62">产品能力 · 场景</text>
+<text x="1164" y="369" text-anchor="end" font-size="11.5" fill="currentColor" fill-opacity="0.42">实线 = MVP 覆盖，虚线 = 一期，点线 = 二期</text>
+<rect x="76.0" y="378" width="264.5" height="56" rx="4" fill="#2E9E97" fill-opacity="0.13" stroke="#2E9E97" stroke-opacity="0.9"/>
+<text x="208.2" y="402" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2E9E97" fill-opacity="1">自助取数问答</text>
+<text x="208.2" y="420" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">自然语言 → SQL → 结果 → 解读</text>
+<rect x="350.5" y="378" width="264.5" height="56" rx="4" fill="#2E9E97" fill-opacity="0.13" stroke="#2E9E97" stroke-opacity="0.9"/>
+<text x="482.8" y="402" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2E9E97" fill-opacity="1">元数据问答</text>
+<text x="482.8" y="420" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">表 / 字段 / 口径 / 归属</text>
+<rect x="625.0" y="378" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3" stroke-dasharray="7 4"/>
+<text x="757.2" y="402" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">分析报告</text>
+<text x="757.2" y="420" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">多轮分析 + 结论 + 图表</text>
+<rect x="899.5" y="378" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3" stroke-dasharray="7 4"/>
+<text x="1031.8" y="402" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">看板沉淀</text>
+<text x="1031.8" y="420" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">把问题固化成看板</text>
+<rect x="76.0" y="444" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.03" stroke="currentColor" stroke-opacity="0.22" stroke-dasharray="2 4"/>
+<text x="208.2" y="468" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.62">数据质量</text>
+<text x="208.2" y="486" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.35">规则建议 · 校验 SQL</text>
+<rect x="350.5" y="444" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.03" stroke="currentColor" stroke-opacity="0.22" stroke-dasharray="2 4"/>
+<text x="482.8" y="468" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.62">血缘与影响分析</text>
+<text x="482.8" y="486" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.35">上下游追溯</text>
+<rect x="625.0" y="444" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.03" stroke="currentColor" stroke-opacity="0.22" stroke-dasharray="2 4"/>
+<text x="757.2" y="468" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.62">数据开发助手</text>
+<text x="757.2" y="486" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.35">ETL 编写与排障</text>
+<rect x="899.5" y="444" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.03" stroke="currentColor" stroke-opacity="0.22" stroke-dasharray="2 4"/>
+<text x="1031.8" y="468" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.62">主动洞察</text>
+<text x="1031.8" y="486" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.35">异动监测 + 推送</text>
+<line x1="300" y1="516" x2="300" y2="559" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="312" y="546.0" font-size="11.5" fill="currentColor" fill-opacity="0.62">调用平台能力</text>
+<rect x="60" y="568" width="1120" height="168" rx="6" fill="currentColor" fill-opacity="0.035" stroke="currentColor" stroke-opacity="0.22"/>
+<text x="76" y="589" font-size="12.5" font-weight="600" letter-spacing="1.2" fill="currentColor" fill-opacity="0.62">平台能力</text>
+<text x="1164" y="589" text-anchor="end" font-size="11.5" fill="currentColor" fill-opacity="0.42">支撑上层场景的通用机制</text>
+<rect x="76.0" y="598" width="356.0" height="56" rx="4" fill="#2E9E97" fill-opacity="0.13" stroke="#2E9E97" stroke-opacity="0.9"/>
+<text x="254.0" y="622" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2E9E97" fill-opacity="1">智能体编排</text>
+<text x="254.0" y="640" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">主 + 子智能体</text>
+<rect x="442.0" y="598" width="356.0" height="56" rx="4" fill="#2E9E97" fill-opacity="0.13" stroke="#2E9E97" stroke-opacity="0.9"/>
+<text x="620.0" y="622" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2E9E97" fill-opacity="1">工具体系</text>
+<text x="620.0" y="640" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">可插拔扩展</text>
+<rect x="808.0" y="598" width="356.0" height="56" rx="4" fill="#2E9E97" fill-opacity="0.13" stroke="#2E9E97" stroke-opacity="0.9"/>
+<text x="986.0" y="622" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2E9E97" fill-opacity="1">评测与反馈</text>
+<text x="986.0" y="640" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">黄金集 · 在线评测</text>
+<rect x="76.0" y="664" width="356.0" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3" stroke-dasharray="7 4"/>
+<text x="254.0" y="688" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">知识与记忆</text>
+<text x="254.0" y="706" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">口径库 · 样本飞轮</text>
+<rect x="442.0" y="664" width="356.0" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3" stroke-dasharray="7 4"/>
+<text x="620.0" y="688" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">安全与权限</text>
+<text x="620.0" y="706" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">RBAC · 脱敏 · 审批</text>
+<rect x="808.0" y="664" width="356.0" height="56" rx="4" fill="currentColor" fill-opacity="0.03" stroke="currentColor" stroke-opacity="0.22" stroke-dasharray="2 4"/>
+<text x="986.0" y="688" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.62">成本与配额</text>
+<text x="986.0" y="706" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.35">用量计量 · 限额</text>
+<line x1="300" y1="736" x2="300" y2="779" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="312" y="766.0" font-size="11.5" fill="currentColor" fill-opacity="0.62">读写资产</text>
+<rect x="60" y="788" width="1120" height="102" rx="6" fill="currentColor" fill-opacity="0.035" stroke="currentColor" stroke-opacity="0.22"/>
+<text x="76" y="809" font-size="12.5" font-weight="600" letter-spacing="1.2" fill="currentColor" fill-opacity="0.62">数据资产</text>
+<text x="1164" y="809" text-anchor="end" font-size="11.5" fill="currentColor" fill-opacity="0.42">平台自建、越用越厚的资产</text>
+<rect x="76.0" y="818" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="208.2" y="842" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">元数据 / 表卡片</text>
+<text x="208.2" y="860" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">结构 + 中文释义 + 示例</text>
+<rect x="350.5" y="818" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="482.8" y="842" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">指标与口径库</text>
+<text x="482.8" y="860" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">业务定义的唯一出处</text>
+<rect x="625.0" y="818" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="757.2" y="842" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">问答样本库</text>
+<text x="757.2" y="860" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">已验证的问题→SQL</text>
+<rect x="899.5" y="818" width="264.5" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="1031.8" y="842" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">审计与运行日志</text>
+<text x="1031.8" y="860" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">合规与归因依据</text>
+<line x1="300" y1="890" x2="300" y2="933" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="312" y="920.0" font-size="11.5" fill="currentColor" fill-opacity="0.62">访问底层数据与模型</text>
+<rect x="60" y="942" width="1120" height="102" rx="6" fill="currentColor" fill-opacity="0.035" stroke="currentColor" stroke-opacity="0.22"/>
+<text x="76" y="963" font-size="12.5" font-weight="600" letter-spacing="1.2" fill="currentColor" fill-opacity="0.62">底层依赖</text>
+<rect x="76.0" y="972" width="356.0" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="254.0" y="996" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">数仓与业务库</text>
+<text x="254.0" y="1014" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">PG · MySQL · StarRocks · Hive</text>
+<rect x="442.0" y="972" width="356.0" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="620.0" y="996" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">知识库文档</text>
+<text x="620.0" y="1014" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">制度 · 口径 · 手册</text>
+<rect x="808.0" y="972" width="356.0" height="56" rx="4" fill="currentColor" fill-opacity="0.055" stroke="currentColor" stroke-opacity="0.3"/>
+<text x="986.0" y="996" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor" fill-opacity="0.92">大模型服务</text>
+<text x="986.0" y="1014" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.5">阿里云百炼</text>
+</svg>
