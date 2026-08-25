@@ -1,0 +1,21 @@
+# 仓库根的 ruff 配置，覆盖 scripts/ 等 backend/ 之外的代码。
+# backend/ 有自己的 pyproject.toml 配置，两边保持一致。
+line-length = 100
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "PL", "S"]
+ignore = [
+    "B008",
+    "S101",
+    "BLE001",
+    "PLR0913",
+    "PLR2004",
+    # 注释和文档字符串是中文的，全角标点会被判成「易混淆字符」。
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    "PLC0415",
+    # 脚本要先改 sys.path 再导入 agentbase，import 只能写在后面。
+    "E402",
+]

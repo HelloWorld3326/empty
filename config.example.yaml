@@ -1,0 +1,62 @@
+# AgentBase 配置示例。复制成 config.yaml 后按需修改。
+# 所有密钥都用 ${VAR} 引用环境变量，不要直接写在这里。
+
+llm:
+  # 阿里云百炼的 OpenAI 兼容端点。换专有云或其他国产模型只改 base_url + model。
+  model: qwen-max
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key: ${DASHSCOPE_API_KEY}
+  temperature: 0.0
+  max_tokens: 4096
+  # 先跑 scripts/model_checkup.py 体检，确认模型并行工具调用可靠了再打开。
+  parallel_tool_calls: false
+
+agent:
+  max_iterations: 30
+  compaction_trigger_tokens: 48000
+  compaction_keep_recent_messages: 6
+  # MVP 默认开启。这是业务同学敢用这个东西的前提，别为了 demo 流畅关掉它。
+  require_sql_confirmation: true
+
+sandbox:
+  # 生产必须是 k8s。local 会把 agent 生成的代码直接跑在网关机器上。
+  provider: local
+  image: agentbase/sandbox:latest
+  namespace: agentbase
+  idle_timeout_seconds: 900
+  workspace_root: /mnt/user-data
+  cpu_limit: "1"
+  memory_limit: 2Gi
+  # 默认禁止一切出网，这里列出的才放行。留空 = 完全断网（推荐）。
+  egress_allowlist: []
+
+skills:
+  paths:
+    - skills
+  max_description_chars: 200
+
+# 会话状态持久化。生产用 postgres，本地开发用 sqlite。
+checkpoint_dsn: sqlite:///./agentbase.db
+
+datasources:
+  - name: crm
+    description: 客户与订单库（只读从库）
+    # 必须是只读账号。应用层的 SQL 校验是第二道防线，不是第一道。
+    dsn: postgresql+psycopg://${CRM_DB_USER}:${CRM_DB_PASSWORD}@${CRM_DB_HOST}:5432/crm
+    statement_timeout_seconds: 30
+    max_rows: 5000
+    # 回传给模型的行数上限。明细走沙箱文件，不进 prompt——
+    # 既压住敏感数据外发面，也省 token。
+    max_rows_to_model: 50
+    include_schemas: [public]
+    exclude_tables: [public.user_password_history]
+
+roles:
+  - name: 分析师
+    datasources: [crm]
+    table_allowlist: ["public.*"]
+  - name: 销售
+    datasources: [crm]
+    # 白名单精确到表。行级权限（只看自己区域）当前未实现，
+    # 需要时在 datasources/registry.py 的 RowFilterHook 上挂实现。
+    table_allowlist: ["public.orders", "public.customers"]

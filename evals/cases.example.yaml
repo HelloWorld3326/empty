@@ -1,0 +1,45 @@
+# 回归评测集。
+#
+# 强烈建议从数据库的历史查询日志或现有 BI 报表里捞，不要凭空设计——
+# 捞出来的问题符合真实分布，设计出来的问题会系统性偏简单，
+# 让你对准确率产生错觉。30 条起步就够用。
+#
+# golden_sql 是人工确认过的正确答案。评分比的是它的执行结果，
+# 不是 SQL 文本——同一个问题有无数种正确写法，比文本毫无意义。
+
+cases:
+  - id: gmv-2026-01
+    question: 2026年1月的GMV是多少
+    datasource: crm
+    golden_sql: >
+      SELECT sum(amount) / 100.0 AS gmv
+      FROM orders
+      WHERE status IN ('paid', 'shipped', 'completed')
+        AND is_test = false
+        AND created_at >= '2026-01-01' AND created_at < '2026-02-01'
+    tags: [指标, 聚合]
+    note: 考察是否读了「指标口径」skill —— 排除测试订单、金额单位是分
+
+  - id: top-customers
+    question: 华东区订单金额最高的前十个客户是谁
+    datasource: crm
+    ordered: true
+    golden_sql: >
+      SELECT c.name, sum(o.amount) / 100.0 AS total
+      FROM orders o JOIN customers c ON o.customer_id = c.customer_id
+      WHERE c.region = '华东' AND o.is_test = false
+      GROUP BY c.name ORDER BY total DESC LIMIT 10
+    tags: [join, 排序]
+    note: 考察 JOIN 和「顺序敏感」的处理
+
+  - id: refund-rate-q1
+    question: 一季度退款率多少
+    datasource: crm
+    golden_sql: >
+      SELECT count(DISTINCT r.order_id) * 1.0 / count(DISTINCT o.order_id) AS refund_rate
+      FROM orders o LEFT JOIN refunds r
+        ON o.order_id = r.order_id AND r.status = 'success'
+      WHERE o.is_test = false
+        AND o.created_at >= '2026-01-01' AND o.created_at < '2026-04-01'
+    tags: [指标, 口径易错]
+    note: 分子分母都要按下单时间口径，这是最容易错的一条

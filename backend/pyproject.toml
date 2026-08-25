@@ -1,0 +1,67 @@
+[project]
+name = "agentbase"
+version = "0.1.0"
+description = "企业内部 Agent 运行时平台（harness）- MVP"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=1.0,<2",
+    "langchain-core>=1.0,<2",
+    "langchain-openai>=1.0,<2",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "sse-starlette>=2.1.3",
+    "sqlalchemy>=2.0.36",
+    "sqlglot>=25.34.0",
+    "pydantic>=2.9.0",
+    "pyyaml>=6.0.2",
+    "httpx>=0.27.0",
+    # checkpointer 不是可选功能：SQL 人工确认要靠它挂起图，
+    # 中断恢复和分叉重跑也都依赖它。
+    "langgraph-checkpoint-sqlite>=2.0.0",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.2.3", "langgraph-checkpoint-postgres>=2.0.0"]
+mysql = ["pymysql>=1.1.1"]
+k8s = ["kubernetes>=31.0.0"]
+dev = ["pytest>=8.3.0", "pytest-asyncio>=0.24.0", "ruff>=0.8.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentbase"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "PL", "S"]
+ignore = [
+    # FastAPI 的 Depends()/Header() 就是写在默认值里的，这是框架用法。
+    "B008",
+    # 断言在测试里是主要表达方式。
+    "S101",
+    # 项目里的宽泛 except 都是刻意的（工具报错要回给模型、内省失败不该中断整次扫描），
+    # 每处都有注释说明。
+    "BLE001",
+    "PLR0913",
+    "PLR2004",
+    # 代码注释和文档字符串是中文的，全角标点会被判成「易混淆字符」。
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    # 惰性导入是刻意的：可选依赖（k8s、postgres checkpointer）不该在
+    # 模块导入时就要求装上，否则最小安装跑不起来。
+    "PLC0415",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# 测试里需要直接构造内部状态，免去连库。
+"tests/*" = ["SLF001", "S105", "S106"]
