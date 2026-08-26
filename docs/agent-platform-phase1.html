@@ -1,0 +1,1103 @@
+<title>SUPCON 智能体平台一期</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+SC:wght@400;500;600;700&display=swap">
+
+<style>
+:root{
+  --ground:#F5F7F8;
+  --surface:#FFFFFF;
+  --surface-2:#EDF1F3;
+  --ink:#131A20;
+  --ink-2:#3D4854;
+  --muted:#616E7C;
+  --line:#DCE2E7;
+  --line-2:#C3CCD4;
+  --accent:#0E6B87;
+  --accent-ink:#0E6B87;
+  --accent-soft:#E2EFF3;
+  --amber:#8F5600;
+  --amber-soft:#F8EEDD;
+  --green:#1C6B41;
+  --green-soft:#E2F0E8;
+  --red:#9E2F27;
+  --red-soft:#F8E7E5;
+  --shadow:0 1px 2px rgba(19,26,32,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1216;
+    --surface:#161C22;
+    --surface-2:#1E252D;
+    --ink:#E2E8EE;
+    --ink-2:#B9C3CE;
+    --muted:#8B96A3;
+    --line:#262E37;
+    --line-2:#38424D;
+    --accent:#59B6D2;
+    --accent-ink:#7FCBE2;
+    --accent-soft:#122931;
+    --amber:#D8A052;
+    --amber-soft:#2B2214;
+    --green:#5CAE83;
+    --green-soft:#132419;
+    --red:#DE7168;
+    --red-soft:#2B1614;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1216;
+  --surface:#161C22;
+  --surface-2:#1E252D;
+  --ink:#E2E8EE;
+  --ink-2:#B9C3CE;
+  --muted:#8B96A3;
+  --line:#262E37;
+  --line-2:#38424D;
+  --accent:#59B6D2;
+  --accent-ink:#7FCBE2;
+  --accent-soft:#122931;
+  --amber:#D8A052;
+  --amber-soft:#2B2214;
+  --green:#5CAE83;
+  --green-soft:#132419;
+  --red:#DE7168;
+  --red-soft:#2B1614;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"IBM Plex Sans","IBM Plex Sans SC",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:15px;
+  line-height:1.72;
+  -webkit-font-smoothing:antialiased;
+}
+
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+
+.shell{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  max-width:1280px;
+  margin:0 auto;
+  padding:0 24px 96px;
+}
+@media (min-width:1120px){
+  .shell{grid-template-columns:206px minmax(0,1fr);gap:56px;padding:0 40px 120px}
+}
+
+/* ---- masthead ---- */
+.masthead{
+  grid-column:1/-1;
+  padding:56px 0 32px;
+  border-bottom:2px solid var(--ink);
+  margin-bottom:44px;
+}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;
+  font-weight:500;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.masthead h1{
+  font-size:clamp(30px,4.4vw,46px);
+  line-height:1.12;
+  font-weight:700;
+  letter-spacing:-.015em;
+  margin:12px 0 0;
+  text-wrap:balance;
+}
+.masthead .sub{
+  margin:14px 0 0;
+  max-width:60ch;
+  color:var(--ink-2);
+  font-size:16px;
+}
+.stampline{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 22px;
+  margin-top:24px;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:12px;
+  color:var(--muted);
+}
+.stampline b{color:var(--ink);font-weight:500}
+
+/* ---- toc ---- */
+.toc{display:none}
+@media (min-width:1120px){
+  .toc{
+    display:block;
+    position:sticky;
+    top:0;
+    align-self:start;
+    max-height:100vh;
+    overflow-y:auto;
+    padding:8px 0 40px;
+  }
+  .toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+  .toc a{
+    display:flex;
+    gap:9px;
+    padding:5px 8px 5px 0;
+    color:var(--muted);
+    text-decoration:none;
+    font-size:13px;
+    line-height:1.45;
+    border-left:2px solid transparent;
+    padding-left:11px;
+  }
+  .toc a:hover{color:var(--accent-ink);border-left-color:var(--accent)}
+  .toc a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .toc a .n{font-family:"IBM Plex Mono",monospace;font-size:11px;flex:0 0 auto;opacity:.7}
+}
+
+main{min-width:0}
+
+/* ---- sections ---- */
+section{padding-top:8px;margin-bottom:56px;scroll-margin-top:20px}
+.sec-head{
+  display:flex;
+  align-items:baseline;
+  gap:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--line-2);
+  margin-bottom:22px;
+}
+.sec-head .num{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:12px;
+  font-weight:600;
+  color:var(--accent-ink);
+  letter-spacing:.06em;
+  flex:0 0 auto;
+}
+.sec-head h2{
+  margin:0;
+  font-size:21px;
+  font-weight:600;
+  letter-spacing:-.01em;
+}
+h3{
+  font-size:15.5px;
+  font-weight:600;
+  margin:30px 0 10px;
+  letter-spacing:-.005em;
+}
+p{margin:0 0 14px;max-width:66ch}
+main a{color:var(--accent-ink);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
+strong{font-weight:600}
+code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:.87em;
+  background:var(--surface-2);
+  padding:1px 5px;
+  border-radius:3px;
+}
+
+/* ---- verdict ---- */
+.verdict{
+  border:1px solid var(--line-2);
+  border-left:3px solid var(--accent);
+  background:var(--surface);
+  padding:22px 24px;
+  margin-bottom:40px;
+  box-shadow:var(--shadow);
+}
+.verdict p{margin:0 0 10px;max-width:68ch}
+.verdict p:last-child{margin:0}
+.verdict .lead{font-size:17px;font-weight:600;letter-spacing:-.01em}
+
+/* ---- tables ---- */
+.tw{overflow-x:auto;margin:0 0 12px;border:1px solid var(--line);background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+th,td{padding:9px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+thead th{
+  background:var(--surface-2);
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  color:var(--muted);
+  white-space:nowrap;
+  border-bottom:1px solid var(--line-2);
+}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--surface-2)}
+td.id,th.id{width:1%;white-space:nowrap}
+.num-cell{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+tfoot td{
+  background:var(--surface-2);
+  font-weight:600;
+  border-top:1px solid var(--line-2);
+  border-bottom:0;
+}
+
+.tag{
+  display:inline-block;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.04em;
+  padding:1px 6px;
+  border-radius:3px;
+  background:var(--accent-soft);
+  color:var(--accent-ink);
+  white-space:nowrap;
+}
+.tag.g{background:var(--green-soft);color:var(--green)}
+.tag.a{background:var(--amber-soft);color:var(--amber)}
+.tag.r{background:var(--red-soft);color:var(--red)}
+.tag.n{background:var(--surface-2);color:var(--muted)}
+
+/* ---- figures ---- */
+figure{margin:24px 0 26px}
+.figframe{
+  border:1px solid var(--line);
+  background:var(--surface);
+  padding:20px 16px;
+  overflow-x:auto;
+}
+figure svg{display:block;max-width:100%;height:auto;margin:0 auto;color:var(--ink-2)}
+figcaption{
+  margin-top:10px;
+  font-size:12.5px;
+  color:var(--muted);
+  max-width:70ch;
+  line-height:1.6;
+}
+figcaption b{color:var(--ink-2);font-weight:600}
+
+/* ---- protocol block ---- */
+pre{
+  margin:0 0 16px;
+  padding:16px 18px;
+  border:1px solid var(--line);
+  background:var(--surface);
+  overflow-x:auto;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:12.5px;
+  line-height:1.75;
+  color:var(--ink-2);
+}
+pre b{color:var(--accent-ink);font-weight:600}
+pre i{color:var(--muted);font-style:normal}
+
+/* ---- budget bars ---- */
+.tiers{display:grid;gap:14px;margin:20px 0 8px}
+@media (min-width:760px){.tiers{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.tier{
+  border:1px solid var(--line);
+  background:var(--surface);
+  padding:16px 17px;
+  display:flex;
+  flex-direction:column;
+  gap:11px;
+}
+.tier.pick{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tier-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.tier-name{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;letter-spacing:.05em}
+.tier-crew{font-size:12px;color:var(--muted)}
+.tier h4{margin:0;font-size:14.5px;font-weight:600}
+.gauge{display:flex;flex-direction:column;gap:5px}
+.gauge-lab{display:flex;justify-content:space-between;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.track{position:relative;height:9px;background:var(--surface-2);border:1px solid var(--line)}
+.track i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);display:block}
+.track u{
+  position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--red);
+  text-decoration:none;
+}
+.tier-note{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:auto}
+.tier-note.ok{color:var(--green)}
+.tier-note.bad{color:var(--red)}
+
+/* ---- week plan ---- */
+.week{
+  border:1px solid var(--line);
+  background:var(--surface);
+  margin-bottom:12px;
+}
+.week-head{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:12px;
+  padding:12px 16px;
+  border-bottom:1px solid var(--line);
+  background:var(--surface-2);
+}
+.week-head .w{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--accent-ink)}
+.week-head .t{font-size:14.5px;font-weight:600}
+.week-head .ms{margin-left:auto;font-size:12px}
+.week-body{display:grid;gap:0}
+.lane{
+  display:grid;
+  grid-template-columns:74px minmax(0,1fr);
+  gap:14px;
+  padding:9px 16px;
+  border-bottom:1px solid var(--line);
+  font-size:13.5px;
+}
+.lane:last-child{border-bottom:0}
+.lane .who{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;
+  font-weight:600;
+  color:var(--muted);
+  letter-spacing:.05em;
+  padding-top:2px;
+}
+.gate{
+  padding:10px 16px;
+  background:var(--accent-soft);
+  border-top:1px solid var(--line);
+  font-size:13px;
+  color:var(--ink-2);
+}
+.gate b{color:var(--accent-ink)}
+
+/* ---- checklists ---- */
+ul.plain{margin:0 0 16px;padding-left:19px;max-width:66ch}
+ul.plain li{margin-bottom:6px}
+ol.steps{margin:0 0 16px;padding-left:21px;max-width:66ch}
+ol.steps li{margin-bottom:8px}
+
+.cut{
+  display:grid;
+  gap:18px;
+  margin-top:6px;
+}
+@media (min-width:720px){.cut{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cut-col h3{margin-top:0}
+.cut-col ul{margin:0;padding-left:19px}
+.cut-col li{margin-bottom:5px;font-size:13.5px;color:var(--ink-2)}
+
+footer{
+  grid-column:1/-1;
+  margin-top:24px;
+  padding-top:20px;
+  border-top:1px solid var(--line-2);
+  font-size:12.5px;
+  color:var(--muted);
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px 20px;
+}
+
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="shell">
+
+<header class="masthead">
+  <div class="eyebrow">一期技术方案 · v1.0 · 2026-08-26</div>
+  <h1>SUPCON 数据智能体平台</h1>
+  <p class="sub">从 PRD 与功能原型收敛出的技术架构、数据模型、垂直切片任务拆解与人力档位。参考项目 nexent，自研业务层。</p>
+  <div class="stampline mono">
+    <span>范围 <b>创建 · 配置 · 发布 · 管理 · 问答</b></span>
+    <span>团队 <b>1 算法 · 2 后端 · 1 前端</b></span>
+    <span>工期 <b>4 周（建议 5 周）</b></span>
+    <span>决策 <b>18 条已锁定</b></span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="目录">
+  <ol>
+    <li><a href="#s0"><span class="n">00</span><span>结论</span></a></li>
+    <li><a href="#s1"><span class="n">01</span><span>决策台账</span></a></li>
+    <li><a href="#s2"><span class="n">02</span><span>技术架构</span></a></li>
+    <li><a href="#s3"><span class="n">03</span><span>运行机制</span></a></li>
+    <li><a href="#s4"><span class="n">04</span><span>版本与发布</span></a></li>
+    <li><a href="#s5"><span class="n">05</span><span>数据模型</span></a></li>
+    <li><a href="#s6"><span class="n">06</span><span>权限模型</span></a></li>
+    <li><a href="#s7"><span class="n">07</span><span>任务拆解</span></a></li>
+    <li><a href="#s8"><span class="n">08</span><span>人力档位</span></a></li>
+    <li><a href="#s9"><span class="n">09</span><span>周计划</span></a></li>
+    <li><a href="#s10"><span class="n">10</span><span>契约清单</span></a></li>
+    <li><a href="#s11"><span class="n">11</span><span>风险</span></a></li>
+    <li><a href="#s12"><span class="n">12</span><span>不做的范围</span></a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="s0">
+  <div class="verdict">
+    <p class="lead">一期做智能体的创建、配置、发布、管理与问答；资源中心只做模型、MCP/API 工具、Skill、知识库（外部）四类。</p>
+    <p>后端与算法产能充足，<strong>前端是唯一瓶颈</strong>：需求 46.5 人天，1 人 4 周只有 20 人天，缺口 26.5 人天。而在 4 人 4 周档位下后端反而会因为前端做不完而闲置——这正说明补前端是全局最高杠杆的一笔投入。</p>
+    <p><strong>建议按 5 人 5 周立项</strong>（+1 前端 +1 周）。若人力不批，按 P0 交付并对外明确定义为"内部验证版"，不承诺试用。</p>
+  </div>
+
+  <h3>关于估算口径</h3>
+  <p>本文所有人天已按「AI 让编码环节提速 2.5–3 倍、设计与联调环节不变」折算。AI 压缩的是敲代码，压不动<strong>对齐、联调、拿权限、验收、改需求</strong>——在一个 4 周、大量对接内部系统的项目里，后者占比超过一半。</p>
+  <p>以「模型管理」这一个切片为例，人工 5 人天 → AI 辅助 1.9 人天（提速 2.6 倍），其中「拿到真实 key 跑通 + 异常路径验收」那 0.7 人天完全压不动。任何按「AI 提速 10 倍」排的计划都会崩。</p>
+</section>
+
+<section id="s1">
+  <div class="sec-head"><span class="num">§01</span><h2>决策台账</h2></div>
+  <p>18 条决策已逐条确认。后续实现如需推翻，走变更流程并更新此表。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th class="id">ID</th><th>决策项</th><th>结论</th><th>关键后果</th></tr></thead>
+      <tbody>
+        <tr><td class="id"><span class="tag">D1</span></td><td>代码基线</td><td>自研后端 + vendored <code>nexent</code> SDK 作为 agent 运行时；用户体系抄表设计不抄 Supabase</td><td>业务层完全自控，不继承 60 路由 / 80 服务的包袱</td></tr>
+        <tr><td class="id"><span class="tag">D2</span></td><td>NL2Agent</td><td><strong>不做</strong></td><td>配置页是纯人工配置，交互不分裂</td></tr>
+        <tr><td class="id"><span class="tag">D3</span></td><td>资源中心范围</td><td>做：模型、MCP/API、Skill、知识库（仅管理）<br>砍：数据资源、测试数据集、全部统计</td><td>省掉一个完整产品（NL2SQL）与一整套向量库设施</td></tr>
+        <tr><td class="id"><span class="tag">D4</span></td><td>Skill 的本质</td><td><strong>结构化 Prompt 模板</strong>，支持 AI 生成；不执行代码、不做沙箱</td><td>避开安全禁区；健康状态降级为「最近一次试运行结果」</td></tr>
+        <tr><td class="id"><span class="tag">D5</span></td><td>发布语义</td><td><strong>快照式版本</strong>：<code>version_no=0</code> 草稿，<code>&ge;1</code> 发布快照</td><td>编辑不影响线上；配置变更 diff 天然有来源</td></tr>
+        <tr><td class="id"><span class="tag">D6</span></td><td>执行模型</td><td>进程内 asyncio，但接口按队列形状设计</td><td>用单机成本买可演进接口，二期换队列前端零改动</td></tr>
+        <tr><td class="id"><span class="tag">D7</span></td><td>SSE 协议</td><td>9 类事件，思考 / 工具 / 引用均为独立事件流</td><td>支撑原型图的实时展开交互</td></tr>
+        <tr><td class="id"><span class="tag">D8</span></td><td>模型接入</td><td>百炼 OpenAI 兼容 + <strong>标准 function calling</strong>；无 Embedding；ASR 砍掉</td><td>不用 CodeAgent 范式，运行时 8→6 人天且稳定性大幅提升</td></tr>
+        <tr><td class="id"><span class="tag">D9</span></td><td>知识库</td><td>外置。抽象 <code>KnowledgeProvider</code>，一期只实现内网适配器</td><td>内网接口不理想也不阻塞运行时开发</td></tr>
+        <tr><td class="id"><span class="tag">D10</span></td><td>租户</td><td>单租户；全表预留 <code>tenant_id</code> 但不实现隔离</td><td>二期要隔离时不迁数据，当前成本为零</td></tr>
+        <tr><td class="id"><span class="tag">D11</span></td><td>身份</td><td>自建账号密码；预留 <code>external_id</code> / <code>source</code></td><td>不被 SSO 对接的外部排期绑架</td></tr>
+        <tr><td class="id"><span class="tag">D12</span></td><td>权限模型</td><td><strong>照搬 nexent</strong>：RBAC + DAC + tenant_scope</td><td>替代 PRD 四档可见范围，前端选择器简化，省 2 人天</td></tr>
+        <tr><td class="id"><span class="tag">D13</span></td><td>前端栈</td><td>Vue3 + Vite + TS + Pinia + Ant Design Vue</td><td>nexent 前端<strong>一行不可复用</strong>，流式渲染需自建，+3 人天</td></tr>
+        <tr><td class="id"><span class="tag">D14</span></td><td>后端栈</td><td>Python 3.11 + FastAPI + SQLAlchemy 2 + PostgreSQL + Redis</td><td>不引入 ES / MinIO / 向量库 / Celery</td></tr>
+        <tr><td class="id"><span class="tag">D15</span></td><td>仓库结构</td><td>monorepo：<code>/contracts</code> <code>/backend</code> <code>/agent-runtime</code> <code>/frontend</code></td><td>OpenAPI spec 单一真源</td></tr>
+        <tr><td class="id"><span class="tag">D16</span></td><td>协作模式</td><td><strong>契约先行 + mock 驱动</strong>，之后按垂直切片分工</td><td>前端零等待；TS 类型由 spec 生成，挡住 AI 字段名幻觉</td></tr>
+        <tr><td class="id"><span class="tag">D17</span></td><td>算法分工</td><td>W1–W2 专职运行时，W3–W4 转资源域后端</td><td>避免运行时单点阻塞全组</td></tr>
+        <tr><td class="id"><span class="tag">D18</span></td><td>附件</td><td>做。本地卷存储，<strong>平台不解析文档</strong></td><td>不为附件引入 MinIO；长文档引导走知识库</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s2">
+  <div class="sec-head"><span class="num">§02</span><h2>技术架构</h2></div>
+
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 940 610" role="img" aria-label="分层架构：Vue3 SPA 经 Nginx 到 FastAPI，API 层下分领域服务层与 Agent Runtime，运行流经 Runtime 到达百炼、知识库与 MCP Server，配置流经领域服务落 PostgreSQL">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+          </marker>
+        </defs>
+
+        <!-- browser -->
+        <rect x="150" y="14" width="640" height="60" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="166" y="36" font-size="13" font-weight="600" fill="currentColor" font-family="IBM Plex Sans, sans-serif">浏览器 · Vue3 SPA</text>
+        <text x="166" y="56" font-size="11.5" fill="currentColor" opacity=".72" font-family="IBM Plex Sans, sans-serif">智能体管理 · 配置台 · 问答 · 资源中心 · 记录</text>
+        <text x="774" y="36" font-size="10.5" fill="currentColor" opacity=".6" text-anchor="end" font-family="IBM Plex Mono, monospace">Vite / TS / Pinia / AntDV</text>
+
+        <line x1="400" y1="74" x2="400" y2="102" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar)"/>
+        <text x="410" y="93" font-size="10.5" fill="currentColor" opacity=".7" font-family="IBM Plex Mono, monospace">JSON</text>
+        <line x1="540" y1="74" x2="540" y2="102" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ara)"/>
+        <text x="550" y="93" font-size="10.5" fill="var(--accent)" font-family="IBM Plex Mono, monospace">SSE</text>
+
+        <!-- nginx -->
+        <rect x="150" y="102" width="640" height="34" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="166" y="124" font-size="12" fill="currentColor" font-family="IBM Plex Sans, sans-serif">Nginx · 静态资源 / API 反代 / <tspan font-family="IBM Plex Mono, monospace" font-size="11">proxy_buffering off</tspan></text>
+
+        <line x1="400" y1="136" x2="400" y2="162" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar)"/>
+        <line x1="540" y1="136" x2="540" y2="162" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ara)"/>
+
+        <!-- api layer -->
+        <rect x="150" y="162" width="640" height="62" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <text x="166" y="184" font-size="13" font-weight="600" fill="currentColor" font-family="IBM Plex Sans, sans-serif">API 层 · FastAPI</text>
+        <text x="166" y="203" font-size="11.5" fill="currentColor" opacity=".72" font-family="IBM Plex Mono, monospace">auth · agents · runs · conversations · resources · records · files</text>
+        <text x="166" y="218" font-size="11" fill="currentColor" opacity=".6" font-family="IBM Plex Sans, sans-serif">中间件：JWT 鉴权 · RBAC/DAC 校验 · 请求日志 · 限流</text>
+
+        <!-- split arrows -->
+        <path d="M320 224 L320 250 L268 250 L268 268" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar)"/>
+        <text x="200" y="245" font-size="10.5" fill="currentColor" opacity=".72" font-family="IBM Plex Mono, monospace">配置流</text>
+        <path d="M620 224 L620 250 L672 250 L672 268" fill="none" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ara)"/>
+        <text x="700" y="245" font-size="10.5" fill="var(--accent)" font-family="IBM Plex Mono, monospace">运行流</text>
+
+        <!-- domain services -->
+        <rect x="24" y="268" width="488" height="128" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="40" y="290" font-size="13" font-weight="600" fill="currentColor" font-family="IBM Plex Sans, sans-serif">领域服务层</text>
+        <text x="40" y="312" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif">AgentService · 版本快照 / 状态机 / 发布前检查</text>
+        <text x="40" y="331" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif">ResourceService · Model / MCP / Skill / Knowledge</text>
+        <text x="40" y="350" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif">ConversationService · 会话 / 消息 / run / trace / citation</text>
+        <text x="40" y="369" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif">PermissionService · RBAC + DAC + tenant_scope</text>
+        <text x="40" y="388" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif">RecordService · 使用记录 / 发布记录 / 配置变更 diff</text>
+
+        <!-- agent runtime -->
+        <rect x="536" y="268" width="380" height="128" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+        <text x="552" y="290" font-size="13" font-weight="600" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">Agent Runtime</text>
+        <text x="900" y="290" font-size="10" fill="var(--accent)" opacity=".8" text-anchor="end" font-family="IBM Plex Mono, monospace">vendored nexent SDK</text>
+        <text x="552" y="312" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif">AgentAssembler · 配置快照 → 可执行 agent</text>
+        <text x="552" y="331" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif">ToolRegistry · MCP 客户端 / 知识检索 / Skill 注入</text>
+        <text x="552" y="350" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif">LLMClient · function calling / 流式</text>
+        <text x="552" y="369" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif">RunManager · asyncio task / 取消 / 超时</text>
+        <text x="552" y="388" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif">EventEmitter · 9 类 SSE 事件</text>
+
+        <line x1="512" y1="332" x2="536" y2="332" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar)"/>
+
+        <!-- storage -->
+        <line x1="180" y1="396" x2="180" y2="436" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar)"/>
+        <line x1="400" y1="396" x2="400" y2="436" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar)"/>
+        <line x1="640" y1="396" x2="640" y2="436" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ara)"/>
+        <line x1="820" y1="396" x2="820" y2="436" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ara)"/>
+
+        <rect x="24" y="436" width="230" height="72" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="40" y="458" font-size="12.5" font-weight="600" fill="currentColor" font-family="IBM Plex Sans, sans-serif">PostgreSQL</text>
+        <text x="40" y="477" font-size="11" fill="currentColor" opacity=".72" font-family="IBM Plex Sans, sans-serif">20 张业务表</text>
+        <text x="40" y="494" font-size="11" fill="currentColor" opacity=".72" font-family="IBM Plex Sans, sans-serif">JSONB 配置快照 · run_event trace</text>
+
+        <rect x="278" y="436" width="234" height="72" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="294" y="458" font-size="12.5" font-weight="600" fill="currentColor" font-family="IBM Plex Sans, sans-serif">Redis</text>
+        <text x="294" y="477" font-size="11" fill="currentColor" opacity=".72" font-family="IBM Plex Sans, sans-serif">run 状态 · 取消标志</text>
+        <text x="294" y="494" font-size="11" fill="currentColor" opacity=".72" font-family="IBM Plex Sans, sans-serif">会话缓存 · 并发限流</text>
+
+        <rect x="536" y="436" width="380" height="72" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="552" y="458" font-size="12.5" font-weight="600" fill="currentColor" font-family="IBM Plex Sans, sans-serif">外部依赖</text>
+        <text x="552" y="477" font-size="11" fill="currentColor" opacity=".72" font-family="IBM Plex Sans, sans-serif">阿里云百炼（公网）· 内网知识库服务</text>
+        <text x="552" y="494" font-size="11" fill="currentColor" opacity=".72" font-family="IBM Plex Sans, sans-serif">远程 MCP Server</text>
+
+        <rect x="24" y="530" width="488" height="30" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="40" y="550" font-size="11" fill="currentColor" opacity=".72" font-family="IBM Plex Sans, sans-serif">本地卷 · 附件文件（平台不解析文档）</text>
+
+        <text x="24" y="590" font-size="11" fill="currentColor" opacity=".6" font-family="IBM Plex Sans, sans-serif">一期不引入：Elasticsearch · MinIO · 向量数据库 · Celery / RabbitMQ · Kubernetes</text>
+      </svg>
+    </div>
+    <figcaption><b>两条数据流，一套代码。</b>配置流（细线）同步走领域服务落 PostgreSQL；运行流（青色）异步经 Agent Runtime 出 SSE 事件。即时测试与正式问答共用运行流，仅以 <code>run.mode = test | chat</code> 区分——test 模式不写会话与消息，只写 run 与 run_event。这让「即时测试」这个切片的边际成本接近零。</figcaption>
+  </figure>
+
+  <h3>技术选型</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>层</th><th>选型</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>前端框架</td><td>Vue3 + Vite + TypeScript</td><td>团队背景；TS 承接 spec 生成的类型</td></tr>
+        <tr><td>组件库</td><td>Ant Design Vue</td><td>原型图视觉语言即 Ant，Table / Modal / Form 一一对应</td></tr>
+        <tr><td>后端框架</td><td>FastAPI</td><td>原生 async，SSE 与 asyncio 取消天然契合</td></tr>
+        <tr><td>ORM</td><td>SQLAlchemy 2.0</td><td>与 nexent 一致，表设计可直接迁移</td></tr>
+        <tr><td>数据库</td><td>PostgreSQL 15+</td><td>JSONB 存配置快照是核心便利</td></tr>
+        <tr><td>缓存</td><td>Redis 7</td><td>run 状态、取消标志、并发限流</td></tr>
+        <tr><td>Agent 内核</td><td>vendored nexent SDK</td><td>复用 MCP 适配与流式封装</td></tr>
+        <tr><td>LLM</td><td>阿里云百炼 OpenAI 兼容端点</td><td>已有 key，支持 function calling</td></tr>
+        <tr><td>契约</td><td>OpenAPI 3.1 + Prism / msw</td><td>单一真源，双端类型生成</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s3">
+  <div class="sec-head"><span class="num">§03</span><h2>运行机制</h2></div>
+
+  <h3>SSE 事件协议</h3>
+  <p>思考过程、工具调用、引用来源是<strong>独立事件流</strong>而非最后一次性返回——原型图里「思考过程实时展开」「引用数量实时累加」的交互依赖这一点。前端 mock server 也基于这份协议造假数据，因此前端在第 2 天就能开发问答页。</p>
+  <pre><b>event: run.started</b>      <i>{ run_id, agent_id, version_no, mode }</i>
+<b>event: thinking.step</b>    <i>{ step_id, phase: "识别"|"检索"|"调用", text }</i>
+<b>event: tool.call</b>        <i>{ call_id, tool_name, tool_type, args_summary }</i>
+<b>event: tool.result</b>      <i>{ call_id, status, duration_ms, summary }</i>
+<b>event: citation</b>         <i>{ citation_id, source_type, source_name, title, snippet }</i>
+<b>event: message.delta</b>    <i>{ text }</i>
+<b>event: message.done</b>     <i>{ message_id, finish_reason, duration_ms }</i>
+<b>event: run.error</b>        <i>{ code, message }</i>
+<b>event: run.cancelled</b>    <i>{ reason }</i></pre>
+
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 900 470" role="img" aria-label="一次运行的时序：前端 POST /runs 取得 run_id 后建立 SSE，RunManager 与百炼和工具多轮往返并逐事件推流，任意时刻可通过 cancel 接口置取消标志中断">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <marker id="ar2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+          </marker>
+          <marker id="ar2r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--red)"/>
+          </marker>
+        </defs>
+
+        <!-- lifelines -->
+        <rect x="20" y="14" width="120" height="28" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="80" y="33" font-size="12" font-weight="600" text-anchor="middle" fill="currentColor" font-family="IBM Plex Sans, sans-serif">前端</text>
+        <line x1="80" y1="42" x2="80" y2="440" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity=".5"/>
+
+        <rect x="260" y="14" width="170" height="28" fill="none" stroke="var(--accent)" stroke-width="1.4"/>
+        <text x="345" y="33" font-size="12" font-weight="600" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">RunManager</text>
+        <line x1="345" y1="42" x2="345" y2="440" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 4" opacity=".5"/>
+
+        <rect x="550" y="14" width="130" height="28" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="615" y="33" font-size="12" font-weight="600" text-anchor="middle" fill="currentColor" font-family="IBM Plex Sans, sans-serif">百炼 LLM</text>
+        <line x1="615" y1="42" x2="615" y2="440" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity=".5"/>
+
+        <rect x="770" y="14" width="112" height="28" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="826" y="33" font-size="12" font-weight="600" text-anchor="middle" fill="currentColor" font-family="IBM Plex Sans, sans-serif">MCP 工具</text>
+        <line x1="826" y1="42" x2="826" y2="440" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity=".5"/>
+
+        <!-- messages -->
+        <line x1="80" y1="66" x2="345" y2="66" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar2)"/>
+        <text x="212" y="60" font-size="11" text-anchor="middle" fill="currentColor" font-family="IBM Plex Mono, monospace">POST /runs</text>
+
+        <line x1="345" y1="90" x2="80" y2="90" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar2)"/>
+        <text x="212" y="84" font-size="11" text-anchor="middle" fill="currentColor" font-family="IBM Plex Mono, monospace">{ run_id }  建 run 记录</text>
+
+        <line x1="80" y1="114" x2="345" y2="114" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar2)"/>
+        <text x="212" y="108" font-size="11" text-anchor="middle" fill="currentColor" font-family="IBM Plex Mono, monospace">GET /runs/{id}/stream</text>
+
+        <line x1="345" y1="140" x2="80" y2="140" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#ar2a)"/>
+        <text x="212" y="134" font-size="11" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Mono, monospace">run.started</text>
+
+        <rect x="262" y="152" width="166" height="34" fill="none" stroke="var(--accent)" stroke-width="1" opacity=".8"/>
+        <text x="345" y="167" font-size="10.5" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">组装快照配置：prompt</text>
+        <text x="345" y="180" font-size="10.5" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">+ Skill 模板 + 工具 schema</text>
+
+        <line x1="345" y1="204" x2="615" y2="204" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar2)"/>
+        <text x="480" y="198" font-size="11" text-anchor="middle" fill="currentColor" font-family="IBM Plex Mono, monospace">chat + tools</text>
+        <line x1="345" y1="204" x2="80" y2="204" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#ar2a)"/>
+        <text x="212" y="198" font-size="11" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Mono, monospace">thinking.step</text>
+
+        <line x1="615" y1="230" x2="345" y2="230" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar2)"/>
+        <text x="480" y="224" font-size="11" text-anchor="middle" fill="currentColor" font-family="IBM Plex Mono, monospace">tool_calls</text>
+
+        <line x1="345" y1="256" x2="826" y2="256" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar2)"/>
+        <text x="585" y="250" font-size="11" text-anchor="middle" fill="currentColor" font-family="IBM Plex Mono, monospace">调用工具</text>
+        <line x1="345" y1="256" x2="80" y2="256" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#ar2a)"/>
+        <text x="212" y="250" font-size="11" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Mono, monospace">tool.call</text>
+
+        <line x1="826" y1="282" x2="345" y2="282" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar2)"/>
+        <text x="585" y="276" font-size="11" text-anchor="middle" fill="currentColor" font-family="IBM Plex Mono, monospace">结果</text>
+        <line x1="345" y1="282" x2="80" y2="282" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#ar2a)"/>
+        <text x="212" y="276" font-size="11" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Mono, monospace">tool.result + citation</text>
+
+        <line x1="345" y1="312" x2="615" y2="312" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar2)"/>
+        <text x="480" y="306" font-size="11" text-anchor="middle" fill="currentColor" font-family="IBM Plex Mono, monospace">chat（带工具结果）</text>
+
+        <line x1="615" y1="338" x2="345" y2="338" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar2)"/>
+        <text x="480" y="332" font-size="11" text-anchor="middle" fill="currentColor" font-family="IBM Plex Mono, monospace">stream tokens</text>
+        <line x1="345" y1="338" x2="80" y2="338" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#ar2a)"/>
+        <text x="212" y="332" font-size="11" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Mono, monospace">message.delta ×N</text>
+
+        <line x1="345" y1="364" x2="80" y2="364" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#ar2a)"/>
+        <text x="212" y="358" font-size="11" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Mono, monospace">message.done · 落库 run_event</text>
+
+        <!-- cancel -->
+        <line x1="20" y1="392" x2="880" y2="392" stroke="currentColor" stroke-width="1" opacity=".3"/>
+        <line x1="80" y1="414" x2="345" y2="414" stroke="var(--red)" stroke-width="1.4" marker-end="url(#ar2r)"/>
+        <text x="212" y="408" font-size="11" text-anchor="middle" fill="var(--red)" font-family="IBM Plex Mono, monospace">POST /runs/{id}/cancel</text>
+        <text x="500" y="411" font-size="10.5" fill="var(--red)" font-family="IBM Plex Sans, sans-serif">任意时刻 · 置 Redis 取消标志 + task.cancel()</text>
+        <line x1="345" y1="436" x2="80" y2="436" stroke="var(--red)" stroke-width="1.4" marker-end="url(#ar2r)"/>
+        <text x="212" y="430" font-size="11" text-anchor="middle" fill="var(--red)" font-family="IBM Plex Mono, monospace">run.cancelled</text>
+      </svg>
+    </div>
+    <figcaption><b>取消是真中断，不是 UI 状态。</b>RunManager 持有 <code>run_id → asyncio.Task</code> 映射，同时在 Redis 写 <code>run:{id}:cancel</code>；工具调用的每轮循环开头检查标志位，LLM 流式读取时用 <code>task.cancel()</code>。这三个 HTTP 接口的形状与任务队列方案一致——二期换成 Celery 时前端一行不改。</figcaption>
+  </figure>
+
+  <h3>配置快照如何变成可执行 agent</h3>
+  <p><code>AgentAssembler</code> 从 <code>agent.config</code> JSONB 读取快照，组装出四样东西：</p>
+  <ol class="steps">
+    <li><strong>system prompt</strong> = 用户填的 Prompt + 挂载 Skill 的模板体（按输入变量渲染）+ 输出格式约束</li>
+    <li><strong>工具清单</strong> = 挂载的 MCP 工具（<code>resource_mcp_tool.input_schema</code> 转 function calling schema）+ 内置知识检索工具（若挂载了知识库）</li>
+    <li><strong>模型参数</strong> = model / max_tokens / temperature / top_p</li>
+    <li><strong>上下文策略</strong> = 自动压缩 / 阈值摘要 / 不压缩</li>
+  </ol>
+</section>
+
+<section id="s4">
+  <div class="sec-head"><span class="num">§04</span><h2>版本与发布</h2></div>
+  <p>照搬 nexent 的 <code>(agent_id, version_no)</code> 复合主键设计——该设计已在其生产项目中验证。</p>
+
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 880 340" role="img" aria-label="快照式版本模型：version_no 0 为可编辑草稿行，发布时拷贝为不可变快照 1 2 3，current_version_no 指向线上读取的那一版，编辑草稿不影响线上">
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <marker id="ar3a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+          </marker>
+        </defs>
+
+        <text x="20" y="26" font-size="12" font-weight="600" fill="currentColor" font-family="IBM Plex Mono, monospace">agent 表 · PK (agent_id, version_no)</text>
+
+        <!-- draft -->
+        <rect x="20" y="48" width="180" height="84" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="5 3"/>
+        <text x="34" y="70" font-size="12.5" font-weight="600" fill="currentColor" font-family="IBM Plex Mono, monospace">version_no = 0</text>
+        <text x="34" y="90" font-size="12" fill="currentColor" font-family="IBM Plex Sans, sans-serif">草稿行 · 可写</text>
+        <text x="34" y="109" font-size="11" fill="currentColor" opacity=".7" font-family="IBM Plex Sans, sans-serif">创作者编辑的就是它</text>
+        <text x="34" y="124" font-size="11" fill="currentColor" opacity=".7" font-family="IBM Plex Sans, sans-serif">config JSONB</text>
+
+        <!-- snapshots -->
+        <rect x="300" y="48" width="150" height="84" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="314" y="70" font-size="12.5" font-weight="600" fill="currentColor" font-family="IBM Plex Mono, monospace">version_no = 1</text>
+        <text x="314" y="90" font-size="12" fill="currentColor" font-family="IBM Plex Sans, sans-serif">快照 · 不可变</text>
+        <text x="314" y="109" font-size="11" fill="currentColor" opacity=".7" font-family="IBM Plex Sans, sans-serif">首次发布</text>
+
+        <rect x="470" y="48" width="150" height="84" fill="none" stroke="var(--accent)" stroke-width="1.8"/>
+        <text x="484" y="70" font-size="12.5" font-weight="600" fill="var(--accent)" font-family="IBM Plex Mono, monospace">version_no = 2</text>
+        <text x="484" y="90" font-size="12" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">快照 · 不可变</text>
+        <text x="484" y="109" font-size="11" fill="var(--accent)" opacity=".85" font-family="IBM Plex Sans, sans-serif">当前线上版</text>
+
+        <rect x="640" y="48" width="120" height="84" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity=".5"/>
+        <text x="700" y="95" font-size="12" text-anchor="middle" fill="currentColor" opacity=".5" font-family="IBM Plex Mono, monospace">…</text>
+
+        <!-- publish arrows -->
+        <path d="M200 76 L300 76" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar3)"/>
+        <text x="250" y="70" font-size="10.5" text-anchor="middle" fill="currentColor" font-family="IBM Plex Sans, sans-serif">发布</text>
+        <path d="M200 108 L250 108 L250 160 L545 160 L545 132" fill="none" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#ar3a)"/>
+        <text x="400" y="176" font-size="10.5" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">再次发布 · 拷贝草稿为新快照</text>
+
+        <!-- pointer -->
+        <rect x="300" y="206" width="320" height="34" fill="none" stroke="var(--accent)" stroke-width="1.4"/>
+        <text x="316" y="228" font-size="12" fill="var(--accent)" font-family="IBM Plex Mono, monospace">agent_meta.current_version_no = 2</text>
+        <path d="M545 206 L545 132" fill="none" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#ar3a)"/>
+
+        <text x="20" y="228" font-size="12" fill="currentColor" font-family="IBM Plex Sans, sans-serif">线上问答读这一版</text>
+        <path d="M175 222 L296 222" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar3)"/>
+
+        <!-- state machine -->
+        <line x1="20" y1="266" x2="860" y2="266" stroke="currentColor" stroke-width="1" opacity=".3"/>
+        <text x="20" y="290" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif"><tspan font-weight="600">保存草稿</tspan> 只改 v0，status 不变　·　<tspan font-weight="600">编辑已发布</tspan> 只改 v0，线上仍读 v2，前端提示「有未发布变更」</text>
+        <text x="20" y="312" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif"><tspan font-weight="600">下架</tspan> status=已下架，current_version_no 保留　·　<tspan font-weight="600">上架</tspan> status=已发布</text>
+        <text x="20" y="334" font-size="11.5" fill="currentColor" opacity=".8" font-family="IBM Plex Sans, sans-serif"><tspan font-weight="600">删除</tspan> 仅草稿 / 已下架可删，已发布必须先下架</text>
+      </svg>
+    </div>
+    <figcaption><b>相比「单份配置 + 自增版本号」只多约 2 人天，但它决定了这个平台是玩具还是生产工具。</b>业务专家改坏一个字时线上不会立刻挂。配置变更记录也由此天然获得数据源——diff <code>version_no=0</code> 与 <code>current_version_no</code> 两份 JSONB 即可，不需要在每个写接口里埋点。</figcaption>
+  </figure>
+</section>
+
+<section id="s5">
+  <div class="sec-head"><span class="num">§05</span><h2>数据模型</h2></div>
+  <p>20 张表，按域分组。所有表带 <code>tenant_id</code>、<code>created_by</code>、<code>created_at</code>、<code>updated_at</code>、<code>deleted_at</code>（软删）。密钥字段一律以 <code>_enc</code> 结尾，应用层对称加密，<strong>前端不回显明文</strong>。</p>
+
+  <h3>身份与权限 · 照搬 nexent</h3>
+  <div class="tw"><table>
+    <thead><tr><th>表</th><th>关键字段</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">sys_user</td><td class="mono">user_id · username · password_hash · display_name · employee_no · role · external_id · source · status</td></tr>
+      <tr><td class="mono">sys_group</td><td class="mono">group_id · name · parent_id</td></tr>
+      <tr><td class="mono">sys_user_group</td><td class="mono">user_id · group_id</td></tr>
+      <tr><td class="mono">sys_role_permission</td><td class="mono">role · permission_category · permission_type · permission_subtype</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>智能体域</h3>
+  <div class="tw"><table>
+    <thead><tr><th>表</th><th>关键字段</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">agent</td><td class="mono"><strong>PK (agent_id, version_no)</strong> · name · description · icon_url · config JSONB · group_ids · ingroup_permission</td></tr>
+      <tr><td class="mono">agent_meta</td><td class="mono">agent_id · status（草稿/已发布/已下架）· current_version_no</td></tr>
+      <tr><td class="mono">agent_resource</td><td class="mono">(agent_id, version_no, resource_type, resource_id) — 挂载关系随版本快照</td></tr>
+      <tr><td class="mono">agent_publish_log</td><td class="mono">agent_id · version_no · action · operator · visibility_desc · result</td></tr>
+      <tr><td class="mono">agent_config_change</td><td class="mono">agent_id · field · before · after · operator</td></tr>
+    </tbody>
+  </table></div>
+  <p><code>config</code> JSONB 结构：<code>{ model, prompt, params: { max_tokens, temperature, top_p }, context_policy, retrieval_top_k }</code></p>
+
+  <h3>资源域</h3>
+  <div class="tw"><table>
+    <thead><tr><th>表</th><th>关键字段</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">resource_model</td><td class="mono">name · model_type（llm/asr/tts/embedding）· provider · base_url · api_key_enc · status · last_check_at</td></tr>
+      <tr><td class="mono">resource_mcp</td><td class="mono">name · service_type · url · auth_type · auth_secret_enc · health_status · last_check_at · owner</td></tr>
+      <tr><td class="mono">resource_mcp_tool</td><td class="mono">mcp_id · tool_name · description · input_schema JSONB — 接入时解析缓存</td></tr>
+      <tr><td class="mono">resource_skill</td><td class="mono">name · output_format · template_body · input_vars JSONB · version · health_status</td></tr>
+      <tr><td class="mono">resource_knowledge</td><td class="mono">external_kb_id · name · owner · doc_count · doc_size · last_sync_at</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>会话与运行域</h3>
+  <div class="tw"><table>
+    <thead><tr><th>表</th><th>关键字段</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">conversation</td><td class="mono">title · agent_id · agent_version_no · user_id</td></tr>
+      <tr><td class="mono">message</td><td class="mono">conversation_id · role · content · run_id</td></tr>
+      <tr><td class="mono">run</td><td class="mono">conversation_id(可空) · agent_id · version_no · mode(test/chat) · status · duration_ms · error</td></tr>
+      <tr><td class="mono">run_event</td><td class="mono">run_id · seq · event_type · payload JSONB — 完整 trace</td></tr>
+      <tr><td class="mono">citation</td><td class="mono">run_id · message_id · source_type · source_name · title · snippet · ref</td></tr>
+      <tr><td class="mono">feedback</td><td class="mono">message_id · user_id · helpful · tags JSONB · comment</td></tr>
+      <tr><td class="mono">attachment</td><td class="mono">conversation_id · message_id · filename · size · mime · storage_path</td></tr>
+    </tbody>
+  </table></div>
+  <p><code>run_event</code> 是「可审计」要求（PRD 9.4）的落点：对话详情弹窗直接按 <code>seq</code> 回放事件流，不需要额外的快照表。</p>
+</section>
+
+<section id="s6">
+  <div class="sec-head"><span class="num">§06</span><h2>权限模型</h2></div>
+  <p>三层，照搬 nexent：</p>
+  <ol class="steps">
+    <li><strong>RBAC</strong> — <code>sys_role_permission</code> 表，<code>role → (category, type, subtype)</code>。控制「能不能进这个菜单、能不能调这类接口」。一期两个角色：<code>ADMIN</code>、<code>USER</code>。</li>
+    <li><strong>DAC</strong> — 资源级判定：输入 <code>CurrentUser(user_id, tenant_id, role, groups)</code> 与 <code>Resource(created_by, group_ids, ingroup_permission)</code>，输出 <code>ResourceAccess(can_read, can_edit, is_creator)</code>。</li>
+    <li><strong>tenant_scope</strong> — 所有查询自动注入 <code>tenant_id</code> 过滤（一期恒为同一值）。</li>
+  </ol>
+
+  <h3>与 PRD 四档可见范围的映射</h3>
+  <div class="tw"><table>
+    <thead><tr><th>PRD 可见范围</th><th>本方案实现</th></tr></thead>
+    <tbody>
+      <tr><td>仅自己</td><td class="mono">ingroup_permission = PRIVATE</td></tr>
+      <tr><td>指定成员 / 指定部门</td><td class="mono">group_ids = [...] + ingroup_permission = READ_ONLY</td></tr>
+      <tr><td>全员可见</td><td class="mono">租户级 READ_ONLY</td></tr>
+    </tbody>
+  </table></div>
+  <p>前端因此从「四档下拉 + 成员选择器 + 部门选择器」简化为「选组 + 选组内权限」，省 2 前端人天。</p>
+</section>
+
+<section id="s7">
+  <div class="sec-head"><span class="num">§07</span><h2>任务拆解</h2></div>
+  <p><strong>不按「层」分工</strong>（后端 A 写 service、后端 B 写 controller），而按<strong>端到端垂直切片</strong>——一个人从表到 API 到页面完整拿下一个切片。在 AI 辅助模式下这是关键：AI 在单个完整切片里上下文最全、幻觉最少；按层分工会让两个人的 AI 各自幻觉出不兼容的接口。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th class="id">ID</th><th>切片</th><th class="num-cell">FE</th><th class="num-cell">BE</th><th class="num-cell">AL</th><th>依赖</th><th>档位</th></tr></thead>
+      <tbody>
+        <tr><td class="id"><span class="tag">S0</span></td><td>契约先行：DDL / OpenAPI / SSE 协议 / mock server</td><td class="num-cell">—</td><td class="num-cell">3</td><td class="num-cell">—</td><td class="mono">—</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S1</span></td><td>工程脚手架、CI、部署基线、鉴权中间件</td><td class="num-cell">2</td><td class="num-cell">3</td><td class="num-cell">—</td><td class="mono">S0</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S2</span></td><td>身份与权限（RBAC + DAC + tenant_scope）</td><td class="num-cell">—</td><td class="num-cell">4</td><td class="num-cell">—</td><td class="mono">S1</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S3</span></td><td>登录与用户 / 组管理</td><td class="num-cell">3</td><td class="num-cell">2</td><td class="num-cell">—</td><td class="mono">S2</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S4</span></td><td><strong>Runtime M1</strong>：单轮对话 + 流式 + 取消</td><td class="num-cell">—</td><td class="num-cell">—</td><td class="num-cell">6</td><td class="mono">S1</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S5</span></td><td>Runtime 工具层：MCP 客户端 / 知识检索 / Skill 注入</td><td class="num-cell">—</td><td class="num-cell">2</td><td class="num-cell">3</td><td class="mono">S4 S13 S15</td><td><span class="tag g">P0</span><span class="tag a">P1</span></td></tr>
+        <tr><td class="id"><span class="tag">S6</span></td><td>智能体 CRUD + 版本快照 + 状态机</td><td class="num-cell">—</td><td class="num-cell">4</td><td class="num-cell">—</td><td class="mono">S2</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S7</span></td><td>智能体列表页（筛选 / 搜索 / 分页 / 批量发布）</td><td class="num-cell">3</td><td class="num-cell">1</td><td class="num-cell">—</td><td class="mono">S6</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S8</span></td><td>配置页 · 基础信息与可见范围</td><td class="num-cell">1.5</td><td class="num-cell">1</td><td class="num-cell">—</td><td class="mono">S6</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S9</span></td><td>配置页 · 模型与 Prompt</td><td class="num-cell">1.5</td><td class="num-cell">1</td><td class="num-cell">—</td><td class="mono">S6 S12</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S10</span></td><td>配置页 · 资源挂载</td><td class="num-cell">2</td><td class="num-cell">1</td><td class="num-cell">—</td><td class="mono">S6 S12 S13</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S11</span></td><td>配置页 · 即时测试 + 发布前检查 + 发布</td><td class="num-cell">3</td><td class="num-cell">2</td><td class="num-cell">—</td><td class="mono">S4 S6</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S12</span></td><td>资源 · 模型（百炼适配 / 健康检查 / 密钥加密）</td><td class="num-cell">2</td><td class="num-cell">2</td><td class="num-cell">—</td><td class="mono">S1</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S13</span></td><td>资源 · MCP/API（接入 / 连通性 / 工具解析 / 诊断）</td><td class="num-cell">3</td><td class="num-cell">4</td><td class="num-cell">—</td><td class="mono">S1</td><td><span class="tag g">P0</span></td></tr>
+        <tr><td class="id"><span class="tag">S14</span></td><td>资源 · Skill（模板 CRUD + AI 生成 + 试运行）</td><td class="num-cell">3</td><td class="num-cell">2</td><td class="num-cell">2</td><td class="mono">S1</td><td><span class="tag a">P1</span></td></tr>
+        <tr><td class="id"><span class="tag">S15</span></td><td>资源 · 知识库（Provider 适配 + 管理 + 挂载）</td><td class="num-cell">1.5</td><td class="num-cell">3</td><td class="num-cell">—</td><td class="mono">S1</td><td><span class="tag a">P1</span></td></tr>
+        <tr><td class="id"><span class="tag">S16</span></td><td>会话 / 消息 / run / trace / citation 持久化</td><td class="num-cell">—</td><td class="num-cell">4</td><td class="num-cell">—</td><td class="mono">S4</td><td><span class="tag a">P1</span></td></tr>
+        <tr><td class="id"><span class="tag">S17</span></td><td>问答页 · 布局与会话管理</td><td class="num-cell">3</td><td class="num-cell">—</td><td class="num-cell">—</td><td class="mono">S16</td><td><span class="tag a">P1</span></td></tr>
+        <tr><td class="id"><span class="tag">S18</span></td><td>问答页 · 流式渲染与思考过程</td><td class="num-cell">4</td><td class="num-cell">—</td><td class="num-cell">—</td><td class="mono">S4 S17</td><td><span class="tag g">P0</span><span class="tag a">P1</span></td></tr>
+        <tr><td class="id"><span class="tag">S19</span></td><td>问答页 · 引用来源面板与工具调用</td><td class="num-cell">2</td><td class="num-cell">—</td><td class="num-cell">—</td><td class="mono">S18</td><td><span class="tag a">P1</span></td></tr>
+        <tr><td class="id"><span class="tag">S20</span></td><td>问答页 · 回答反馈</td><td class="num-cell">1</td><td class="num-cell">1</td><td class="num-cell">—</td><td class="mono">S16</td><td><span class="tag a">P1</span></td></tr>
+        <tr><td class="id"><span class="tag">S21</span></td><td>附件上传</td><td class="num-cell">2</td><td class="num-cell">2</td><td class="num-cell">—</td><td class="mono">S16</td><td><span class="tag a">P1</span></td></tr>
+        <tr><td class="id"><span class="tag">S22</span></td><td>记录 · 使用记录与对话详情</td><td class="num-cell">2.5</td><td class="num-cell">2</td><td class="num-cell">—</td><td class="mono">S16</td><td><span class="tag n">P2</span></td></tr>
+        <tr><td class="id"><span class="tag">S23</span></td><td>记录 · 发布记录与配置变更</td><td class="num-cell">1.5</td><td class="num-cell">1</td><td class="num-cell">—</td><td class="mono">S6</td><td><span class="tag n">P2</span></td></tr>
+        <tr><td class="id"><span class="tag">S24</span></td><td>联调 / 异常路径 / 权限收敛 / 部署 / 验收</td><td class="num-cell">5</td><td class="num-cell">5</td><td class="num-cell">—</td><td class="mono">全部</td><td><span class="tag g">P0</span><span class="tag n">P2</span></td></tr>
+      </tbody>
+      <tfoot><tr><td></td><td>合计人天</td><td class="num-cell">46.5</td><td class="num-cell">50</td><td class="num-cell">11</td><td></td><td></td></tr></tfoot>
+    </table>
+  </div>
+  <p style="font-size:13px;color:var(--muted)">S18 的流式渲染组件在 P0 档位下也必须做（即时测试要用），只是不装配成完整问答页。</p>
+</section>
+
+<section id="s8">
+  <div class="sec-head"><span class="num">§08</span><h2>人力档位</h2></div>
+  <p>下面的红色刻度线是<strong>前端需求 46.5 人天</strong>；蓝条是该档位下的前端产能。</p>
+
+  <div class="tiers">
+    <div class="tier">
+      <div class="tier-top"><span class="tier-name">P0</span><span class="tier-crew">4 人 / 4 周</span></div>
+      <h4>内部验证版</h4>
+      <div class="gauge">
+        <div class="gauge-lab"><span>前端产能</span><span>20 / 46.5</span></div>
+        <div class="track"><i style="width:43%"></i><u style="left:calc(100% - 2px)"></u></div>
+      </div>
+      <div class="gauge">
+        <div class="gauge-lab"><span>后端 + 算法</span><span>60 / 61</span></div>
+        <div class="track"><i style="width:98%"></i><u style="left:calc(100% - 2px)"></u></div>
+      </div>
+      <p class="tier-note">登录与用户管理、智能体列表与状态机、配置页全套、即时测试（含流式回答）、资源·模型、资源·MCP。<strong>没有问答页、没有 Skill、没有知识库、没有记录追溯、没有附件。</strong></p>
+      <p class="tier-note bad">前端缺 26.5 人天；后端零缓冲。不对外承诺试用。</p>
+    </div>
+
+    <div class="tier">
+      <div class="tier-top"><span class="tier-name">P1</span><span class="tier-crew">5 人 / 4 周</span></div>
+      <h4>功能完整版</h4>
+      <div class="gauge">
+        <div class="gauge-lab"><span>前端产能</span><span>40 / 46.5</span></div>
+        <div class="track"><i style="width:86%"></i><u style="left:calc(100% - 2px)"></u></div>
+      </div>
+      <div class="gauge">
+        <div class="gauge-lab"><span>后端 + 算法</span><span>60 / 61</span></div>
+        <div class="track"><i style="width:98%"></i><u style="left:calc(100% - 2px)"></u></div>
+      </div>
+      <p class="tier-note">P0 + 完整问答页（历史会话、引用面板、工具调用、反馈）+ 资源·Skill（含 AI 生成）+ 资源·知识库 + 附件上传。</p>
+      <p class="tier-note bad">仍缺记录追溯，PRD 第 9.4 节的可审计要求全部落空。</p>
+    </div>
+
+    <div class="tier pick">
+      <div class="tier-top"><span class="tier-name">P2</span><span class="tier-crew">5 人 / 5 周</span></div>
+      <h4>可试用版 · 推荐</h4>
+      <div class="gauge">
+        <div class="gauge-lab"><span>前端产能</span><span>50 / 46.5</span></div>
+        <div class="track"><i style="width:100%"></i><u style="left:93%"></u></div>
+      </div>
+      <div class="gauge">
+        <div class="gauge-lab"><span>后端 + 算法</span><span>75 / 61</span></div>
+        <div class="track"><i style="width:100%"></i><u style="left:81%"></u></div>
+      </div>
+      <p class="tier-note">P1 + 智能体记录三个 tab 与对话详情 + 发布前检查完整化 + 权限矩阵验证 + 异常路径与性能收敛 + 目标环境部署。</p>
+      <p class="tier-note ok">两侧均有缓冲。可交给 3–5 个真实业务场景的业务专家自建自用。</p>
+    </div>
+  </div>
+
+  <p style="margin-top:22px"><strong>一个反直觉的事实：</strong>在 4 人 4 周档位下，后端会因为前端做不完而<strong>闲置</strong>——后端 P0 只需约 39 人天，产能却有 60。这正说明补前端是全局最高杠杆的一笔投入：一个前端换来的产出远大于一个后端。</p>
+</section>
+
+<section id="s9">
+  <div class="sec-head"><span class="num">§09</span><h2>周计划 · P2 五人五周</h2></div>
+
+  <div class="week">
+    <div class="week-head"><span class="w">W1</span><span class="t">契约周 · 不产出业务代码</span></div>
+    <div class="week-body">
+      <div class="lane"><span class="who">BE1</span><span>全量 DDL（20 表 + 索引 + 角色权限初始化数据）；OpenAPI spec：auth / users / agents</span></div>
+      <div class="lane"><span class="who">BE2</span><span>OpenAPI spec：conversations / runs / resources / records；mock server 生成；CI 流水线</span></div>
+      <div class="lane"><span class="who">AL</span><span>Runtime spike：百炼 function calling 打通；SSE 事件协议定稿</span></div>
+      <div class="lane"><span class="who">FE1</span><span>脚手架（Vite + TS + Pinia + AntDV）+ 布局导航 + 请求层 + mock 接入</span></div>
+      <div class="lane"><span class="who">FE2</span><span>组件基建（表格 / 弹窗 / 表单封装）+ 流式渲染组件原型</span></div>
+    </div>
+    <div class="gate"><b>验收物</b>　<code>contracts/</code> 目录完整、mock server 可跑、前端能从 mock 拉到全部列表数据。这一周看起来「没进展」，但它让后面四周五个人零阻塞并行——不做这一周，后面每周都要丢 1 天在接口对不齐上。</div>
+  </div>
+
+  <div class="week">
+    <div class="week-head"><span class="w">W2</span><span class="t">内核周</span><span class="ms"><span class="tag a">里程碑 M1</span></span></div>
+    <div class="week-body">
+      <div class="lane"><span class="who">BE1</span><span>S2 权限 + S6 智能体 CRUD / 版本快照 / 状态机</span></div>
+      <div class="lane"><span class="who">BE2</span><span>S12 资源·模型 + S13 资源·MCP</span></div>
+      <div class="lane"><span class="who">AL</span><span><strong>S4 Runtime M1</strong>：W2 末必须交付可出流式回答的 <code>/runs</code> endpoint</span></div>
+      <div class="lane"><span class="who">FE1</span><span>S7 列表页 + S8 / S9 配置页</span></div>
+      <div class="lane"><span class="who">FE2</span><span>S18 流式渲染与思考过程组件（基于 mock SSE）</span></div>
+    </div>
+    <div class="gate"><b>M1 判定</b>　创建 agent → 即时测试 → 看到流式回答（工具用 mock）。<strong>这条最短链路不通，后面全是空转。</strong></div>
+  </div>
+
+  <div class="week">
+    <div class="week-head"><span class="w">W3</span><span class="t">资源周</span><span class="ms"><span class="tag a">里程碑 M2</span></span></div>
+    <div class="week-body">
+      <div class="lane"><span class="who">BE1</span><span>S3 登录 / 用户 + S11 发布前检查 + S23 后端</span></div>
+      <div class="lane"><span class="who">BE2</span><span>S16 会话 / 消息 / run / trace + S15 知识库 Provider</span></div>
+      <div class="lane"><span class="who">AL</span><span>S5 工具层（接真实 MCP + 知识检索工具）→ 转 S14 Skill AI 生成</span></div>
+      <div class="lane"><span class="who">FE1</span><span>S10 资源挂载 + S11 即时测试 / 发布 + S12 / S13 资源页</span></div>
+      <div class="lane"><span class="who">FE2</span><span>S17 问答页布局与会话 + S19 引用面板</span></div>
+    </div>
+    <div class="gate"><b>M2 判定</b>　agent 能真调 MCP 工具、真查知识库；发布 / 上下架 / 版本闭环。</div>
+  </div>
+
+  <div class="week">
+    <div class="week-head"><span class="w">W4</span><span class="t">完整周</span><span class="ms"><span class="tag a">里程碑 M3</span></span></div>
+    <div class="week-body">
+      <div class="lane"><span class="who">BE1</span><span>S22 / S23 记录后端 + 权限收敛</span></div>
+      <div class="lane"><span class="who">BE2</span><span>S20 反馈 + S21 附件 + 异常路径</span></div>
+      <div class="lane"><span class="who">AL</span><span>S14 Skill AI 生成收尾 + prompt 效果调优 + 内置工具</span></div>
+      <div class="lane"><span class="who">FE1</span><span>S14 / S15 资源页 + S22 / S23 记录页</span></div>
+      <div class="lane"><span class="who">FE2</span><span>S20 反馈 + S21 附件 + 问答页收尾</span></div>
+    </div>
+    <div class="gate"><b>M3 判定</b>　功能完整，happy path 全通。</div>
+  </div>
+
+  <div class="week">
+    <div class="week-head"><span class="w">W5</span><span class="t">加固周</span><span class="ms"><span class="tag g">里程碑 M4</span></span></div>
+    <div class="week-body">
+      <div class="lane"><span class="who">全员</span><span>S24：端到端联调、异常路径、权限矩阵逐项验证、性能（列表与搜索 &lt; 1s）、目标环境部署、试用数据准备、验收</span></div>
+    </div>
+    <div class="gate"><b>M4 判定</b>　可交付给业务专家试用。<br><strong>若只有 4 周（P1 档位）</strong>：删掉 W5，把加固压进 W4，交付标准降为「功能完整、happy path 稳定」，不承诺试用，且记录追溯（S22 / S23）不做。</div>
+  </div>
+</section>
+
+<section id="s10">
+  <div class="sec-head"><span class="num">§10</span><h2>W1 契约先行清单</h2></div>
+  <p>这是 <span class="tag">D16</span> 能否落地的唯一抓手，也是第 1 周唯一的验收物。</p>
+  <div class="tw"><table>
+    <thead><tr><th>文件</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">contracts/schema.sql</td><td>20 张表全量 DDL + 索引 + 初始化数据（角色权限、默认管理员、默认组）</td></tr>
+      <tr><td class="mono">contracts/openapi.yaml</td><td>约 65 个 endpoint 的完整定义，含请求 / 响应 schema 与示例</td></tr>
+      <tr><td class="mono">contracts/sse-protocol.md</td><td>9 类 SSE 事件定义 + 一次完整运行的示例事件流</td></tr>
+      <tr><td class="mono">contracts/errors.md</td><td>统一错误码表（业务码 / HTTP 码 / 前端提示文案）</td></tr>
+      <tr><td class="mono">contracts/mock/</td><td>基于 spec 的 mock server（Prism 或 msw），含 SSE 事件回放脚本</td></tr>
+      <tr><td class="mono">CLAUDE.md / AGENTS.md</td><td>目录结构、命名约定、代码风格、禁止事项、AI 生成代码的 review 标准</td></tr>
+      <tr><td class="mono">contracts/README.md</td><td>契约变更流程：改 spec 必须走 PR 且通知全员，CI 校验双端类型与 spec 一致</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>OpenAPI 模块划分</h3>
+  <div class="tw"><table>
+    <thead><tr><th>模块</th><th class="num-cell">Endpoints</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">auth</td><td class="num-cell">4</td><td>login / logout / me / change-password</td></tr>
+      <tr><td class="mono">users &amp; groups</td><td class="num-cell">8</td><td>用户 CRUD、组 CRUD、成员关系</td></tr>
+      <tr><td class="mono">agents</td><td class="num-cell">12</td><td>列表 / 创建 / 草稿读写 / 删除 / 发布 / 上下架 / 版本列表 / 版本详情 / 发布前检查 / 资源挂载</td></tr>
+      <tr><td class="mono">runs</td><td class="num-cell">4</td><td>创建 / SSE 流 / 取消 / 详情</td></tr>
+      <tr><td class="mono">conversations</td><td class="num-cell">6</td><td>列表 / 创建 / 详情 / 重命名 / 删除 / 消息列表</td></tr>
+      <tr><td class="mono">feedback</td><td class="num-cell">1</td><td>提交反馈</td></tr>
+      <tr><td class="mono">attachments</td><td class="num-cell">2</td><td>上传 / 下载</td></tr>
+      <tr><td class="mono">resources·models</td><td class="num-cell">6</td><td>列表 / 接入 / 启停 / 删除 / 连通性测试 / 可接入模型清单</td></tr>
+      <tr><td class="mono">resources·mcp</td><td class="num-cell">8</td><td>列表 / 接入 / 编辑 / 删除 / 单测 / 批量测试 / 诊断 / 工具清单</td></tr>
+      <tr><td class="mono">resources·skills</td><td class="num-cell">7</td><td>列表 / 创建 / 编辑 / 删除 / AI 生成 / 试运行 / 详情</td></tr>
+      <tr><td class="mono">resources·knowledge</td><td class="num-cell">4</td><td>外部清单 / 登记 / 删除 / 详情</td></tr>
+      <tr><td class="mono">records</td><td class="num-cell">3</td><td>使用记录 / 发布记录 / 配置变更</td></tr>
+    </tbody>
+    <tfoot><tr><td>合计</td><td class="num-cell">65</td><td></td></tr></tfoot>
+  </table></div>
+</section>
+
+<section id="s11">
+  <div class="sec-head"><span class="num">§11</span><h2>风险</h2></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th class="id">ID</th><th>风险</th><th>概率/影响</th><th>缓解</th><th>判定点</th><th>降级</th></tr></thead>
+      <tbody>
+        <tr><td class="id"><span class="tag r">R1</span></td><td><strong>内网知识库接口能力未知</strong>——若只有全文查询没有切片检索，「引用来源」落不了地</td><td><span class="tag r">高</span> <span class="tag a">中</span></td><td><code>KnowledgeProvider</code> 抽象 + mock 适配器兜底，不阻塞运行时开发</td><td class="mono">W1 末</td><td>知识库降为纯登记，检索能力从 agent 工具清单移除</td></tr>
+        <tr><td class="id"><span class="tag r">R2</span></td><td><strong>前端人力缺口 26.5 人天</strong></td><td><span class="tag r">已确认</span> <span class="tag r">高</span></td><td>立即申请 +1 前端</td><td class="mono">立即</td><td>按 P0 交付，对外明确为「内部验证版」，不承诺试用</td></tr>
+        <tr><td class="id"><span class="tag r">R3</span></td><td><strong>内网没有现成 MCP Server 可接</strong>——MCP 功能无法验证</td><td><span class="tag a">中</span> <span class="tag a">中</span></td><td>W1 内盘点内网是否有 MCP server 或可包装的业务 API</td><td class="mono">W1 末</td><td>算法用 <code>fastmcp</code> 写 1–2 个演示用 MCP server（+2 人天）</td></tr>
+        <tr><td class="id"><span class="tag a">R4</span></td><td>Skill 的 AI 生成质量不稳定</td><td><span class="tag a">中</span> <span class="tag n">低</span></td><td>生成结果必须人工确认后才保存；保留手写模板路径</td><td class="mono">W4</td><td>关闭 AI 生成入口，Skill 只支持手写</td></tr>
+        <tr><td class="id"><span class="tag a">R5</span></td><td>附件长文档撑爆上下文</td><td><span class="tag r">高</span> <span class="tag a">中</span></td><td>平台不解析文档；超阈值只传文件名与摘要；限制大小与数量</td><td class="mono">W4</td><td>引导用户改走知识库</td></tr>
+        <tr><td class="id"><span class="tag r">R6</span></td><td><strong>契约漂移</strong>——AI 生成的代码与 spec 不一致</td><td><span class="tag r">高</span> <span class="tag r">高</span></td><td>spec 为唯一真源，TS 类型与 Pydantic model 均由 spec 生成；CI 加 spec-diff 检查</td><td class="mono">每周</td><td>每周一次契约对齐会</td></tr>
+        <tr><td class="id"><span class="tag n">R7</span></td><td>百炼限流 / 长上下文成本</td><td><span class="tag a">中</span> <span class="tag n">低</span></td><td>Redis 做 per-user 并发限制；<code>max_tokens</code> 在 agent 配置中可调</td><td class="mono">W3</td><td>降低默认 max_tokens，加排队提示</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>立项当天必须启动</h3>
+  <ol class="steps">
+    <li><strong>申请 +1 前端</strong>（R2，最高杠杆）</li>
+    <li><strong>盘点内网 MCP Server / 可包装的业务 API</strong>（R3）</li>
+    <li><strong>索取内网知识库的接口文档</strong>（R1）——检索接口形态、知识库清单接口、鉴权是否可透传用户身份</li>
+    <li>确认前端同学对 Ant Design Vue 的熟悉度，不熟则改用 Element Plus（4 周项目里熟悉度权重高于对齐度）</li>
+  </ol>
+</section>
+
+<section id="s12">
+  <div class="sec-head"><span class="num">§12</span><h2>不做的范围</h2></div>
+  <p>一期明确不做以下内容，需求变更须重新评估排期。</p>
+  <div class="cut">
+    <div class="cut-col">
+      <h3>来自 PRD 的裁剪</h3>
+      <ul>
+        <li>工作台概览页及其全部首页能力</li>
+        <li>全部统计卡片与指标（管理中智能体 / 本周调用 / 平均满意度 / 待发布 / 各资源统计）</li>
+        <li>测试数据集与回归测试（第 6.11 节全章）</li>
+        <li>数据资源：数据源 / 数据表 / 报表（第 6.10 节全章）</li>
+        <li>语音输入（ASR）</li>
+        <li>待处理详情、待发布详情等统计下钻交互</li>
+      </ul>
+    </div>
+    <div class="cut-col">
+      <h3>技术侧裁剪</h3>
+      <ul>
+        <li>NL2Agent（自然语言自动生成智能体配置）</li>
+        <li>Skill 的代码执行与沙箱（Skill 仅为 Prompt 模板）</li>
+        <li>平台自建知识库（解析 / 切分 / embedding / 向量检索）</li>
+        <li>多租户隔离逻辑（仅预留字段）</li>
+        <li>SSO / LDAP / CAS 对接（仅预留字段）</li>
+        <li>版本回滚 UI（表结构支持，二期加按钮）</li>
+        <li>任务队列与水平扩展（接口形状已预留）</li>
+        <li>A2A、长期记忆、配额计费、监控看板</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <span>SUPCON 数据智能体平台 · 一期技术方案 v1.0</span>
+  <span>2026-08-26</span>
+  <span>参考项目 nexent（Apache-2.0）</span>
+</footer>
+
+</div>
