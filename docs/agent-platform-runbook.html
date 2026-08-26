@@ -1,0 +1,499 @@
+<title>智能体平台启动手册</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+SC:wght@400;500;600;700&display=swap">
+
+<style>
+:root{
+  --ground:#F5F7F8; --surface:#FFFFFF; --surface-2:#EDF1F3;
+  --ink:#131A20; --ink-2:#3D4854; --muted:#616E7C;
+  --line:#DCE2E7; --line-2:#C3CCD4;
+  --accent:#0E6B87; --accent-ink:#0E6B87; --accent-soft:#E2EFF3;
+  --amber:#8F5600; --amber-soft:#F8EEDD;
+  --green:#1C6B41; --green-soft:#E2F0E8;
+  --red:#9E2F27; --red-soft:#F8E7E5;
+  --term-bg:#F0F3F5; --term-ink:#2A343E;
+  --shadow:0 1px 2px rgba(19,26,32,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1216; --surface:#161C22; --surface-2:#1E252D;
+    --ink:#E2E8EE; --ink-2:#B9C3CE; --muted:#8B96A3;
+    --line:#262E37; --line-2:#38424D;
+    --accent:#59B6D2; --accent-ink:#7FCBE2; --accent-soft:#122931;
+    --amber:#D8A052; --amber-soft:#2B2214;
+    --green:#5CAE83; --green-soft:#132419;
+    --red:#DE7168; --red-soft:#2B1614;
+    --term-bg:#10161C; --term-ink:#C3CFDA;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1216; --surface:#161C22; --surface-2:#1E252D;
+  --ink:#E2E8EE; --ink-2:#B9C3CE; --muted:#8B96A3;
+  --line:#262E37; --line-2:#38424D;
+  --accent:#59B6D2; --accent-ink:#7FCBE2; --accent-soft:#122931;
+  --amber:#D8A052; --amber-soft:#2B2214;
+  --green:#5CAE83; --green-soft:#132419;
+  --red:#DE7168; --red-soft:#2B1614;
+  --term-bg:#10161C; --term-ink:#C3CFDA;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans","IBM Plex Sans SC",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.72; -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+
+.wrap{max-width:880px;margin:0 auto;padding:0 24px 100px}
+@media (min-width:900px){.wrap{padding:0 32px 120px}}
+
+.masthead{padding:56px 0 30px;border-bottom:2px solid var(--ink);margin-bottom:40px}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+.masthead h1{
+  font-size:clamp(29px,4.4vw,42px);line-height:1.14;font-weight:700;
+  letter-spacing:-.015em;margin:12px 0 0;text-wrap:balance;
+}
+.masthead .sub{margin:14px 0 0;max-width:60ch;color:var(--ink-2);font-size:16px}
+
+section{margin-bottom:54px;scroll-margin-top:20px}
+.sec-head{
+  display:flex;align-items:baseline;gap:14px;
+  padding-bottom:10px;border-bottom:1px solid var(--line-2);margin-bottom:22px;
+}
+.sec-head .num{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;
+  color:var(--accent-ink);letter-spacing:.06em;flex:0 0 auto;
+}
+.sec-head h2{margin:0;font-size:21px;font-weight:600;letter-spacing:-.01em}
+h3{font-size:15.5px;font-weight:600;margin:28px 0 10px}
+p{margin:0 0 14px;max-width:66ch}
+strong{font-weight:600}
+code{font-family:"IBM Plex Mono",monospace;font-size:.87em;background:var(--surface-2);padding:1px 5px;border-radius:3px}
+
+.callout{
+  border:1px solid var(--line-2);border-left:3px solid var(--accent);
+  background:var(--surface);padding:20px 22px;margin:0 0 28px;box-shadow:var(--shadow);
+}
+.callout p{margin:0 0 10px}
+.callout p:last-child{margin:0}
+.callout .lead{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.callout.warn{border-left-color:var(--amber)}
+
+pre{
+  margin:0 0 16px;padding:14px 16px;border:1px solid var(--line);
+  background:var(--term-bg);color:var(--term-ink);overflow-x:auto;
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;line-height:1.7;
+}
+pre .c{color:var(--muted)}
+pre .p{color:var(--accent-ink);font-weight:600}
+
+.tw{overflow-x:auto;margin:0 0 14px;border:1px solid var(--line);background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
+th,td{padding:9px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+thead th{
+  background:var(--surface-2);font-family:"IBM Plex Mono",monospace;font-size:11px;
+  font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  white-space:nowrap;border-bottom:1px solid var(--line-2);
+}
+tbody tr:last-child td{border-bottom:0}
+
+.tag{
+  display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  font-weight:600;letter-spacing:.04em;padding:1px 6px;border-radius:3px;
+  background:var(--accent-soft);color:var(--accent-ink);white-space:nowrap;
+}
+.tag.g{background:var(--green-soft);color:var(--green)}
+.tag.a{background:var(--amber-soft);color:var(--amber)}
+.tag.r{background:var(--red-soft);color:var(--red)}
+
+/* day blocks */
+.day{border:1px solid var(--line);background:var(--surface);margin-bottom:16px}
+.day.key{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.day-head{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;
+  padding:13px 17px;border-bottom:1px solid var(--line);background:var(--surface-2);
+}
+.day-head .d{font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:600;color:var(--accent-ink)}
+.day-head .t{font-size:15px;font-weight:600}
+.day-head .meta{margin-left:auto;font-size:12px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+.day-body{padding:4px 0}
+.lane{
+  display:grid;grid-template-columns:64px minmax(0,1fr);gap:14px;
+  padding:10px 17px;border-bottom:1px solid var(--line);font-size:13.5px;line-height:1.65;
+}
+.lane:last-child{border-bottom:0}
+.lane .who{
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;
+  color:var(--muted);letter-spacing:.05em;padding-top:3px;
+}
+.day-note{padding:12px 17px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink-2);background:var(--surface)}
+.check{padding:13px 17px;background:var(--accent-soft);border-top:1px solid var(--line);font-size:13.5px}
+.check b{color:var(--accent-ink)}
+.check ol,.check ul{margin:8px 0 0;padding-left:20px}
+.check li{margin-bottom:4px}
+.day-free{padding:14px 17px}
+.day-free p{margin:0 0 12px}
+.day-free p:last-child{margin:0}
+.day-free h4{margin:16px 0 8px;font-size:14px;font-weight:600}
+.day-free h4:first-child{margin-top:0}
+.day-free pre{margin-bottom:12px}
+.day-free .tw{margin-bottom:12px}
+
+figure{margin:22px 0 26px}
+.figframe{border:1px solid var(--line);background:var(--surface);padding:20px 16px;overflow-x:auto}
+figure svg{display:block;max-width:100%;height:auto;margin:0 auto;color:var(--ink-2)}
+figcaption{margin-top:10px;font-size:12.5px;color:var(--muted);max-width:70ch;line-height:1.6}
+figcaption b{color:var(--ink-2);font-weight:600}
+
+ul.plain{margin:0 0 16px;padding-left:19px;max-width:66ch}
+ul.plain li{margin-bottom:6px}
+ol.steps{margin:0 0 16px;padding-left:21px;max-width:66ch}
+ol.steps li{margin-bottom:9px}
+
+.loop{display:grid;gap:12px;margin:18px 0}
+@media (min-width:700px){.loop{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.loop-step{border:1px solid var(--line);background:var(--surface);padding:14px 15px;display:flex;flex-direction:column;gap:7px}
+.loop-step .n{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--accent-ink);letter-spacing:.08em}
+.loop-step h4{margin:0;font-size:14px;font-weight:600}
+.loop-step p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.6}
+
+footer{
+  margin-top:20px;padding-top:20px;border-top:1px solid var(--line-2);
+  font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 20px;
+}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">SUPCON 数据智能体平台 · 一期</div>
+  <h1>启动手册</h1>
+  <p class="sub">第一周逐日操作、五个人怎么并行、以及第二周之后每个人的工作循环。配套《一期技术方案与任务拆解》使用。</p>
+</header>
+
+<section id="mind">
+  <div class="sec-head"><span class="num">§01</span><h2>先纠正一个思路</h2></div>
+
+  <p>很多人会这样规划：<strong>部署数据库 → 建表 → 写后端 → 写前端</strong>。</p>
+  <p>这个顺序不能说错，但它是<strong>串行</strong>的——第一步没做完，后面四个人只能等。五个人的项目按这个节奏走，第一周实际只有一个人在产出。</p>
+
+  <div class="callout">
+    <p class="lead">第一周不写任何业务代码，写的是「让五个人能同时干活的地基」。</p>
+    <p>目标不是"做出功能"，而是让第二周开始，五个人可以<strong>完全不互相等待</strong>地并行工作。</p>
+  </div>
+
+  <p>这个地基包含三样东西，缺一样就会有人卡住：</p>
+  <div class="tw"><table>
+    <thead><tr><th>地基</th><th>不铺好谁被卡住</th><th>铺好要多久</th></tr></thead>
+    <tbody>
+      <tr><td>能跑起来的数据库 + 建好的表</td><td>两个后端、算法</td><td><strong>半天</strong></td></tr>
+      <tr><td>写死的接口定义（OpenAPI）</td><td>所有人</td><td>2 天</td></tr>
+      <tr><td>基于接口定义的假数据服务（mock）</td><td>前端</td><td>1 天</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>关键在于：<strong>地基里最贵的不是数据库，是接口定义。</strong>数据库半天就起来了，但"这个接口叫什么、传什么、返回什么"如果不先说死，五个人就会各写各的，第三周拼起来的时候全是对不上的字段。</p>
+
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 860 330" role="img" aria-label="对比两种排期：串行方案里五个人依次等待，第一周只有一人产出；并行方案在半天基础设施和三天契约之后，五个人从第二天起同时开工">
+        <defs>
+          <marker id="rb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- serial -->
+        <text x="14" y="20" font-size="12.5" font-weight="600" fill="var(--red)" font-family="IBM Plex Sans, sans-serif">串行：部署 → 建表 → 后端 → 前端</text>
+        <text x="14" y="38" font-size="11" fill="currentColor" opacity=".7" font-family="IBM Plex Sans, sans-serif">第一周只有一个人在产出，其余四人空转</text>
+
+        <rect x="120" y="54" width="90" height="20" fill="none" stroke="var(--red)" stroke-width="1.2"/>
+        <text x="165" y="68" font-size="10.5" text-anchor="middle" fill="var(--red)" font-family="IBM Plex Sans, sans-serif">部署</text>
+        <rect x="214" y="54" width="120" height="20" fill="none" stroke="var(--red)" stroke-width="1.2"/>
+        <text x="274" y="68" font-size="10.5" text-anchor="middle" fill="var(--red)" font-family="IBM Plex Sans, sans-serif">建表</text>
+        <rect x="338" y="54" width="230" height="20" fill="none" stroke="var(--red)" stroke-width="1.2"/>
+        <text x="453" y="68" font-size="10.5" text-anchor="middle" fill="var(--red)" font-family="IBM Plex Sans, sans-serif">写后端</text>
+        <rect x="572" y="54" width="220" height="20" fill="none" stroke="var(--red)" stroke-width="1.2"/>
+        <text x="682" y="68" font-size="10.5" text-anchor="middle" fill="var(--red)" font-family="IBM Plex Sans, sans-serif">写前端</text>
+
+        <text x="14" y="68" font-size="10.5" fill="currentColor" opacity=".6" font-family="IBM Plex Mono, monospace">BE1</text>
+        <line x1="120" y1="86" x2="792" y2="86" stroke="currentColor" stroke-width="1" opacity=".25" stroke-dasharray="3 3"/>
+        <text x="14" y="104" font-size="10.5" fill="currentColor" opacity=".6" font-family="IBM Plex Mono, monospace">其余 4 人</text>
+        <rect x="120" y="92" width="448" height="18" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3" opacity=".45"/>
+        <text x="344" y="105" font-size="10.5" text-anchor="middle" fill="currentColor" opacity=".55" font-family="IBM Plex Sans, sans-serif">等待</text>
+
+        <line x1="14" y1="132" x2="846" y2="132" stroke="currentColor" stroke-width="1" opacity=".3"/>
+
+        <!-- parallel -->
+        <text x="14" y="158" font-size="12.5" font-weight="600" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">并行：半天地基 + 三天契约，之后五人同时开工</text>
+
+        <rect x="120" y="176" width="52" height="20" fill="none" stroke="var(--accent)" stroke-width="1.4"/>
+        <text x="146" y="190" font-size="10" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">D0</text>
+        <text x="14" y="190" font-size="10.5" fill="currentColor" opacity=".6" font-family="IBM Plex Mono, monospace">BE1</text>
+
+        <rect x="176" y="176" width="130" height="20" fill="none" stroke="var(--accent)" stroke-width="1.2"/>
+        <text x="241" y="190" font-size="10" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">DDL + seed</text>
+        <rect x="310" y="176" width="482" height="20" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="551" y="190" font-size="10.5" text-anchor="middle" fill="currentColor" font-family="IBM Plex Sans, sans-serif">S2 权限 · S6 智能体域 · S3 登录</text>
+
+        <rect x="176" y="202" width="196" height="20" fill="none" stroke="var(--accent)" stroke-width="1.2"/>
+        <text x="274" y="216" font-size="10" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">OpenAPI + mock</text>
+        <rect x="376" y="202" width="416" height="20" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="584" y="216" font-size="10.5" text-anchor="middle" fill="currentColor" font-family="IBM Plex Sans, sans-serif">S12 模型 · S13 MCP · S16 会话</text>
+        <text x="14" y="216" font-size="10.5" fill="currentColor" opacity=".6" font-family="IBM Plex Mono, monospace">BE2</text>
+
+        <rect x="176" y="228" width="196" height="20" fill="none" stroke="var(--accent)" stroke-width="1.2"/>
+        <text x="274" y="242" font-size="10" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">百炼 spike + SSE 协议</text>
+        <rect x="376" y="228" width="416" height="20" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="584" y="242" font-size="10.5" text-anchor="middle" fill="currentColor" font-family="IBM Plex Sans, sans-serif">S4 Runtime → S5 工具层 → S14 Skill</text>
+        <text x="14" y="242" font-size="10.5" fill="currentColor" opacity=".6" font-family="IBM Plex Mono, monospace">AL</text>
+
+        <rect x="176" y="254" width="196" height="20" fill="none" stroke="var(--accent)" stroke-width="1.2"/>
+        <text x="274" y="268" font-size="10" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">脚手架 + 连 mock</text>
+        <rect x="376" y="254" width="416" height="20" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="584" y="268" font-size="10.5" text-anchor="middle" fill="currentColor" font-family="IBM Plex Sans, sans-serif">S7 列表 · S8–S11 配置页 · 资源页</text>
+        <text x="14" y="268" font-size="10.5" fill="currentColor" opacity=".6" font-family="IBM Plex Mono, monospace">FE1</text>
+
+        <rect x="176" y="280" width="196" height="20" fill="none" stroke="var(--accent)" stroke-width="1.2"/>
+        <text x="274" y="294" font-size="10" text-anchor="middle" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">组件 + 连假 SSE</text>
+        <rect x="376" y="280" width="416" height="20" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="584" y="294" font-size="10.5" text-anchor="middle" fill="currentColor" font-family="IBM Plex Sans, sans-serif">S17–S21 问答页</text>
+        <text x="14" y="294" font-size="10.5" fill="currentColor" opacity=".6" font-family="IBM Plex Mono, monospace">FE2</text>
+
+        <line x1="376" y1="170" x2="376" y2="306" stroke="var(--accent)" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <text x="382" y="322" font-size="10.5" fill="var(--accent)" font-family="IBM Plex Sans, sans-serif">Day 3 假 SSE 服务上线 · 前端从此不再等任何人</text>
+      </svg>
+    </div>
+    <figcaption><b>这条虚线是整个排期的支点。</b>Day 3 假 SSE 服务一上线，前端就跟后端解绑了——问答页（前端工作量最大的 9 人天）不需要等算法把运行时做完。串行方案里前端要等到第三周才能开工，并行方案里第二天就满负荷。<strong>这一条本身就等于凭空多出 8–9 个前端人天。</strong></figcaption>
+  </figure>
+</section>
+
+<section id="d0">
+  <div class="sec-head"><span class="num">§02</span><h2>Day 0 · 半天 · 1 个人</h2></div>
+  <p>这是唯一必须串行的半天。BE1 一个人做完，其他人 clone 下来就能跑。</p>
+
+  <div class="day">
+    <div class="day-head"><span class="d">D0</span><span class="t">铺地基</span><span class="meta">BE1 · 半天</span></div>
+    <div class="day-free">
+      <h4>1 · 建仓库，定目录</h4>
+      <pre><span class="p">mkdir</span> agent-platform &amp;&amp; <span class="p">cd</span> agent-platform
+<span class="p">git</span> init
+<span class="p">mkdir</span> -p contracts/mock backend agent-runtime frontend deploy var/attachments</pre>
+      <div class="tw"><table>
+        <thead><tr><th>目录</th><th>放什么</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">contracts/</td><td>建表语句、接口定义、SSE 协议 —— <strong>唯一真源</strong></td></tr>
+          <tr><td class="mono">backend/</td><td>FastAPI 业务后端</td></tr>
+          <tr><td class="mono">agent-runtime/</td><td>Agent 执行内核（独立包）</td></tr>
+          <tr><td class="mono">frontend/</td><td>Vue3 前端</td></tr>
+          <tr><td class="mono">deploy/</td><td>docker-compose、部署脚本</td></tr>
+        </tbody>
+      </table></div>
+
+      <h4>2 · 拉起数据库和 Redis</h4>
+      <p>把仓库里的 <code>docs/starter/docker-compose.yml</code> 复制到 <code>deploy/</code>，然后：</p>
+      <pre><span class="p">cd</span> deploy &amp;&amp; <span class="p">docker</span> compose up -d
+<span class="p">docker</span> compose ps          <span class="c"># 两个容器都是 healthy 就对了</span></pre>
+      <p>这就是你说的"部署 PG 和 Redis"——用 Docker 的话是<strong>一条命令、五分钟</strong>的事，不需要专门排期。</p>
+
+      <h4>3 · 环境变量</h4>
+      <p>复制 <code>docs/starter/.env.example</code> 成根目录的 <code>.env</code>，各人填自己的值。<strong><code>.env</code> 必须写进 <code>.gitignore</code>，永远不提交。</strong></p>
+
+      <h4>4 · 项目约定</h4>
+      <p>把 <code>docs/starter/CLAUDE.md.template</code> 复制成根目录的 <code>CLAUDE.md</code>（用 Codex 的人再复制一份 <code>AGENTS.md</code>）。这份文件 AI 会自动读，它决定了 AI 生成的代码符不符合你们的规矩。</p>
+
+      <h4>5 · 推第一个提交</h4>
+      <pre><span class="p">git</span> add -A &amp;&amp; <span class="p">git</span> commit -m <span class="c">"chore: 项目骨架与本地开发环境"</span>
+<span class="p">git</span> push -u origin main</pre>
+    </div>
+    <div class="check">
+      <b>Day 0 验收</b>　任何一个组员执行 <code>git clone</code> → <code>cd deploy &amp;&amp; docker compose up -d</code>，两个容器 healthy。
+      <br>到此为止，基础设施这件事就结束了，整个一期不用再管。
+    </div>
+  </div>
+</section>
+
+<section id="w1">
+  <div class="sec-head"><span class="num">§03</span><h2>第一周 · 逐日</h2></div>
+
+  <div class="day">
+    <div class="day-head"><span class="d">D1</span><span class="t">Kickoff + 五路开工</span><span class="meta">全员</span></div>
+    <div class="day-free">
+      <h4>上午 · Kickoff 会（1 小时，必须开）</h4>
+      <p>不是走过场。要当场对齐三件事：</p>
+      <ol class="steps">
+        <li><strong>过一遍决策台账</strong>（技术方案第 1 节的 18 条）。逐条念，谁有异议现在提。会后这 18 条就是不可推翻的前提。</li>
+        <li><strong>讲清楚"垂直切片"分工法</strong>：一个人从表到接口到页面把一个切片做完，不要按层分工。当场把 S0–S24 分掉。</li>
+        <li><strong>当场认领三个外部依赖的 owner</strong>：谁去盘点内网 MCP Server（<span class="tag r">R3</span>）、谁去要知识库接口文档（<span class="tag r">R1</span>）、谁去申请 +1 前端（<span class="tag r">R2</span>）。</li>
+      </ol>
+    </div>
+    <div class="day-body">
+      <div class="lane"><span class="who">BE1</span><span>写 <code>contracts/schema.sql</code> 前半：身份权限 4 张表 + 智能体域 5 张表　<span class="tag">产出</span> 9 张表 DDL，本地能跑通</span></div>
+      <div class="lane"><span class="who">BE2</span><span>写 <code>contracts/openapi.yaml</code> 骨架：65 个接口的<strong>路径和方法</strong>先列全，请求响应体留空　<span class="tag">产出</span> 能被工具解析的 yaml</span></div>
+      <div class="lane"><span class="who">AL</span><span>写几十行脚本直接调百炼 OpenAI 兼容端点，验证 function calling　<span class="tag">产出</span> 终端能看到模型返回 <code>tool_calls</code></span></div>
+      <div class="lane"><span class="who">FE1</span><span><code>pnpm create vite</code> 起 Vue3+TS，装 Pinia / AntDV，配路由和布局壳子　<span class="tag">产出</span> 浏览器能打开，导航在</span></div>
+      <div class="lane"><span class="who">FE2</span><span>组件基建：表格封装（分页/搜索/选择列）、弹窗封装、表单封装　<span class="tag">产出</span> 三个能用假数据渲染的组件</span></div>
+    </div>
+    <div class="day-note"><strong>AL 今天这个脚本是整个项目风险最高的一次验证。</strong>如果百炼的 function calling 跟预期不一样，agent 运行时的做法要改——今天发现只损失一天，第三周发现就要命了。</div>
+  </div>
+
+  <div class="day">
+    <div class="day-head"><span class="d">D2</span><span class="t">表建起来、接口补肉</span></div>
+    <div class="day-body">
+      <div class="lane"><span class="who">BE1</span><span>补完资源域 5 张表 + 会话运行域 7 张表；写 <code>seed.sql</code>（角色权限、默认管理员、默认组）；跑通建库</span></div>
+      <div class="lane"><span class="who">BE2</span><span>给每个接口补请求体与响应体 schema，先补 agents / resources 两组</span></div>
+      <div class="lane"><span class="who">AL</span><span>把昨天的脚本扩展成能流式输出：模型回答一个字一个字打印出来</span></div>
+      <div class="lane"><span class="who">FE1</span><span>接入请求层（axios 封装、错误处理、loading 态），先连写死的 JSON 跑通</span></div>
+      <div class="lane"><span class="who">FE2</span><span>继续组件基建；开始做流式渲染组件原型（先用 <code>setInterval</code> 假装有字流进来）</span></div>
+    </div>
+    <div class="check">
+      <b>Day 2 验收</b>
+      <pre style="margin:8px 0 0"><span class="p">docker</span> compose exec postgres psql -U agent -d agent_platform -c <span class="c">"\dt"</span>
+<span class="c"># 应该看到 20 张表</span>
+<span class="p">docker</span> compose exec postgres psql -U agent -d agent_platform -c <span class="c">"select * from sys_user;"</span>
+<span class="c"># 应该看到 seed 进去的默认管理员</span></pre>
+    </div>
+    <div class="day-note">这就是你说的"执行 DDL 把表建好"——它确实要早做，因为<strong>表结构是所有人的共同语言</strong>：后端照着它写查询、前端照着它理解字段、AI 照着它生成代码。但它只值 1.5 天，不是一周。</div>
+  </div>
+
+  <div class="day key">
+    <div class="day-head"><span class="d">D3</span><span class="t">SSE 协议定稿 + 假服务上线</span><span class="meta">最关键的一天</span></div>
+    <div class="day-body">
+      <div class="lane"><span class="who">三人会</span><span>AL + BE2 + FE2 上午开 1 小时，定稿 <code>contracts/sse-protocol.md</code>：9 类事件字段全部写死 + 一段完整运行的示例事件流</span></div>
+      <div class="lane"><span class="who">BE2</span><span>用 FastAPI 写一个<strong>假的 SSE 服务</strong>：不接大模型，按示例事件流定时吐假数据（每 200ms 一个 <code>message.delta</code>）。几十行代码</span></div>
+      <div class="lane"><span class="who">AL</span><span>搭 <code>agent-runtime</code> 骨架，把流式脚本改造成能发出这 9 类事件</span></div>
+      <div class="lane"><span class="who">FE2</span><span><strong>把流式渲染组件接到假 SSE 服务</strong>——浏览器里能看到思考过程展开、字往外蹦、引用条数累加</span></div>
+      <div class="lane"><span class="who">BE1</span><span>补完 conversations / runs / records 三组接口定义</span></div>
+      <div class="lane"><span class="who">FE1</span><span>跑通 mock server：用 Prism 或 msw 从 <code>openapi.yaml</code> 自动生成假接口，所有列表页拉到假数据</span></div>
+    </div>
+    <div class="check">
+      <b>Day 3 验收 · 第一周最重要的一次</b>
+      <p style="margin:8px 0 0">前端在浏览器里，<strong>在后端一行业务代码都没写的情况下</strong>，能看到一个假的智能体在流式回答问题，思考过程在展开，引用来源在累加。</p>
+      <p style="margin:8px 0 0">到这一刻，前端就彻底解绑了——接下来两周它不需要等任何人。</p>
+    </div>
+  </div>
+
+  <div class="day">
+    <div class="day-head"><span class="d">D4</span><span class="t">类型生成 + CI + 错误码</span></div>
+    <div class="day-body">
+      <div class="lane"><span class="who">BE1</span><span>写 <code>contracts/errors.md</code> 统一错误码；配 CI（lint + 测试 + 校验 openapi.yaml 合法）</span></div>
+      <div class="lane"><span class="who">BE2</span><span>后端接入 spec：生成 Pydantic model，路由骨架全部建好（函数体先 <code>raise NotImplementedError</code>）</span></div>
+      <div class="lane"><span class="who">AL</span><span><code>agent-runtime</code> 骨架 + 单测框架，能跑通"输入一句话，输出 9 类事件"</span></div>
+      <div class="lane"><span class="who">FE1</span><span>前端接入 spec：生成 TS 类型和 API 客户端到 <code>src/api/</code>，所有页面改用生成的类型</span></div>
+      <div class="lane"><span class="who">FE2</span><span>继续组件库，把 Day 3 的流式组件收拾成可复用的</span></div>
+    </div>
+    <div class="day-note"><strong>为什么类型生成这么重要：</strong>这是防 AI 幻觉的核心护栏。AI 写代码最常见的错就是字段名编错——后端叫 <code>agentId</code>，前端 AI 写成 <code>agent_id</code>，运行时才发现是 <code>undefined</code>。用生成的类型之后，编译期就红了，根本提交不上去。</div>
+  </div>
+
+  <div class="day">
+    <div class="day-head"><span class="d">D5</span><span class="t">验收 + 分配第二周</span></div>
+    <div class="check">
+      <b>W1 验收演示（半小时，全员在场）</b>　按这五条逐一演示，做不到就不算过：
+      <ol>
+        <li>新人 clone → <code>docker compose up -d</code> → 20 张表建好、默认管理员在</li>
+        <li><code>openapi.yaml</code> 里 65 个接口全部有完整定义，能用 Swagger UI 打开浏览</li>
+        <li>mock server 跑起来，前端所有列表页有假数据</li>
+        <li>前端能连上假 SSE 服务，看到完整的流式回答动画</li>
+        <li>前后端的类型都是从 spec 生成的，不是手写的</li>
+      </ol>
+    </div>
+    <div class="day-note">下午：按任务表把 W2 的活分到人，<strong>每个人拿到的是一张「切片任务卡」</strong>（模板见仓库 <code>docs/starter/切片任务卡示例.md</code>）。</div>
+  </div>
+</section>
+
+<section id="loop">
+  <div class="sec-head"><span class="num">§04</span><h2>第二周之后 · 每个人的工作循环</h2></div>
+  <p>第一周之后节奏就固定了，每个人循环做这四件事：</p>
+
+  <div class="loop">
+    <div class="loop-step">
+      <span class="n">01</span>
+      <h4>领一张切片任务卡</h4>
+      <p>上面写清楚四件事：切片范围、已定的契约、验收标准、不许动什么。</p>
+    </div>
+    <div class="loop-step">
+      <span class="n">02</span>
+      <h4>整段贴给 AI</h4>
+      <p>让它把这个切片从 service、路由、页面到测试一次做完。契约写死了，AI 不会编字段名；划了边界，AI 不会去改别人的文件。</p>
+    </div>
+    <div class="loop-step">
+      <span class="n">03</span>
+      <h4>自己 review</h4>
+      <p>权限有没有漏、有没有 N+1 查询、外部调用有没有超时处理、测试测的是行为还是实现。<strong>看不懂的代码不许合。</strong></p>
+    </div>
+    <div class="loop-step">
+      <span class="n">04</span>
+      <h4>跑通验收，提 PR</h4>
+      <p>验收标准里的每一条都真的点一遍，包括异常情况。</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <p><strong>AI 提速的边界要有心理准备。</strong>AI 让"敲代码"快 2.5–3 倍，但"想清楚要什么、跟别人对齐、拿到内网权限、验收异常路径"这些一点没变快。</p>
+    <p>所以任务卡写得越清楚，AI 的产出越高——<strong>你花在写任务卡上的 20 分钟，能省 AI 两小时的返工。</strong></p>
+  </div>
+
+  <h3>任务卡为什么必须有这四个部分</h3>
+  <p>AI 写代码的失败模式不是"写不出来"，是<strong>在你没说清的地方自己编一个</strong>。编出来的东西单看没问题，跟别人的代码一拼就对不上。这四个部分正好堵住四个编造的入口：</p>
+  <div class="tw"><table>
+    <thead><tr><th>缺了什么</th><th>AI 会怎么翻车</th></tr></thead>
+    <tbody>
+      <tr><td>切片范围</td><td>顺手把相邻功能也做了，或者只做一半</td></tr>
+      <tr><td>已定的契约</td><td>自己发明字段名和接口路径</td></tr>
+      <tr><td>验收标准</td><td>只写 happy path，异常分支全是 <code>pass</code></td></tr>
+      <tr><td>不许动什么</td><td>去改公共文件，把别人的活覆盖掉</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="rhythm">
+  <div class="sec-head"><span class="num">§05</span><h2>每周固定动作</h2></div>
+  <div class="tw"><table>
+    <thead><tr><th>时间</th><th>动作</th><th>时长</th></tr></thead>
+    <tbody>
+      <tr><td>每天早上</td><td>站会：昨天做完什么、今天做什么、被谁卡住</td><td>10 分钟</td></tr>
+      <tr><td>每周一</td><td>契约对齐会：过一遍这周 <code>contracts/</code> 的改动，有没有人的代码要跟着改</td><td>30 分钟</td></tr>
+      <tr><td>每周五</td><td>里程碑验收：按周计划的判定标准逐条演示</td><td>30 分钟</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>四道里程碑闸门</h3>
+  <div class="tw"><table>
+    <thead><tr><th>时点</th><th>代号</th><th>判定标准</th></tr></thead>
+    <tbody>
+      <tr><td>W2 末</td><td><span class="tag a">M1</span></td><td>创建 agent → 即时测试 → 看到流式回答（工具用 mock）</td></tr>
+      <tr><td>W3 末</td><td><span class="tag a">M2</span></td><td>agent 能真调 MCP 工具、真查知识库；发布 / 上下架闭环</td></tr>
+      <tr><td>W4 末</td><td><span class="tag a">M3</span></td><td>功能完整，happy path 全通</td></tr>
+      <tr><td>W5 末</td><td><span class="tag g">M4</span></td><td>可交给业务专家试用</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout warn">
+    <p><strong>M1 是最关键的一道闸。</strong>如果 W2 末"创建 agent → 即时测试 → 流式回答"这条最短链路没通，不要继续往下堆功能——先停下来查为什么，因为后面所有东西都挂在这条链路上。</p>
+  </div>
+</section>
+
+<section id="tldr">
+  <div class="sec-head"><span class="num">§06</span><h2>一句话记忆</h2></div>
+  <div class="callout">
+    <p class="lead">第一周铺地基：半天基础设施 + 两天接口定义 + 一天假数据服务。</p>
+    <p>之后每人认领一条从表到页面的完整切片，每周五按里程碑验收。</p>
+  </div>
+</section>
+
+<footer>
+  <span>SUPCON 数据智能体平台 · 一期启动手册</span>
+  <span>配套《一期技术方案与任务拆解》</span>
+  <span>2026-08-26</span>
+</footer>
+
+</div>

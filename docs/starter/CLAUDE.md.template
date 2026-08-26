@@ -1,0 +1,70 @@
+# 项目约定（供 AI 编码助手与人类共同遵守）
+
+> 本文件放在仓库根目录，命名为 CLAUDE.md（Codex 用户另存一份 AGENTS.md，内容相同）。
+> 每个人开工前把它读一遍；AI 会自动读取它。
+
+## 这是什么项目
+
+SUPCON 数据智能体平台一期。业务专家在这里创建、配置、测试、发布智能体，
+其他人在问答页使用这些智能体。参考项目是 nexent，但业务层完全自研。
+
+## 目录结构
+
+```
+/contracts        契约（唯一真源，改动必须走 PR 并通知全员）
+  schema.sql        全量建表 DDL
+  seed.sql          初始化数据（角色权限、默认管理员、默认组）
+  openapi.yaml      全部 HTTP 接口定义
+  sse-protocol.md   SSE 事件协议
+  errors.md         统一错误码
+  mock/             基于 openapi.yaml 的 mock server
+/backend          FastAPI 业务后端
+  apps/             路由层，一个业务域一个文件
+  services/         领域服务层，业务逻辑写在这里
+  database/         SQLAlchemy 模型与查询
+  permissions/      RBAC + DAC + tenant_scope
+  utils/
+/agent-runtime    Agent 执行内核（独立包，backend 通过 import 使用）
+/frontend         Vue3 SPA
+  src/api/          由 openapi.yaml 生成的客户端与类型，禁止手改
+  src/views/        页面
+  src/components/   复用组件
+  src/stores/       Pinia
+```
+
+## 铁律
+
+1. **契约是唯一真源。** 前端的 TS 类型、后端的 Pydantic model 都由 `contracts/openapi.yaml`
+   生成。任何一方发现接口对不上，改的是 spec，不是自己那边的代码。
+2. **不许手改生成物。** `frontend/src/api/` 和后端的 schema 生成目录都是自动生成的，
+   手改会在下次生成时丢失。
+3. **一个切片一个人做完。** 从表到接口到页面，不要按层分工。
+4. **不引入新的基础设施。** 一期只有 PostgreSQL 和 Redis。想加 ES / MinIO /
+   消息队列 / 新的中间件，先在群里说，不要直接装。
+5. **密钥永不入库明文、永不回前端。** 所有 `*_enc` 字段用 `CREDENTIAL_ENC_KEY` 加密，
+   接口返回时一律脱敏成 `sk-****abcd`。
+6. **软删不硬删。** 所有删除都是写 `deleted_at`，查询默认过滤。
+7. **agent 表的 version_no=0 是草稿行。** 任何写操作只能改 v0；发布是拷贝 v0 成新版本。
+   永远不要 UPDATE version_no >= 1 的行。
+
+## 代码风格
+
+- 后端：Python 3.11，全部类型标注，`ruff` + `ruff format`，行宽 100
+- 前端：TypeScript strict 模式，`eslint` + `prettier`，组件用 `<script setup>`
+- 数据库：表名与字段名 snake_case，布尔字段用 `is_` / `has_` 前缀
+- 提交信息：`类型(域): 描述`，例如 `feat(agent): 版本快照与发布接口`
+
+## 给 AI 下任务时必须说清的四件事
+
+1. 这是哪个切片（S0–S24 的编号）
+2. 涉及哪些表、哪些接口（贴 openapi.yaml 里的对应片段）
+3. 验收标准是什么（能跑通什么操作，边界情况怎么处理）
+4. 不要动什么（明确划出不属于本切片的文件）
+
+## AI 生成代码的 review 底线
+
+自己看不懂的代码不许合。重点检查这四项：
+- 权限：每个接口有没有过 `PermissionService`，能不能越权读到别人的资源
+- SQL：有没有 N+1 查询，列表接口有没有分页
+- 异常：外部调用（百炼 / MCP / 知识库）有没有超时和失败处理
+- 测试：测的是行为还是实现——AI 很容易写出"把实现抄一遍"的假测试

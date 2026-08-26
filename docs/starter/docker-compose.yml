@@ -1,0 +1,41 @@
+# 本地开发环境 · 一条命令拉起 PostgreSQL + Redis
+# 用法：docker compose up -d
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: agent-pg
+    environment:
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agent_dev_pwd
+      POSTGRES_DB: agent_platform
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # 容器首次启动时自动执行这里的 .sql，建表不用手工跑
+      - ../../contracts/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ../../contracts/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent -d agent_platform"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: agent-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
+  redisdata:
