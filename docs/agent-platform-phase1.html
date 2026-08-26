@@ -847,7 +847,44 @@ footer{
 
 <section id="s7">
   <div class="sec-head"><span class="num">§07</span><h2>任务拆解</h2></div>
-  <p><strong>不按「层」分工</strong>（后端 A 写 service、后端 B 写 controller），而按<strong>端到端垂直切片</strong>——一个人从表到 API 到页面完整拿下一个切片。在 AI 辅助模式下这是关键：AI 在单个完整切片里上下文最全、幻觉最少；按层分工会让两个人的 AI 各自幻觉出不兼容的接口。</p>
+  <p><strong>不按「层」分工</strong>（后端 A 写 service、后端 B 写 controller），而按<strong>端到端垂直切片</strong>——一个切片从表到 API 到页面由一个 owner 负全责。在 AI 辅助模式下这是关键：AI 在单个完整切片里上下文最全、幻觉最少；按层分工会让两个人的 AI 各自幻觉出不兼容的接口。</p>
+
+  <h3>「垂直切片」不等于「一个人写两种语言」</h3>
+  <p>这一点容易误解：<strong>反对的是按技术层切任务，不是反对前后端分人。</strong>「负全责」指对结果负责，不是代码都得他一个人敲。25 个切片实际分三类，分工方式不同：</p>
+  <div class="tw"><table>
+    <thead><tr><th>类型</th><th>切片</th><th>分工</th></tr></thead>
+    <tbody>
+      <tr><td>纯后端</td><td class="mono">S0 S2 S4 S5 S6 S16</td><td>一个人全做</td></tr>
+      <tr><td>纯前端</td><td class="mono">S17 S18 S19</td><td>一个人全做</td></tr>
+      <tr><td><strong>前后端都有</strong>（16 个，占大头）</td><td class="mono">S1 S3 S7–S15 S20–S24</td><td>一前一后配对，指定一个 owner</td></tr>
+    </tbody>
+  </table></div>
+  <p>对第三类的三条规则：</p>
+  <ol class="steps">
+    <li><strong>每个切片指定一个 owner</strong>（通常是后端那位）。契约完不完整、验收过没过、有分歧谁拍板，都是 owner 的事。</li>
+    <li><strong>两人同时开工，不是接力。</strong>后端写接口的同时，前端基于 mock 写页面——这就是第一周做契约与 mock 的全部意义。</li>
+    <li><strong>一起验收。</strong>验收标准由两人一起点一遍，不是各测各的。</li>
+  </ol>
+
+  <h3>用 AI 缓解前端缺口的一个用法</h3>
+  <p>W1 由 FE2 建好组件基建（表格 / 弹窗 / 表单封装）之后，资源中心那几个页面基本是「填空」——列表 + 分页 + 搜索 + 新增弹窗 + 删除确认，没有复杂交互。<strong>这类页面后端同学用 AI 能写出来，前端只做 review。</strong></p>
+  <div class="tw"><table>
+    <thead><tr><th>可转移的切片</th><th class="num-cell">前端人天</th></tr></thead>
+    <tbody>
+      <tr><td>S12 资源·模型</td><td class="num-cell">2</td></tr>
+      <tr><td>S13 资源·MCP</td><td class="num-cell">3</td></tr>
+      <tr><td>S15 资源·知识库</td><td class="num-cell">1.5</td></tr>
+    </tbody>
+    <tfoot><tr><td>合计（扣除 review 与返修，净省约 4 人天）</td><td class="num-cell">6.5</td></tr></tfoot>
+  </table></div>
+  <p><strong>边界必须划清，这招只对 CRUD 填空页有效：</strong></p>
+  <ul class="plain">
+    <li><span class="tag g">可转移</span>　资源中心三个列表页</li>
+    <li><span class="tag r">绝不转移</span>　问答页（S17–S19）、配置页（S8–S11）。流式渲染、思考过程展开、引用面板联动、资源挂载的多态交互——后端写出来必然推倒重来，省的时间不够赔。</li>
+  </ul>
+  <p>两个前提：FE2 的组件库必须先建好；前端必须 review（不 review 的话第四周会收到一堆风格不统一、边界情况没处理的页面）。</p>
+
+  <h3>切片清单</h3>
   <div class="tw">
     <table>
       <thead><tr><th class="id">ID</th><th>切片</th><th class="num-cell">FE</th><th class="num-cell">BE</th><th class="num-cell">AL</th><th>依赖</th><th>档位</th></tr></thead>
