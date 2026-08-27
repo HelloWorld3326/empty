@@ -1,0 +1,1972 @@
+# =============================================================================
+# SUPCON 数据智能体平台 一期 · 接口契约
+# OpenAPI 3.1 · 65 endpoints
+#
+# 契约文件，唯一真源。修改必须走 PR 并通知全员。
+# 前端 TS 类型与后端 Pydantic model 均由本文件生成，禁止手写、禁止手改生成物。
+#
+# tag 即垂直切片，切片编号见 docs/一期技术方案与任务拆解.md 第 7 节。
+# =============================================================================
+openapi: 3.1.0
+info:
+  title: SUPCON 数据智能体平台 API
+  version: 1.0.0-phase1
+  description: |
+    一期范围：智能体的创建、配置、发布、管理与问答，资源中心（模型 / MCP / Skill / 知识库）。
+    不含：数据资源、测试数据集、统计指标、NL2Agent、语音输入。
+
+servers:
+  - url: /api
+    description: 同域部署，Nginx 反代
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: auth
+    description: S3 登录与用户管理 · 认证
+  - name: users
+    description: S3 登录与用户管理 · 用户与组
+  - name: agents
+    description: S6 智能体 CRUD 与版本 / S7 列表 / S10 挂载 / S11 发布检查
+  - name: runs
+    description: S4 Agent 运行时 · 发起 / 流式 / 取消 / 回放
+  - name: conversations
+    description: S16 会话持久化 / S17 问答页会话管理
+  - name: feedback
+    description: S20 回答反馈
+  - name: attachments
+    description: S21 附件上传
+  - name: resources-models
+    description: S12 资源·模型
+  - name: resources-mcp
+    description: S13 资源·MCP/API 工具
+  - name: resources-skills
+    description: S14 资源·Skill
+  - name: resources-knowledge
+    description: S15 资源·知识库
+  - name: records
+    description: S22 使用记录 / S23 发布记录与配置变更
+
+paths:
+
+  # ===========================================================================
+  # S3 · 认证（4）
+  # ===========================================================================
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: 账号密码登录
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, maxLength: 64 }
+                password: { type: string, maxLength: 128 }
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [access_token, expires_in, user]
+                properties:
+                  access_token: { type: string }
+                  expires_in:   { type: integer, description: 秒 }
+                  user:         { $ref: '#/components/schemas/CurrentUser' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: 登出
+      responses:
+        '204': { description: 已登出 }
+
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: 当前用户信息
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CurrentUser' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/change-password:
+    post:
+      tags: [auth]
+      summary: 修改自己的密码
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [old_password, new_password]
+              properties:
+                old_password: { type: string }
+                new_password: { type: string, minLength: 8, maxLength: 128 }
+      responses:
+        '204': { description: 已修改 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ===========================================================================
+  # S3 · 用户与组（8）
+  # ===========================================================================
+  /users:
+    get:
+      tags: [users]
+      summary: 用户列表
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { $ref: '#/components/parameters/Keyword' }
+        - name: role
+          in: query
+          schema: { type: string, enum: [ADMIN, USER] }
+        - name: group_id
+          in: query
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/PageMeta' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/User' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [users]
+      summary: 新建用户（仅管理员）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCreate' }
+      responses:
+        '201':
+          description: 已创建
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /users/{user_id}:
+    parameters:
+      - { $ref: '#/components/parameters/UserId' }
+    patch:
+      tags: [users]
+      summary: 修改用户（角色、所属组、启停）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdate' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [users]
+      summary: 删除用户（软删）
+      responses:
+        '204': { description: 已删除 }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /groups:
+    get:
+      tags: [users]
+      summary: 组（部门）树
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Group' }
+    post:
+      tags: [users]
+      summary: 新建组
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:      { type: string, maxLength: 64 }
+                parent_id: { type: [integer, 'null'], format: int64 }
+      responses:
+        '201':
+          description: 已创建
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Group' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /groups/{group_id}:
+    parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema: { type: integer, format: int64 }
+    patch:
+      tags: [users]
+      summary: 修改组
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:      { type: string, maxLength: 64 }
+                parent_id: { type: [integer, 'null'], format: int64 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Group' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [users]
+      summary: 删除组
+      description: 组下仍有成员时返回 409 `GROUP_NOT_EMPTY`
+      responses:
+        '204': { description: 已删除 }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ===========================================================================
+  # S6 / S7 / S10 / S11 · 智能体（12）
+  # ===========================================================================
+  /agents:
+    get:
+      tags: [agents]
+      summary: 智能体列表
+      description: 只返回当前用户有读权限的智能体（DAC 判定）。
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { $ref: '#/components/parameters/Keyword' }
+        - name: status
+          in: query
+          description: 不传表示全部
+          schema: { type: string, enum: [DRAFT, PUBLISHED, OFFLINE] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/PageMeta' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/AgentListItem' }
+    post:
+      tags: [agents]
+      summary: 创建智能体
+      description: 落 `version_no=0` 草稿行，`agent_meta.status=DRAFT`。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentDraftWrite' }
+      responses:
+        '201':
+          description: 已创建
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentDetail' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /agents/{agent_id}:
+    parameters:
+      - { $ref: '#/components/parameters/AgentId' }
+    get:
+      tags: [agents]
+      summary: 取草稿（v0）完整配置
+      description: |
+        `has_unpublished_changes` 表示草稿与当前线上版存在差异，
+        前端据此展示"有未发布变更"提示。
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentDetail' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [agents]
+      summary: 保存草稿
+      description: 只写 `version_no=0`，不影响线上版本。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentDraftWrite' }
+      responses:
+        '200':
+          description: 已保存
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentDetail' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [agents]
+      summary: 删除智能体
+      description: 仅 DRAFT / OFFLINE 可删；PUBLISHED 返回 409 `AGENT_PUBLISHED_CANNOT_DELETE`。
+      responses:
+        '204': { description: 已删除 }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /agents/{agent_id}/publish:
+    parameters:
+      - { $ref: '#/components/parameters/AgentId' }
+    post:
+      tags: [agents]
+      summary: 发布
+      description: 拷贝 v0 为新的 `version_no`，更新 `current_version_no`，状态置 PUBLISHED。
+      responses:
+        '200':
+          description: 已发布
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [agent_id, version_no, status]
+                properties:
+                  agent_id:   { type: string }
+                  version_no: { type: integer }
+                  status:     { type: string, enum: [PUBLISHED] }
+        '422':
+          description: 发布前检查未通过
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /agents/{agent_id}/unpublish:
+    parameters:
+      - { $ref: '#/components/parameters/AgentId' }
+    post:
+      tags: [agents]
+      summary: 下架
+      description: 状态置 OFFLINE，保留 `current_version_no`。
+      responses:
+        '204': { description: 已下架 }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /agents/{agent_id}/republish:
+    parameters:
+      - { $ref: '#/components/parameters/AgentId' }
+    post:
+      tags: [agents]
+      summary: 上架
+      description: 从 OFFLINE 恢复为 PUBLISHED，不产生新版本。从未发布过则返回 409。
+      responses:
+        '204': { description: 已上架 }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /agents/{agent_id}/versions:
+    parameters:
+      - { $ref: '#/components/parameters/AgentId' }
+    get:
+      tags: [agents]
+      summary: 版本列表
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AgentVersionBrief' }
+
+  /agents/{agent_id}/versions/{version_no}:
+    parameters:
+      - { $ref: '#/components/parameters/AgentId' }
+      - name: version_no
+        in: path
+        required: true
+        schema: { type: integer, minimum: 0 }
+    get:
+      tags: [agents]
+      summary: 某个版本的完整配置快照
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /agents/{agent_id}/precheck:
+    parameters:
+      - { $ref: '#/components/parameters/AgentId' }
+    post:
+      tags: [agents]
+      summary: 发布前检查
+      description: |
+        逐项返回检查结果。全部 `PASS` 时 `passed=true`，前端才允许点发布。
+        检查项：基础配置、模型可用、提示词非空、即时测试已通过、可见范围完整、挂载资源健康。
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [passed, items]
+                properties:
+                  passed: { type: boolean }
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/PrecheckItem' }
+
+  /agents/{agent_id}/resources:
+    parameters:
+      - { $ref: '#/components/parameters/AgentId' }
+    put:
+      tags: [agents]
+      summary: 设置资源挂载（全量替换）
+      description: |
+        前端一次提交全部挂载关系，后端整体覆盖 `version_no=0` 的挂载记录。
+        不提供逐条增删，避免并发下挂载状态不一致。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resources]
+              properties:
+                resources:
+                  type: array
+                  items:
+                    type: object
+                    required: [resource_type, resource_id]
+                    properties:
+                      resource_type: { type: string, enum: [MCP, SKILL, KNOWLEDGE] }
+                      resource_id:   { type: string }
+      responses:
+        '200':
+          description: 已保存
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [resources]
+                properties:
+                  resources:
+                    type: array
+                    items: { $ref: '#/components/schemas/MountedResource' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ===========================================================================
+  # S4 · 运行（4）
+  # ===========================================================================
+  /runs:
+    post:
+      tags: [runs]
+      summary: 发起一次运行
+      description: |
+        立即返回 `run_id`，不阻塞。前端拿到后再建 SSE 连接。
+        `mode=TEST` 用于配置页的即时测试：跑草稿版（version_no=0），
+        不写 conversation / message，只写 run 与 run_event。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agent_id, question, mode]
+              properties:
+                agent_id:        { type: string }
+                question:        { type: string, minLength: 1, maxLength: 4000 }
+                mode:            { type: string, enum: [CHAT, TEST] }
+                conversation_id: { type: [string, 'null'], description: 'mode=CHAT 必填；为空则新建会话' }
+                attachment_ids:
+                  type: array
+                  items: { type: string }
+      responses:
+        '202':
+          description: 已受理
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [run_id, conversation_id]
+                properties:
+                  run_id:          { type: string }
+                  conversation_id: { type: [string, 'null'] }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /runs/{run_id}/stream:
+    parameters:
+      - { $ref: '#/components/parameters/RunId' }
+    get:
+      tags: [runs]
+      summary: SSE 事件流
+      description: |
+        返回 `text/event-stream`。九类事件的完整定义见 `contracts/sse-protocol.md`。
+        OpenAPI 无法描述事件流的内部结构，**以 sse-protocol.md 为准**。
+      responses:
+        '200':
+          description: 事件流
+          content:
+            text/event-stream:
+              schema: { type: string }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /runs/{run_id}/cancel:
+    parameters:
+      - { $ref: '#/components/parameters/RunId' }
+    post:
+      tags: [runs]
+      summary: 取消运行
+      description: 置取消标志并中断执行任务；流上会收到 `run.cancelled` 后关闭。
+      responses:
+        '204': { description: 已取消 }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /runs/{run_id}:
+    parameters:
+      - { $ref: '#/components/parameters/RunId' }
+    get:
+      tags: [runs]
+      summary: 运行详情与轨迹回放
+      description: 按 `seq` 返回完整事件序列，对话详情弹窗据此重现当时的界面。
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RunDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ===========================================================================
+  # S16 / S17 · 会话（6）
+  # ===========================================================================
+  /conversations:
+    get:
+      tags: [conversations]
+      summary: 我的会话列表
+      description: 按 `updated_at` 倒序。关键词同时匹配会话名与智能体名。
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { $ref: '#/components/parameters/Keyword' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/PageMeta' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Conversation' }
+    post:
+      tags: [conversations]
+      summary: 新建会话
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agent_id]
+              properties:
+                agent_id: { type: string }
+                title:    { type: string, maxLength: 40, description: 不传则由首个问题自动生成 }
+      responses:
+        '201':
+          description: 已创建
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Conversation' }
+
+  /conversations/{conversation_id}:
+    parameters:
+      - { $ref: '#/components/parameters/ConversationId' }
+    get:
+      tags: [conversations]
+      summary: 会话详情
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Conversation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [conversations]
+      summary: 重命名会话
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, minLength: 1, maxLength: 40 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Conversation' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+    delete:
+      tags: [conversations]
+      summary: 删除会话
+      responses:
+        '204': { description: 已删除 }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /conversations/{conversation_id}/messages:
+    parameters:
+      - { $ref: '#/components/parameters/ConversationId' }
+    get:
+      tags: [conversations]
+      summary: 会话消息列表
+      description: 每条 assistant 消息带上它的引用来源、工具调用摘要与已提交的反馈。
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Message' }
+
+  # ===========================================================================
+  # S20 · 反馈（1）
+  # ===========================================================================
+  /messages/{message_id}/feedback:
+    parameters:
+      - name: message_id
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [feedback]
+      summary: 提交回答反馈
+      description: 同一条消息同一用户只能提交一次，重复提交返回 409。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [helpful]
+              properties:
+                helpful: { type: boolean }
+                tags:
+                  type: array
+                  description: helpful=false 时的问题类型，可多选
+                  items:
+                    type: string
+                    enum: [INACCURATE, ILLOGICAL, SHALLOW, UNACTIONABLE, SLOW]
+                comment: { type: string, maxLength: 500 }
+      responses:
+        '204': { description: 已提交 }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  # ===========================================================================
+  # S21 · 附件（2）
+  # ===========================================================================
+  /attachments:
+    post:
+      tags: [attachments]
+      summary: 上传附件
+      description: |
+        平台**不解析文档内容**。超过阈值时只把文件名与摘要传给模型，
+        引导用户走知识库。大小上限由 `ATTACHMENT_MAX_MB` 控制。
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:            { type: string, format: binary }
+                conversation_id: { type: string }
+      responses:
+        '201':
+          description: 已上传
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Attachment' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMedia' }
+
+  /attachments/{attachment_id}:
+    parameters:
+      - name: attachment_id
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [attachments]
+      summary: 下载附件
+      description: 校验归属：只有该会话的参与者可下载。
+      responses:
+        '200':
+          description: 文件流
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ===========================================================================
+  # S12 · 资源·模型（6）
+  # ===========================================================================
+  /resources/models:
+    get:
+      tags: [resources-models]
+      summary: 已接入模型列表
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { $ref: '#/components/parameters/Keyword' }
+        - name: model_type
+          in: query
+          schema: { type: string, enum: [LLM, ASR, TTS, EMBEDDING] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/PageMeta' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Model' }
+    post:
+      tags: [resources-models]
+      summary: 接入模型（支持批量）
+      description: 密钥加密入库，响应中一律脱敏为 `sk-****abcd`。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [models]
+              properties:
+                models:
+                  type: array
+                  minItems: 1
+                  items: { $ref: '#/components/schemas/ModelCreate' }
+      responses:
+        '201':
+          description: 已接入
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Model' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /resources/models/available:
+    get:
+      tags: [resources-models]
+      summary: 可接入模型清单
+      description: 供接入弹窗多选。已接入的项 `already_added=true`，前端置灰不可重复添加。
+      parameters:
+        - name: model_type
+          in: query
+          schema: { type: string, enum: [LLM, ASR, TTS, EMBEDDING] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [name, display_name, model_type, provider, already_added]
+                  properties:
+                    name:          { type: string }
+                    display_name:  { type: string }
+                    model_type:    { type: string, enum: [LLM, ASR, TTS, EMBEDDING] }
+                    provider:      { type: string }
+                    already_added: { type: boolean }
+
+  /resources/models/{model_id}:
+    parameters:
+      - { $ref: '#/components/parameters/ModelId' }
+    patch:
+      tags: [resources-models]
+      summary: 启用 / 停用模型
+      description: 停用后不再出现在智能体配置页的模型下拉中；已引用它的智能体在发布检查时会报错。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [ENABLED, DISABLED] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Model' }
+    delete:
+      tags: [resources-models]
+      summary: 删除模型
+      description: 被引用时返回 409 `RESOURCE_IN_USE`，`detail` 中带引用影响清单。
+      responses:
+        '204': { description: 已删除 }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /resources/models/{model_id}/test:
+    parameters:
+      - { $ref: '#/components/parameters/ModelId' }
+    post:
+      tags: [resources-models]
+      summary: 连通性测试
+      description: 真发一次最小请求。超时 / 鉴权失败 / 模型不存在返回不同的 `code`。
+      responses:
+        '200':
+          description: 测试结果
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthCheckResult' }
+
+  # ===========================================================================
+  # S13 · 资源·MCP/API 工具（8）
+  # ===========================================================================
+  /resources/mcp:
+    get:
+      tags: [resources-mcp]
+      summary: MCP/API 工具列表
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { $ref: '#/components/parameters/Keyword' }
+        - name: health_status
+          in: query
+          schema: { type: string, enum: [OK, WARN, ERROR, WATCHING, UNKNOWN] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/PageMeta' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/McpService' }
+    post:
+      tags: [resources-mcp]
+      summary: 接入 MCP/API 工具
+      description: 保存前应先调 `/test` 验证；接入成功后自动解析并缓存工具清单。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/McpWrite' }
+      responses:
+        '201':
+          description: 已接入
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/McpService' }
+        '502': { $ref: '#/components/responses/UpstreamError' }
+
+  /resources/mcp/batch-test:
+    post:
+      tags: [resources-mcp]
+      summary: 批量连通性测试
+      description: 对当前列表的全部或指定服务并发测试，返回汇总。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mcp_ids:
+                  type: array
+                  description: 为空表示测试当前租户下全部
+                  items: { type: string }
+      responses:
+        '200':
+          description: 测试汇总
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [total, ok, failed, results]
+                properties:
+                  total:  { type: integer }
+                  ok:     { type: integer }
+                  failed: { type: integer }
+                  results:
+                    type: array
+                    items:
+                      allOf:
+                        - type: object
+                          required: [mcp_id, name]
+                          properties:
+                            mcp_id: { type: string }
+                            name:   { type: string }
+                        - { $ref: '#/components/schemas/HealthCheckResult' }
+
+  /resources/mcp/{mcp_id}:
+    parameters:
+      - { $ref: '#/components/parameters/McpId' }
+    put:
+      tags: [resources-mcp]
+      summary: 编辑 MCP/API 工具
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/McpWrite' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/McpService' }
+    delete:
+      tags: [resources-mcp]
+      summary: 删除 MCP/API 工具
+      responses:
+        '204': { description: 已删除 }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /resources/mcp/{mcp_id}/test:
+    parameters:
+      - { $ref: '#/components/parameters/McpId' }
+    post:
+      tags: [resources-mcp]
+      summary: 单个连通性测试
+      description: 校验服务地址、鉴权信息，并尝试解析工具描述。成功后刷新工具清单缓存。
+      responses:
+        '200':
+          description: 测试结果
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthCheckResult' }
+
+  /resources/mcp/{mcp_id}/diagnose:
+    parameters:
+      - { $ref: '#/components/parameters/McpId' }
+    get:
+      tags: [resources-mcp]
+      summary: 诊断
+      description: 连接状态、依赖服务、入出参、近期调用、影响范围、处理建议。
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Diagnosis' }
+
+  /resources/mcp/{mcp_id}/tools:
+    parameters:
+      - { $ref: '#/components/parameters/McpId' }
+    get:
+      tags: [resources-mcp]
+      summary: 该服务的工具清单
+      description: 接入与测试时解析缓存的结果，`input_schema` 可直接转 function calling schema。
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/McpTool' }
+
+  # ===========================================================================
+  # S14 · 资源·Skill（7）
+  # ===========================================================================
+  /resources/skills:
+    get:
+      tags: [resources-skills]
+      summary: Skill 列表
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { $ref: '#/components/parameters/Keyword' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/PageMeta' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Skill' }
+    post:
+      tags: [resources-skills]
+      summary: 新建 Skill
+      description: Skill 是结构化 Prompt 模板，不是可执行代码。模板中的 `{{var}}` 必须在 `input_vars` 中声明。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SkillWrite' }
+      responses:
+        '201':
+          description: 已创建
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Skill' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /resources/skills/generate:
+    post:
+      tags: [resources-skills]
+      summary: AI 生成 Skill 模板
+      description: |
+        返回**预览**，不落库。用户确认后再调 `POST /resources/skills` 保存。
+        生成失败或质量不佳时，用户始终可以改走手写模板。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requirement, output_format]
+              properties:
+                requirement:   { type: string, maxLength: 1000, description: 自然语言描述的生成需求 }
+                output_format: { type: string, enum: [JSON, TABLE, TEXT] }
+      responses:
+        '200':
+          description: 生成结果预览
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [name, description, template_body, input_vars]
+                properties:
+                  name:          { type: string }
+                  description:   { type: string }
+                  template_body: { type: string }
+                  input_vars:
+                    type: array
+                    items: { $ref: '#/components/schemas/SkillInputVar' }
+        '502': { $ref: '#/components/responses/UpstreamError' }
+
+  /resources/skills/{skill_id}:
+    parameters:
+      - { $ref: '#/components/parameters/SkillId' }
+    get:
+      tags: [resources-skills]
+      summary: Skill 详情
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SkillDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [resources-skills]
+      summary: 编辑 Skill
+      description: 保存时 `version` 自增。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SkillWrite' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Skill' }
+    delete:
+      tags: [resources-skills]
+      summary: 删除 Skill
+      responses:
+        '204': { description: 已删除 }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /resources/skills/{skill_id}/test:
+    parameters:
+      - { $ref: '#/components/parameters/SkillId' }
+    post:
+      tags: [resources-skills]
+      summary: 试运行 Skill
+      description: 用给定的变量值渲染模板并跑一次模型，结果写入 `health_status`。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [variables]
+              properties:
+                variables:
+                  type: object
+                  additionalProperties: { type: string }
+      responses:
+        '200':
+          description: 试运行结果
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, duration_ms]
+                properties:
+                  status:      { type: string, enum: [OK, FAILED] }
+                  duration_ms: { type: integer }
+                  output:      { type: [string, 'null'] }
+                  message:     { type: [string, 'null'] }
+
+  # ===========================================================================
+  # S15 · 资源·知识库（4）
+  # ===========================================================================
+  /resources/knowledge/available:
+    get:
+      tags: [resources-knowledge]
+      summary: 内网可用知识库清单
+      description: |
+        经 `KnowledgeProvider` 从内网知识库服务拉取。
+        内网接口拿不到的字段（文档数、大小）返回 null，前端显示 `—`，不阻塞。
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [external_kb_id, name, already_registered]
+                  properties:
+                    external_kb_id:     { type: string }
+                    name:               { type: string }
+                    owner:              { type: [string, 'null'] }
+                    doc_count:          { type: [integer, 'null'] }
+                    already_registered: { type: boolean }
+        '502': { $ref: '#/components/responses/UpstreamError' }
+
+  /resources/knowledge:
+    get:
+      tags: [resources-knowledge]
+      summary: 已登记知识库列表
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { $ref: '#/components/parameters/Keyword' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/PageMeta' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/KnowledgeBase' }
+    post:
+      tags: [resources-knowledge]
+      summary: 登记知识库
+      description: 只存元信息，检索时实时走内网服务。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [external_kb_id]
+              properties:
+                external_kb_id: { type: string }
+                owner:          { type: string, maxLength: 64 }
+      responses:
+        '201':
+          description: 已登记
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KnowledgeBase' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /resources/knowledge/{knowledge_id}:
+    parameters:
+      - name: knowledge_id
+        in: path
+        required: true
+        schema: { type: string }
+    delete:
+      tags: [resources-knowledge]
+      summary: 取消登记
+      responses:
+        '204': { description: 已取消登记 }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  # ===========================================================================
+  # S22 / S23 · 记录（3）
+  # ===========================================================================
+  /agents/{agent_id}/records/usage:
+    parameters:
+      - { $ref: '#/components/parameters/AgentId' }
+    get:
+      tags: [records]
+      summary: 使用记录
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - name: status
+          in: query
+          schema: { type: string, enum: [SUCCESS, CANCELLED, FAILED] }
+        - name: feedback
+          in: query
+          schema: { type: string, enum: [HELPFUL, UNHELPFUL, NONE] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/PageMeta' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/UsageRecord' }
+
+  /agents/{agent_id}/records/publish:
+    parameters:
+      - { $ref: '#/components/parameters/AgentId' }
+    get:
+      tags: [records]
+      summary: 发布记录
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/PageMeta' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/PublishRecord' }
+
+  /agents/{agent_id}/records/config-changes:
+    parameters:
+      - { $ref: '#/components/parameters/AgentId' }
+    get:
+      tags: [records]
+      summary: 配置变更记录
+      description: |
+        **无独立存储表**。由相邻两个版本快照的 `config` JSONB 做 diff 实时生成，
+        操作人与时间取自该版本行的 `created_by` / `created_at`。
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/PageMeta' }
+                  - type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ConfigChange' }
+
+# =============================================================================
+components:
+# =============================================================================
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: page_size
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Keyword:
+      name: keyword
+      in: query
+      description: 模糊搜索关键词
+      schema: { type: string, maxLength: 128 }
+    UserId:
+      name: user_id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    AgentId:
+      name: agent_id
+      in: path
+      required: true
+      schema: { type: string }
+    RunId:
+      name: run_id
+      in: path
+      required: true
+      schema: { type: string }
+    ConversationId:
+      name: conversation_id
+      in: path
+      required: true
+      schema: { type: string }
+    ModelId:
+      name: model_id
+      in: path
+      required: true
+      schema: { type: string }
+    McpId:
+      name: mcp_id
+      in: path
+      required: true
+      schema: { type: string }
+    SkillId:
+      name: skill_id
+      in: path
+      required: true
+      schema: { type: string }
+
+  responses:
+    BadRequest:
+      description: 参数不合法
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Unauthorized:
+      description: 未登录或登录已过期
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Forbidden:
+      description: 无权限
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: 不存在或已删除
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Conflict:
+      description: 状态冲突（含引用影响）
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    RateLimited:
+      description: 并发超限
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    PayloadTooLarge:
+      description: 文件过大
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    UnsupportedMedia:
+      description: 文件类型不支持
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    UpstreamError:
+      description: 外部服务不可用（模型 / MCP / 知识库）
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+  schemas:
+
+    # ---- 通用 ------------------------------------------------------------
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:    { type: string, description: 业务码，见 contracts/errors.md }
+        message: { type: string, description: 可直接展示给用户的中文提示 }
+        detail:  { type: object, additionalProperties: true }
+
+    PageMeta:
+      type: object
+      required: [total, page, page_size]
+      properties:
+        total:     { type: integer }
+        page:      { type: integer }
+        page_size: { type: integer }
+
+    HealthStatus:
+      type: string
+      enum: [OK, WARN, ERROR, WATCHING, UNKNOWN]
+
+    HealthCheckResult:
+      type: object
+      required: [status, checked_at]
+      properties:
+        status:      { $ref: '#/components/schemas/HealthStatus' }
+        checked_at:  { type: string, format: date-time }
+        duration_ms: { type: [integer, 'null'] }
+        code:        { type: [string, 'null'], description: 失败时的业务码 }
+        message:     { type: [string, 'null'], description: 失败时的中文提示 }
+
+    ReferenceImpact:
+      type: object
+      description: 删除资源时的引用影响，放在 Error.detail 里返回
+      required: [count, agents]
+      properties:
+        count: { type: integer }
+        agents:
+          type: array
+          items:
+            type: object
+            required: [agent_id, name]
+            properties:
+              agent_id: { type: string }
+              name:     { type: string }
+
+    # ---- S3 用户 ---------------------------------------------------------
+    CurrentUser:
+      type: object
+      required: [user_id, username, display_name, role, groups, permissions]
+      properties:
+        user_id:      { type: string }
+        username:     { type: string }
+        display_name: { type: string }
+        employee_no:  { type: [string, 'null'] }
+        role:         { type: string, enum: [ADMIN, USER] }
+        groups:
+          type: array
+          items: { $ref: '#/components/schemas/Group' }
+        permissions:
+          type: array
+          description: 扁平化的权限点，形如 "agent:write"、"resource:write:mcp"
+          items: { type: string }
+
+    User:
+      type: object
+      required: [user_id, username, display_name, role, status, groups, created_at]
+      properties:
+        user_id:      { type: string }
+        username:     { type: string }
+        display_name: { type: string }
+        employee_no:  { type: [string, 'null'] }
+        email:        { type: [string, 'null'] }
+        role:         { type: string, enum: [ADMIN, USER] }
+        status:       { type: string, enum: [ACTIVE, DISABLED] }
+        groups:
+          type: array
+          items: { $ref: '#/components/schemas/Group' }
+        created_at:   { type: string, format: date-time }
+
+    UserCreate:
+      type: object
+      required: [username, password, display_name]
+      properties:
+        username:     { type: string, maxLength: 64 }
+        password:     { type: string, minLength: 8, maxLength: 128 }
+        display_name: { type: string, maxLength: 64 }
+        employee_no:  { type: string, maxLength: 32 }
+        email:        { type: string, format: email }
+        role:         { type: string, enum: [ADMIN, USER], default: USER }
+        group_ids:
+          type: array
+          items: { type: integer, format: int64 }
+
+    UserUpdate:
+      type: object
+      properties:
+        display_name: { type: string, maxLength: 64 }
+        employee_no:  { type: string, maxLength: 32 }
+        email:        { type: string, format: email }
+        role:         { type: string, enum: [ADMIN, USER] }
+        status:       { type: string, enum: [ACTIVE, DISABLED] }
+        group_ids:
+          type: array
+          items: { type: integer, format: int64 }
+
+    Group:
+      type: object
+      required: [group_id, name]
+      properties:
+        group_id:  { type: string }
+        name:      { type: string }
+        parent_id: { type: [string, 'null'] }
+        children:
+          type: array
+          items: { $ref: '#/components/schemas/Group' }
+
+    # ---- S6/S7/S10/S11 智能体 --------------------------------------------
+    AgentStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED, OFFLINE]
+
+    Visibility:
+      type: object
+      description: |
+        DAC 可见性。对应 PRD 的四档可见范围：
+        仅自己 = PRIVATE；指定成员/部门 = READ_ONLY + group_ids；全员可见 = READ_ONLY + group_ids 为空。
+      required: [ingroup_permission, group_ids]
+      properties:
+        ingroup_permission: { type: string, enum: [PRIVATE, READ_ONLY, EDIT] }
+        group_ids:
+          type: array
+          items: { type: string }
+
+    AgentConfig:
+      type: object
+      required: [model_id, prompt, params]
+      properties:
+        model_id: { type: string }
+        prompt:   { type: string, minLength: 1, maxLength: 20000 }
+        params:
+          type: object
+          required: [max_tokens, temperature, top_p]
+          properties:
+            max_tokens:  { type: integer, minimum: 1, maximum: 32768 }
+            temperature: { type: number, minimum: 0, maximum: 2 }
+            top_p:       { type: number, minimum: 0, maximum: 1 }
+        context_policy:  { type: string, enum: [AUTO, THRESHOLD, NONE], default: AUTO }
+        retrieval_top_k: { type: integer, minimum: 0, maximum: 20, default: 5 }
+
+    AgentListItem:
+      type: object
+      required: [agent_id, name, description, status, visibility, resource_count, updated_at]
+      properties:
+        agent_id:       { type: string }
+        name:           { type: string }
+        description:    { type: string }
+        icon_url:       { type: [string, 'null'] }
+        status:         { $ref: '#/components/schemas/AgentStatus' }
+        visibility:     { $ref: '#/components/schemas/Visibility' }
+        resource_count: { type: integer, description: 已挂载资源数量 }
+        current_version_no: { type: [integer, 'null'] }
+        has_unpublished_changes: { type: boolean }
+        can_edit:       { type: boolean, description: DAC 判定结果，前端据此禁用操作 }
+        created_by_name: { type: string }
+        updated_at:     { type: string, format: date-time }
+
+    AgentDraftWrite:
+      type: object
+      required: [name, description, visibility, config]
+      properties:
+        name:        { type: string, minLength: 1, maxLength: 64 }
+        description: { type: string, minLength: 1, maxLength: 1000 }
+        icon_url:    { type: [string, 'null'] }
+        visibility:  { $ref: '#/components/schemas/Visibility' }
+        config:      { $ref: '#/components/schemas/AgentConfig' }
+
+    AgentDetail:
+      type: object
+      required: [agent_id, version_no, name, description, status, visibility, config, resources]
+      properties:
+        agent_id:    { type: string }
+        version_no:  { type: integer, description: '0 为草稿' }
+        name:        { type: string }
+        description: { type: string }
+        icon_url:    { type: [string, 'null'] }
+        status:      { $ref: '#/components/schemas/AgentStatus' }
+        visibility:  { $ref: '#/components/schemas/Visibility' }
+        config:      { $ref: '#/components/schemas/AgentConfig' }
+        resources:
+          type: array
+          items: { $ref: '#/components/schemas/MountedResource' }
+        current_version_no:      { type: [integer, 'null'] }
+        has_unpublished_changes: { type: boolean }
+        can_edit:                { type: boolean }
+        created_by_name:         { type: string }
+        updated_at:              { type: string, format: date-time }
+
+    AgentVersionBrief:
+      type: object
+      required: [version_no, created_at, created_by_name, is_current]
+      properties:
+        version_no:      { type: integer }
+        created_at:      { type: string, format: date-time }
+        created_by_name: { type: string }
+        is_current:      { type: boolean }
+
+    MountedResource:
+      type: object
+      required: [resource_type, resource_id, name, health_status]
+      properties:
+        resource_type: { type: string, enum: [MCP, SKILL, KNOWLEDGE] }
+        resource_id:   { type: string }
+        name:          { type: string }
+        description:   { type: [string, 'null'] }
+        health_status: { $ref: '#/components/schemas/HealthStatus' }
+
+    PrecheckItem:
+      type: object
+      required: [key, label, result, message]
+      properties:
+        key:     { type: string, enum: [BASIC_INFO, MODEL_AVAILABLE, PROMPT, QUICK_TEST, VISIBILITY, RESOURCE_HEALTH] }
+        label:   { type: string, description: 展示用中文名 }
+        result:  { type: string, enum: [PASS, WARN, FAIL] }
+        message: { type: string, description: 未通过时说明怎么解决 }
+
+    # ---- S4 运行 ---------------------------------------------------------
+    RunDetail:
+      type: object
+      required: [run_id, agent_id, version_no, mode, status, started_at, events]
+      properties:
+        run_id:         { type: string }
+        agent_id:       { type: string }
+        version_no:     { type: integer }
+        mode:           { type: string, enum: [CHAT, TEST] }
+        status:         { type: string, enum: [RUNNING, SUCCESS, CANCELLED, FAILED] }
+        duration_ms:    { type: [integer, 'null'] }
+        error_code:     { type: [string, 'null'] }
+        error_message:  { type: [string, 'null'] }
+        started_at:     { type: string, format: date-time }
+        finished_at:    { type: [string, 'null'], format: date-time }
+        events:
+          type: array
+          description: 按 seq 升序的完整事件序列，结构见 contracts/sse-protocol.md
+          items:
+            type: object
+            required: [seq, event_type, payload]
+            properties:
+              seq:        { type: integer }
+              event_type: { type: string }
+              payload:    { type: object, additionalProperties: true }
+
+    # ---- S16/S17 会话 ----------------------------------------------------
+    Conversation:
+      type: object
+      required: [conversation_id, title, agent_id, agent_name, created_at, updated_at]
+      properties:
+        conversation_id:  { type: string }
+        title:            { type: string }
+        agent_id:         { type: string }
+        agent_name:       { type: string }
+        agent_version_no: { type: integer }
+        created_at:       { type: string, format: date-time }
+        updated_at:       { type: string, format: date-time }
+
+    Message:
+      type: object
+      required: [message_id, role, content, created_at]
+      properties:
+        message_id: { type: string }
+        role:       { type: string, enum: [USER, ASSISTANT] }
+        content:    { type: string }
+        run_id:     { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+        citations:
+          type: array
+          items: { $ref: '#/components/schemas/Citation' }
+        tool_calls:
+          type: array
+          items:
+            type: object
+            required: [call_id, tool_label, status, duration_ms]
+            properties:
+              call_id:     { type: string }
+              tool_label:  { type: string }
+              status:      { type: string, enum: [OK, FAILED, TIMEOUT] }
+              duration_ms: { type: integer }
+        thinking_steps:
+          type: array
+          items:
+            type: object
+            required: [phase, text]
+            properties:
+              phase: { type: string, enum: [IDENTIFY, RETRIEVE, INVOKE] }
+              text:  { type: string }
+        feedback:
+          oneOf:
+            - { $ref: '#/components/schemas/Feedback' }
+            - { type: 'null' }
+        attachments:
+          type: array
+          items: { $ref: '#/components/schemas/Attachment' }
+
+    Citation:
+      type: object
+      required: [citation_id, source_type, source_name, title, snippet]
+      properties:
+        citation_id: { type: string }
+        source_type: { type: string, enum: [KNOWLEDGE, TOOL] }
+        source_name: { type: string }
+        title:       { type: string }
+        snippet:     { type: string }
+        ref:         { type: [string, 'null'] }
+
+    Feedback:
+      type: object
+      required: [helpful, created_at]
+      properties:
+        helpful: { type: boolean }
+        tags:
+          type: array
+          items: { type: string, enum: [INACCURATE, ILLOGICAL, SHALLOW, UNACTIONABLE, SLOW] }
+        comment:    { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+
+    Attachment:
+      type: object
+      required: [attachment_id, filename, size_bytes, mime, created_at]
+      properties:
+        attachment_id: { type: string }
+        filename:      { type: string }
+        size_bytes:    { type: integer }
+        mime:          { type: string }
+        created_at:    { type: string, format: date-time }
+
+    # ---- S12 模型 --------------------------------------------------------
+    Model:
+      type: object
+      required: [model_id, name, display_name, model_type, provider, status, health_status, reference_count, updated_at]
+      properties:
+        model_id:      { type: string }
+        name:          { type: string }
+        display_name:  { type: string }
+        model_type:    { type: string, enum: [LLM, ASR, TTS, EMBEDDING] }
+        provider:      { type: string }
+        base_url:      { type: string }
+        api_key_masked: { type: [string, 'null'], description: "脱敏形如 sk-****abcd，永不返回明文" }
+        status:        { type: string, enum: [ENABLED, DISABLED] }
+        health_status: { $ref: '#/components/schemas/HealthStatus' }
+        last_check_at: { type: [string, 'null'], format: date-time }
+        reference_count: { type: integer, description: 被多少智能体引用 }
+        updated_at:    { type: string, format: date-time }
+
+    ModelCreate:
+      type: object
+      required: [name, display_name, model_type, provider, base_url]
+      properties:
+        name:         { type: string, maxLength: 128 }
+        display_name: { type: string, maxLength: 128 }
+        model_type:   { type: string, enum: [LLM, ASR, TTS, EMBEDDING] }
+        provider:     { type: string, maxLength: 64 }
+        base_url:     { type: string, format: uri }
+        api_key:      { type: string, description: 明文提交一次，加密入库后不再回显 }
+
+    # ---- S13 MCP ---------------------------------------------------------
+    McpService:
+      type: object
+      required: [mcp_id, name, description, service_type, url, auth_type, health_status, reference_count, tool_count, updated_at]
+      properties:
+        mcp_id:        { type: string }
+        name:          { type: string }
+        description:   { type: string }
+        service_type:  { type: string, enum: [REMOTE, BUSINESS_API] }
+        url:           { type: string }
+        auth_type:     { type: string, enum: [NONE, API_KEY, BEARER, OAUTH2] }
+        auth_secret_masked: { type: [string, 'null'] }
+        owner:         { type: [string, 'null'] }
+        health_status: { $ref: '#/components/schemas/HealthStatus' }
+        last_check_at: { type: [string, 'null'], format: date-time }
+        last_error:    { type: [string, 'null'] }
+        reference_count: { type: integer }
+        tool_count:    { type: integer }
+        updated_at:    { type: string, format: date-time }
+
+    McpWrite:
+      type: object
+      required: [name, description, url, auth_type]
+      properties:
+        name:         { type: string, maxLength: 128 }
+        description:  { type: string, maxLength: 1000 }
+        service_type: { type: string, enum: [REMOTE, BUSINESS_API], default: REMOTE }
+        url:          { type: string, format: uri }
+        auth_type:    { type: string, enum: [NONE, API_KEY, BEARER, OAUTH2] }
+        auth_secret:  { type: [string, 'null'], description: 按鉴权方式填写，加密入库 }
+        owner:        { type: string, maxLength: 64 }
+
+    McpTool:
+      type: object
+      required: [tool_name, input_schema]
+      properties:
+        tool_name:    { type: string }
+        description:  { type: [string, 'null'] }
+        input_schema: { type: object, additionalProperties: true, description: JSON Schema，可直接转 function calling }
+
+    Diagnosis:
+      type: object
+      required: [health_status, items, suggestion, impact]
+      properties:
+        health_status: { $ref: '#/components/schemas/HealthStatus' }
+        items:
+          type: array
+          items:
+            type: object
+            required: [key, label, result, message]
+            properties:
+              key:     { type: string, enum: [CONNECTION, AUTH, DEPENDENCY, SCHEMA, RECENT_CALLS] }
+              label:   { type: string }
+              result:  { type: string, enum: [PASS, WARN, FAIL] }
+              message: { type: string }
+        recent:
+          type: object
+          properties:
+            failure_count_24h: { type: integer }
+            avg_duration_ms:   { type: [integer, 'null'] }
+            last_success_at:   { type: [string, 'null'], format: date-time }
+            last_failure_at:   { type: [string, 'null'], format: date-time }
+        impact:     { $ref: '#/components/schemas/ReferenceImpact' }
+        suggestion: { type: string, description: 处理建议，含建议联系人或动作 }
+
+    # ---- S14 Skill -------------------------------------------------------
+    SkillInputVar:
+      type: object
+      required: [name, label, required]
+      properties:
+        name:     { type: string, description: "模板中引用为 {{name}} 的占位符" }
+        label:    { type: string }
+        required: { type: boolean }
+        example:  { type: [string, 'null'] }
+
+    Skill:
+      type: object
+      required: [skill_id, name, description, output_format, version, health_status, reference_count, updated_at]
+      properties:
+        skill_id:      { type: string }
+        name:          { type: string }
+        description:   { type: string }
+        output_format: { type: string, enum: [JSON, TABLE, TEXT] }
+        version:       { type: integer }
+        health_status: { $ref: '#/components/schemas/HealthStatus' }
+        owner:         { type: [string, 'null'] }
+        reference_count: { type: integer }
+        updated_at:    { type: string, format: date-time }
+
+    SkillDetail:
+      allOf:
+        - { $ref: '#/components/schemas/Skill' }
+        - type: object
+          required: [template_body, input_vars]
+          properties:
+            template_body: { type: string }
+            input_vars:
+              type: array
+              items: { $ref: '#/components/schemas/SkillInputVar' }
+            last_test_at:  { type: [string, 'null'], format: date-time }
+            last_test_msg: { type: [string, 'null'] }
+
+    SkillWrite:
+      type: object
+      required: [name, description, output_format, template_body, input_vars]
+      properties:
+        name:          { type: string, maxLength: 128 }
+        description:   { type: string, maxLength: 1000 }
+        output_format: { type: string, enum: [JSON, TABLE, TEXT] }
+        template_body: { type: string, minLength: 1, maxLength: 20000 }
+        input_vars:
+          type: array
+          items: { $ref: '#/components/schemas/SkillInputVar' }
+        owner:         { type: string, maxLength: 64 }
+
+    # ---- S15 知识库 ------------------------------------------------------
+    KnowledgeBase:
+      type: object
+      required: [knowledge_id, external_kb_id, name, reference_count]
+      properties:
+        knowledge_id:   { type: string }
+        external_kb_id: { type: string }
+        name:           { type: string }
+        owner:          { type: [string, 'null'] }
+        doc_count:      { type: [integer, 'null'], description: 内网接口拿不到时为 null，前端显示 — }
+        doc_size_bytes: { type: [integer, 'null'] }
+        last_sync_at:   { type: [string, 'null'], format: date-time }
+        reference_count: { type: integer }
+
+    # ---- S22/S23 记录 ----------------------------------------------------
+    UsageRecord:
+      type: object
+      required: [run_id, created_at, user_name, question, duration_ms, status]
+      properties:
+        run_id:       { type: string }
+        created_at:   { type: string, format: date-time }
+        user_name:    { type: string }
+        employee_no:  { type: [string, 'null'] }
+        question:     { type: string }
+        duration_ms:  { type: [integer, 'null'] }
+        status:       { type: string, enum: [SUCCESS, CANCELLED, FAILED] }
+        feedback:     { type: string, enum: [HELPFUL, UNHELPFUL, NONE] }
+        feedback_comment: { type: [string, 'null'] }
+
+    PublishRecord:
+      type: object
+      required: [created_at, action, result, operator_name]
+      properties:
+        created_at:      { type: string, format: date-time }
+        version_no:      { type: [integer, 'null'] }
+        action:          { type: string, enum: [PUBLISH, UNPUBLISH, REPUBLISH, SAVE_DRAFT] }
+        result:          { type: string, enum: [SUCCESS, FAILED] }
+        fail_reason:     { type: [string, 'null'] }
+        visibility_desc: { type: [string, 'null'] }
+        operator_name:   { type: string }
+
+    ConfigChange:
+      type: object
+      required: [created_at, field, field_label, before, after, operator_name]
+      properties:
+        created_at:    { type: string, format: date-time }
+        version_no:    { type: integer }
+        field:         { type: string, description: 'config 内的 JSON 路径，如 params.temperature' }
+        field_label:   { type: string, description: 展示用中文名，如「提示词」「挂载资源」 }
+        before:        { type: [string, 'null'] }
+        after:         { type: [string, 'null'] }
+        operator_name: { type: string }

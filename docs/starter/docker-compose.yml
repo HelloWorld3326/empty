@@ -14,8 +14,8 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       # 容器首次启动时自动执行这里的 .sql，建表不用手工跑
-      - ../../contracts/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
-      - ../../contracts/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+      - ../contracts/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ../contracts/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U agent -d agent_platform"]
       interval: 5s
