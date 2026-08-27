@@ -19,6 +19,10 @@
 
 每个人只需要看自己这一行。`openapi.yaml` 里的 `tag` 就是切片，用 Swagger UI 按 tag 折叠即可。
 
+> **编号说明**：下表的 S 编号是契约文件里使用的原始编号。
+> 团队按 **主干 / Harness / CBB / 其他** 四模块分工后的新编号（M/H/C/X）见
+> `docs/任务拆解-四模块版.md` 附录的映射表。契约文件不随分工方式改动。
+
 | 切片 | 名称 | 表 | OpenAPI tag | 接口数 | 其他契约 |
 |---|---|---|---|---|---|
 | **S2** | 身份与权限 | `sys_user` `sys_group` `sys_user_group` `sys_role_permission` | — | — | `errors.md` 通用段 |
