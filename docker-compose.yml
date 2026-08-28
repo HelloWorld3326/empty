@@ -1,0 +1,41 @@
+# 一键拉起 MaxKB + 两个自研服务。
+# 生产环境请把 MaxKB 的数据库换成外部 PostgreSQL，并给所有服务加上反向代理和 HTTPS。
+services:
+  maxkb:
+    image: 1panel/maxkb
+    container_name: maxkb
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - maxkb-data:/opt/maxkb
+
+  tool-api:
+    build:
+      context: ./services/tool-api
+    container_name: cs-tool-api
+    restart: always
+    env_file:
+      - ./services/tool-api/.env
+    ports:
+      # 只对内网开放，不要映射到公网
+      - "127.0.0.1:8100:8100"
+
+  chat-gateway:
+    build:
+      context: ./services/chat-gateway
+    container_name: cs-chat-gateway
+    restart: always
+    env_file:
+      - ./services/chat-gateway/.env
+    environment:
+      MAXKB_BASE_URL: http://maxkb:8080
+      TOOL_API_BASE_URL: http://tool-api:8100
+    depends_on:
+      - maxkb
+      - tool-api
+    ports:
+      - "8200:8200"
+
+volumes:
+  maxkb-data:

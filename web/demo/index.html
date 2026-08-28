@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>客服助手 · 接入示例</title>
+<style>
+  body { font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+         margin: 0; background: #f5f6f8; color: #1f2328; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 96px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .hint { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+  .msg { padding: 10px 14px; border-radius: 10px; margin: 10px 0; white-space: pre-wrap;
+         line-height: 1.6; max-width: 85%; }
+  .user { background: #2563eb; color: #fff; margin-left: auto; }
+  .bot { background: #fff; border: 1px solid #e5e7eb; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff;
+         border-top: 1px solid #e5e7eb; padding: 12px; }
+  .bar-inner { max-width: 720px; margin: 0 auto; display: flex; gap: 8px; }
+  input { flex: 1; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+  button { padding: 10px 16px; border: 0; border-radius: 8px; background: #2563eb; color: #fff;
+           font-size: 14px; cursor: pointer; }
+  button.ghost { background: #fff; color: #4b5563; border: 1px solid #d1d5db; }
+  button:disabled { opacity: .5; cursor: default; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>在线客服</h1>
+  <p class="hint">
+    示例页面。真实场景里 <code>Authorization</code> 用客户360 的登录态，
+    页面上不会出现任何 MaxKB 的地址或 Key。
+  </p>
+  <div id="log"></div>
+</div>
+
+<div class="bar"><div class="bar-inner">
+  <input id="q" placeholder="例如：我的退款进度到哪了？" autocomplete="off">
+  <button id="send">发送</button>
+  <button id="human" class="ghost">转人工</button>
+</div></div>
+
+<script>
+// 网关地址：同域部署时留空即可
+const GATEWAY = "http://127.0.0.1:8200";
+// 联调用：AUTH_MODE=debug 时靠这个头识别客户；上线换成真实登录态的 Bearer Token
+const AUTH_HEADERS = { "X-Debug-Customer-Id": "C10001" };
+
+let conversationId = null;
+const log = document.getElementById("log");
+
+function bubble(cls, text) {
+  const el = document.createElement("div");
+  el.className = "msg " + cls;
+  el.textContent = text;
+  log.appendChild(el);
+  window.scrollTo(0, document.body.scrollHeight);
+  return el;
+}
+
+async function ensureSession() {
+  if (conversationId) return conversationId;
+  const resp = await fetch(GATEWAY + "/api/chat/sessions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
+  });
+  if (!resp.ok) throw new Error("建会话失败：" + resp.status);
+  conversationId = (await resp.json()).conversation_id;
+  return conversationId;
+}
+
+async function ask(question) {
+  const chatId = await ensureSession();
+  bubble("user", question);
+  const target = bubble("bot", "");
+
+  const resp = await fetch(GATEWAY + "/api/chat/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
+    body: JSON.stringify({ conversation_id: chatId, question }),
+  });
+  if (!resp.ok) { target.textContent = "出错了：" + resp.status; return; }
+
+  // 逐块读取 SSE，实现打字机效果
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop();
+    for (const part of parts) {
+      const line = part.trim();
+      if (!line.startsWith("data:")) continue;
+      const event = JSON.parse(line.slice(5).trim());
+      if (event.type === "delta") target.textContent += event.content;
+      if (event.type === "error") target.textContent += "\n[" + event.message + "]";
+    }
+  }
+}
+
+document.getElementById("send").onclick = async () => {
+  const input = document.getElementById("q");
+  const question = input.value.trim();
+  if (!question) return;
+  input.value = "";
+  try { await ask(question); } catch (e) { bubble("bot", String(e)); }
+};
+
+document.getElementById("q").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("send").click();
+});
+
+document.getElementById("human").onclick = async () => {
+  try {
+    const chatId = await ensureSession();
+    const resp = await fetch(GATEWAY + "/api/chat/handoff", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
+      body: JSON.stringify({ conversation_id: chatId, title: "客户要求人工客服" }),
+    });
+    const ticket = await resp.json();
+    bubble("bot", "已为你转接人工，工单号：" + (ticket.ticket_no || "-"));
+  } catch (e) { bubble("bot", String(e)); }
+};
+</script>
+</body>
+</html>
